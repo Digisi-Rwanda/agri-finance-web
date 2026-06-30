@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --agri-font: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+  --agri-brand: #00450d;
+  --agri-brand-soft: #0a5c18;
+  --agri-brand-deep: #002f09;
+  --agri-brand-muted: #0a5c18;
+  --agri-link: #2b5bb5;
+  --agri-accent-mint: #b8e6c4;
+  --agri-accent-soft: #f0f7f1;
+  --agri-surface: #ffffff;
+  --agri-surface-muted: #ecefea;
+  --agri-surface-page: #f8faf5;
+  --agri-border: #c0c9bb;
+  --agri-border-hairline: #e1e3de;
+  --agri-text-primary: #191c1a;
+  --agri-text-secondary: #41493e;
+  --agri-text-muted: #717a6d;
+  --agri-text-on-brand: #ffffff;
+  --agri-error: #ba1a1a;
+  --agri-radius-md: 12px;
+  --agri-radius-lg: 16px;
+  font-family: var(--agri-font);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--agri-surface-page);
+  color: var(--agri-text-primary);
+}

@@ -1,0 +1,387 @@
+/**
+ * Light portal theme — same CSS variable names as neon dark
+ * so gauges, charts, and cards resolve correct colors.
+ */
+
+.portal-light {
+  --neon-bg: #f8faf5;
+  --neon-bg-panel: #ffffff;
+  --neon-sidebar: #00450d;
+  --neon-card: #ffffff;
+  --neon-border: #e1e3de;
+  --neon-text: #191c1a;
+  --neon-muted: #64748b;
+  --neon-cyan: #00450d;
+  --neon-magenta: #2b5bb5;
+  --neon-pink: #0a5c18;
+  --neon-lime: #0a5c18;
+  --neon-yellow: #b45309;
+  --neon-orange: #c2410c;
+  --neon-violet: #2b5bb5;
+  --neon-glow-cyan: 0 2px 12px rgba(0, 69, 13, 0.12);
+  --neon-glow-pink: 0 2px 12px rgba(43, 91, 181, 0.12);
+  --neon-ring-track: #e8efe9;
+}
+
+.portal-light.app-shell {
+  background: var(--neon-bg);
+  color: var(--neon-text);
+}
+
+.portal-light .sidebar {
+  background: var(--neon-sidebar);
+  border-right: 1px solid #0b5a18;
+}
+
+.portal-light .brand {
+  color: #ffffff;
+  text-shadow: none;
+}
+
+.portal-light .brand-sub {
+  color: #b8e6c4;
+}
+
+.portal-light .nav-link {
+  color: #d6f0de;
+  text-transform: none;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.portal-light .nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.portal-light .nav-link.active {
+  background: #0b5a18;
+  color: #ffffff;
+  border: 0;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.portal-light .topbar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--neon-border);
+  backdrop-filter: none;
+}
+
+.portal-light .topbar__eyebrow {
+  color: var(--neon-cyan);
+  text-shadow: none;
+}
+
+.portal-light .topbar__title {
+  color: var(--neon-text);
+}
+
+.portal-light .topbar__search input {
+  background: var(--neon-bg);
+  border: 1px solid #c0c9bb;
+  color: var(--neon-text);
+}
+
+.portal-light .topbar__search-icon {
+  color: var(--neon-muted);
+}
+
+.portal-light .topbar__profile {
+  background: var(--neon-bg);
+  border-color: var(--neon-border);
+}
+
+.portal-light .topbar-icon {
+  background: #ffffff;
+  border-color: var(--neon-border);
+  color: var(--neon-text);
+}
+
+.portal-light .topbar-icon:hover {
+  background: #f0f7f1 !important;
+  border-color: var(--neon-cyan) !important;
+  box-shadow: none;
+}
+
+.portal-light .topbar-icon__dot {
+  border-color: #ffffff;
+}
+
+.portal-light .topbar-avatar {
+  background: var(--neon-magenta);
+  box-shadow: none;
+}
+
+.portal-light .topbar-user__meta strong {
+  color: var(--neon-text);
+}
+
+.portal-light .topbar-user__meta small {
+  color: var(--neon-muted);
+}
+
+.portal-light .card,
+.portal-light .widget,
+.portal-light .table-shell,
+.portal-light .confirm-card {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.05);
+  color: var(--neon-text);
+}
+
+.portal-light .card:hover,
+.portal-light .widget:hover {
+  border-color: #c0c9bb;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.08);
+}
+
+.portal-light .page-header h1 {
+  color: var(--neon-text);
+  text-shadow: none;
+}
+
+.portal-light .page-header p {
+  color: var(--neon-muted);
+}
+
+.portal-light .card h2 {
+  color: #0f172a;
+}
+
+.portal-light .card-subtitle,
+.portal-light .muted,
+.portal-light .dashboard-empty {
+  color: var(--neon-muted);
+}
+
+.portal-light a {
+  color: var(--neon-magenta);
+}
+
+.portal-light a:hover {
+  color: #1d4ed8;
+}
+
+.portal-light .btn-primary {
+  background: var(--neon-magenta);
+  box-shadow: none;
+}
+
+.portal-light .btn-secondary {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.portal-light input,
+.portal-light select {
+  background: #ffffff;
+  color: var(--neon-text);
+  border-color: #c0c9bb;
+}
+
+.portal-light .filters label {
+  color: var(--neon-muted);
+}
+
+.portal-light th {
+  color: var(--neon-muted);
+}
+
+.portal-light td {
+  border-bottom-color: #edf2f7;
+  color: var(--neon-text);
+}
+
+.portal-light .empty-cell {
+  color: var(--neon-muted);
+}
+
+.portal-light .activity-item {
+  border-bottom-color: #edf2f7;
+}
+
+.portal-light .activity-item strong {
+  color: var(--neon-text);
+}
+
+.portal-light .activity-item p,
+.portal-light .activity-item small {
+  color: var(--neon-muted);
+}
+
+.portal-light .neon-gauge__ring {
+  background:
+    radial-gradient(circle at center, var(--neon-card) 58%, transparent 59%),
+    conic-gradient(
+      var(--ring-color) 0deg,
+      var(--ring-color) calc(var(--pct) * 3.6deg),
+      var(--neon-ring-track) calc(var(--pct) * 3.6deg),
+      var(--neon-ring-track) 360deg
+    );
+  box-shadow: 0 4px 16px rgba(0, 69, 13, 0.1);
+}
+
+.portal-light .neon-gauge__ring span {
+  color: var(--neon-text);
+}
+
+.portal-light .neon-percent-card strong {
+  color: var(--neon-cyan);
+  text-shadow: none;
+}
+
+.portal-light .neon-progress-row__track {
+  background: var(--neon-ring-track);
+}
+
+.portal-light .neon-progress-row__fill--a {
+  background: linear-gradient(90deg, #00450d, #6fbf73);
+}
+
+.portal-light .neon-progress-row__fill--b {
+  background: linear-gradient(90deg, #2b5bb5, #60a5fa);
+}
+
+.portal-light .neon-progress-row__fill--c {
+  background: linear-gradient(90deg, #0a5c18, #a3e635);
+}
+
+.portal-light .bar-row__track {
+  background: var(--neon-ring-track);
+}
+
+.portal-light .bar-row__fill {
+  background: linear-gradient(90deg, #00450d, #6fbf73);
+  box-shadow: none;
+}
+
+.portal-light .bar-row span,
+.portal-light .bar-row__count {
+  color: var(--neon-text);
+}
+
+.portal-light .stat-card--green {
+  border-left-color: var(--neon-cyan);
+}
+
+.portal-light .stat-card--blue {
+  border-left-color: var(--neon-magenta);
+}
+
+.portal-light .stat-card--amber {
+  border-left-color: var(--neon-orange);
+}
+
+.portal-light .stat-card--slate {
+  border-left-color: #64748b;
+}
+
+.portal-light .stat-card h3 {
+  color: var(--neon-muted);
+}
+
+.portal-light .stat-card p {
+  color: var(--neon-text);
+}
+
+.portal-light .quick-action-card {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+}
+
+.portal-light .quick-action-card:hover {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 8px 20px rgba(0, 69, 13, 0.08);
+}
+
+.portal-light .quick-action-card strong {
+  color: var(--neon-text);
+}
+
+.portal-light .quick-action-card small {
+  color: var(--neon-muted);
+}
+
+.portal-light .quick-action-card__icon {
+  background: #e8f5eb;
+  color: var(--neon-cyan);
+}
+
+.portal-light .neon-area-chart .recharts-cartesian-grid-horizontal line,
+.portal-light .neon-area-chart .recharts-cartesian-grid-vertical line {
+  stroke: #e2e8f0;
+}
+
+.portal-light .neon-area-chart .recharts-text {
+  fill: var(--neon-muted);
+}
+
+.portal-light .confirm-overlay {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.portal-light .confirm-card h3 {
+  color: var(--neon-text);
+}
+
+.portal-light .confirm-card p {
+  color: var(--neon-muted);
+}
+
+.portal-light .dashboard-skeleton {
+  background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 37%, #eef2f7 63%);
+}
+
+.portal-light .theme-switch {
+  background: #f0f7f1;
+  border-color: #c0c9bb;
+}
+
+.portal-light .theme-switch__btn {
+  color: var(--neon-muted);
+}
+
+.portal-light .theme-switch__btn--active {
+  background: #ffffff;
+  color: var(--neon-cyan);
+  box-shadow: 0 2px 8px rgba(0, 69, 13, 0.1);
+}
+
+.portal-light .status-success {
+  background: #dcfce7;
+  color: var(--neon-cyan);
+}
+
+.portal-light .status-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.portal-light .status-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.portal-light .status-neutral {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.neon-dashboard .theme-switch {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .theme-switch__btn {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .theme-switch__btn--active {
+  background: rgba(255, 45, 149, 0.2);
+  color: var(--neon-pink);
+  box-shadow: var(--neon-glow-pink);
+}

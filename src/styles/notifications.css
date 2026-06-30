@@ -1,0 +1,232 @@
+/**
+ * Notifications page — works in light and dark portal themes.
+ */
+
+.notifications-page .page-header {
+  align-items: flex-start;
+}
+
+.notifications-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.notifications-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.notification-item:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.notification-item--unread {
+  background: #f0f7ff;
+  border-color: #bfdbfe;
+}
+
+.notification-item--read {
+  opacity: 0.92;
+}
+
+.notification-item__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.notification-item__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.notification-item__message {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.notification-item__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.5rem 0.9rem;
+  border: 0;
+  border-radius: 8px;
+  background: #1e3a5f;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.notification-item__mark:hover {
+  background: #0f2744;
+}
+
+.notification-item__read-label {
+  flex-shrink: 0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.notification-item--skeleton {
+  min-height: 88px;
+  background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 37%, #eef2f7 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s infinite;
+  border-color: #e2e8f0;
+}
+
+.notifications-empty {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: #64748b;
+}
+
+.notifications-empty svg {
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.notifications-empty h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.notifications-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Dark / neon portal */
+.neon-dashboard .notifications-badge {
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--neon-cyan);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.neon-dashboard .notification-item {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .notification-item--unread {
+  background: rgba(34, 211, 238, 0.08);
+  border-color: rgba(34, 211, 238, 0.28);
+}
+
+.neon-dashboard .notification-item__title {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .notification-item__message {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .notification-item__mark {
+  background: linear-gradient(90deg, #db2777, #7c3aed);
+}
+
+.neon-dashboard .notification-item__mark:hover {
+  background: linear-gradient(90deg, #be185d, #6d28d9);
+}
+
+.neon-dashboard .notification-item__read-label {
+  background: rgba(163, 230, 53, 0.15);
+  color: var(--neon-lime);
+}
+
+.neon-dashboard .notification-item--skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 37%, rgba(255, 255, 255, 0.04) 63%);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .notifications-empty h2 {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .notifications-empty p {
+  color: var(--neon-muted);
+}
+
+/* Light portal — Agri Trust blues */
+.portal-light .notifications-badge {
+  background: #e8f0fe;
+  color: #2b5bb5;
+  border-color: #c7d7f5;
+}
+
+.portal-light .notification-item--unread {
+  background: #f0f7ff;
+  border-color: #c7d7f5;
+}
+
+.portal-light .notification-item__mark {
+  background: #2b5bb5;
+}
+
+.portal-light .notification-item__mark:hover {
+  background: #1d4ed8;
+}
+
+.portal-light .notification-item__read-label {
+  background: #e8f5eb;
+  color: #00450d;
+}
+
+@media (max-width: 640px) {
+  .notification-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notification-item__mark {
+    align-self: flex-start;
+  }
+
+  .notifications-page__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
