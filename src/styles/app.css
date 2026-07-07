@@ -547,6 +547,64 @@ button.secondary {
 
 .table-scroll {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-loan-list {
+  display: none;
+}
+
+.loan-mobile-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.85rem;
+  background: #fff;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.loan-mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.loan-mobile-card__head strong {
+  font-size: 0.98rem;
+  color: #0f172a;
+}
+
+.loan-mobile-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.86rem;
+  color: #475569;
+}
+
+.loan-mobile-card__meta span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  margin-bottom: 0.15rem;
+}
+
+.loan-mobile-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.loan-mobile-card__actions button {
+  width: 100%;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 .status-badge {
@@ -799,6 +857,9 @@ button.secondary {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .farmer-head p {
@@ -1102,34 +1163,46 @@ th {
   }
 
   .sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 20;
-    padding: 0.8rem 1rem;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 88vw);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+    border-right: 1px solid #0b5a18;
+    border-bottom: none;
+    padding: 1rem;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
   }
 
-  .sidebar nav {
-    display: none;
-    gap: 0.4rem;
-    overflow-x: auto;
-    padding-bottom: 0.2rem;
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar nav,
+  .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
   }
 
   .nav-link {
-    white-space: nowrap;
+    white-space: normal;
     margin-bottom: 0;
-  }
-
-  .sidebar-footer {
-    display: none;
-  }
-
-  .sidebar.open nav,
-  .sidebar.open .sidebar-footer {
-    display: flex;
-    flex-direction: column;
   }
 
   .topbar {
@@ -1188,6 +1261,15 @@ th {
 
   .filters {
     flex-wrap: wrap;
+  }
+
+  .page-header h1,
+  .hero-strip h1 {
+    display: none;
+  }
+
+  .page-header {
+    margin-bottom: 0.65rem;
   }
 }
 
@@ -1373,11 +1455,55 @@ th {
 
   .main-content {
     padding: 0.9rem 0.8rem 1.1rem;
+    overflow-x: hidden;
   }
 
   .card {
     padding: 0.85rem;
     border-radius: 10px;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .filters label {
+    width: 100%;
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .table-footer .page-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .table-footer .page-actions button {
+    flex: 1;
+  }
+
+  .desktop-table {
+    display: none;
+  }
+
+  .mobile-loan-list {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+  }
+
+  .momo-grid {
+    grid-template-columns: 1fr !important;
   }
 
   .action-cell {
@@ -1410,8 +1536,32 @@ th {
     font-size: 1rem;
   }
 
-  .topbar h1 {
+  .topbar h1,
+  .topbar__title {
     font-size: 0.95rem;
+  }
+
+  .topbar__end {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+  }
+
+  .topbar__profile {
+    max-width: 100%;
+  }
+
+  .page-actions {
+    flex-direction: column;
+  }
+
+  .page-actions .btn-primary,
+  .page-actions .btn-secondary {
+    width: 100%;
+  }
+
+  .loan-mobile-card__actions {
+    grid-template-columns: 1fr;
   }
 
   .topbar-search {
@@ -1473,6 +1623,19 @@ th {
 .dark th,
 .dark td {
   border-bottom-color: #1f2a40;
+}
+
+.dark .loan-mobile-card {
+  background: #111b2e;
+  border-color: #1f2a40;
+}
+
+.dark .loan-mobile-card__head strong {
+  color: #dbe6f5;
+}
+
+.dark .loan-mobile-card__meta {
+  color: #9fb0c8;
 }
 
 @keyframes shimmer {

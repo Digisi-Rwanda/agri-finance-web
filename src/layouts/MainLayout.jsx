@@ -102,6 +102,10 @@ function MainLayout() {
   }, [])
 
   useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
     localStorage.setItem('theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
@@ -142,6 +146,15 @@ function MainLayout() {
           )}
         </div>
       </aside>
+
+      {menuOpen ? (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close menu"
+          onClick={() => setMenuOpen(false)}
+        />
+      ) : null}
 
       <div className="content-shell">
         <header className="topbar">

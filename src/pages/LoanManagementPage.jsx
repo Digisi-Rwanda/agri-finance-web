@@ -6,7 +6,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getLoans, updateLoanStatus } from '../services/bankService'
-import { formatRwf } from '../utils/currency'
+import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
 function LoanManagementPage() {
@@ -61,6 +61,9 @@ function LoanManagementPage() {
     .filter((loan) => loan.status === 'Approved')
     .reduce((sum, loan) => sum + Number(loan.amount || 0), 0)
 
+  const riskLabelFor = (score) =>
+    score >= 700 ? 'Low Risk' : score >= 620 ? 'Moderate' : 'High Risk'
+
   const handleExportReport = () => {
     const headers = [
       { key: 'id', label: 'Loan ID' },
@@ -110,7 +113,7 @@ function LoanManagementPage() {
         <StatCard title="Total Applications" value={loans.length.toLocaleString()} />
         <StatCard title="Avg. Credit Score" value={avgScore.toLocaleString()} />
         <StatCard title="Approval Rate" value={`${approvalRate}%`} />
-        <StatCard title="Total Disbursed" value={formatRwf(totalDisbursed)} />
+        <StatCard title="Total Disbursed" value={formatRwfCompact(totalDisbursed)} />
       </div>
 
       <DataTableShell
@@ -191,14 +194,12 @@ function LoanManagementPage() {
                   No loans found. Adjust filters or create a new application.
                 </td>
               </tr>
-            ) : pagedLoans.map((loan) => {
-              const riskLabel = loan.score >= 700 ? 'Low Risk (0.15)' : loan.score >= 620 ? 'Moderate (0.48)' : 'High Risk (0.88)'
-              return (
+            ) : pagedLoans.map((loan) => (
                 <tr key={loan.id}>
                   <td>{loan.farmer}</td>
                   <td>{loan.score}</td>
                   <td>{formatRwf(loan.amount)}</td>
-                  <td>{riskLabel}</td>
+                  <td>{riskLabelFor(loan.score)}</td>
                   <td>{loan.purpose || 'General'}</td>
                   <td><StatusBadge value={loan.status} /></td>
                   <td className="action-cell">
@@ -210,10 +211,52 @@ function LoanManagementPage() {
                     </button>
                   </td>
                 </tr>
-              )
-            })}
+              ))}
           </tbody>
         </table>
+
+        <div className="mobile-loan-list" aria-label="Loan applications">
+          {loading ? (
+            <div className="skeleton-row" />
+          ) : pagedLoans.length === 0 ? (
+            <p className="empty-cell">No loans found. Adjust filters or create a new application.</p>
+          ) : (
+            pagedLoans.map((loan) => (
+              <article key={`mobile-${loan.id}`} className="loan-mobile-card">
+                <div className="loan-mobile-card__head">
+                  <strong>{loan.farmer}</strong>
+                  <StatusBadge value={loan.status} />
+                </div>
+                <div className="loan-mobile-card__meta">
+                  <div>
+                    <span>Amount</span>
+                    {formatRwf(loan.amount)}
+                  </div>
+                  <div>
+                    <span>Score</span>
+                    {loan.score}
+                  </div>
+                  <div>
+                    <span>Risk</span>
+                    {riskLabelFor(loan.score)}
+                  </div>
+                  <div>
+                    <span>Purpose</span>
+                    {loan.purpose || 'General'}
+                  </div>
+                </div>
+                <div className="loan-mobile-card__actions">
+                  <button type="button" className="btn-primary" onClick={() => handleStatus(loan.id, 'Approved')}>
+                    Approve
+                  </button>
+                  <button type="button" className="btn-secondary danger" onClick={() => handleStatus(loan.id, 'Rejected')}>
+                    Reject
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
       </DataTableShell>
     </section>
   )

@@ -101,26 +101,28 @@ export default function MomoPaymentsPage() {
           ) : history.length === 0 ? (
             <p className="muted">No transactions yet.</p>
           ) : (
-            <table className="desktop-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Amount</th>
-                  <th>Phone</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.slice(0, 20).map((row) => (
-                  <tr key={row.paymentId}>
-                    <td>{row.paymentType?.replaceAll('_', ' ')}</td>
-                    <td>{row.status}</td>
-                    <td>{formatRwf(row.amount)} {row.currency}</td>
-                    <td>{row.phoneNumber}</td>
+            <div className="table-scroll">
+              <table className="desktop-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Phone</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {history.slice(0, 20).map((row) => (
+                    <tr key={row.paymentId}>
+                      <td>{row.paymentType?.replaceAll('_', ' ')}</td>
+                      <td>{row.status}</td>
+                      <td>{formatRwf(row.amount)} {row.currency}</td>
+                      <td>{row.phoneNumber}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </article>
       </div>
