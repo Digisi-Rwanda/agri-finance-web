@@ -237,7 +237,7 @@ function BankDashboardPage() {
             </p>
           </div>
           <Link to="/farmer" className="btn-secondary">
-            Open analysis
+            View all farmers
           </Link>
         </div>
 
@@ -310,32 +310,23 @@ function BankDashboardPage() {
 
       <div className="quick-actions">
         <QuickActionCard
+          to="/farmer"
+          icon={FileCheck2}
+          title="Farmers"
+          description="View farmer profiles, farms, and credit data"
+        />
+        <QuickActionCard
           to="/loans"
           icon={HandCoins}
-          title="Loan management"
+          title="Loans"
           description="Review, approve, or reject applications"
         />
         <QuickActionCard
-          to="/farmer"
-          icon={FileCheck2}
-          title="Farmer analysis"
-          description="Browse profiles, farms, yields, and payments"
+          to="/payments"
+          icon={ScrollText}
+          title="Payments"
+          description="Track mobile money transactions"
         />
-        {isAdmin ? (
-          <QuickActionCard
-            to="/audit"
-            icon={ScrollText}
-            title="Audit logs"
-            description="Track sign-ins and system events"
-          />
-        ) : (
-          <QuickActionCard
-            to="/payments"
-            icon={ScrollText}
-            title="MoMo payments"
-            description="View mobile money transactions"
-          />
-        )}
       </div>
     </section>
   )

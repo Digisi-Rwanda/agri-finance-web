@@ -22,44 +22,79 @@ import ThemeSwitch from '../components/layout/ThemeSwitch'
 import { PortalThemeContext } from '../context/PortalThemeContext'
 import { getUserInitials, ROLE_LABELS } from '../utils/roles'
 
-const navItemsByRole = {
+const navSectionsByRole = {
   BANK: [
-    { to: '/', label: 'Home', icon: Home },
-    { to: '/loans', label: 'Loan Management', icon: HandCoins },
-    { to: '/payments', label: 'MoMo Payments', icon: Wallet },
-    { to: '/farmer', label: 'Farmer Analysis', icon: FileCheck2 },
+    {
+      title: 'Overview',
+      items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
+    },
+    {
+      title: 'Management',
+      items: [
+        { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
+        { to: '/loans', label: 'Loans', icon: HandCoins },
+        { to: '/payments', label: 'Payments', icon: Wallet },
+      ],
+    },
   ],
   INSURER: [
-    { to: '/insurer', label: 'Home', icon: Home },
-    { to: '/insurance', label: 'Insurance Management', icon: Shield },
-    { to: '/payments', label: 'MoMo Payments', icon: Wallet },
+    {
+      title: 'Overview',
+      items: [{ to: '/insurer', label: 'Dashboard', icon: Home, end: true }],
+    },
+    {
+      title: 'Management',
+      items: [
+        { to: '/insurance', label: 'Insurance', icon: Shield },
+        { to: '/payments', label: 'Payments', icon: Wallet },
+      ],
+    },
   ],
   ADMIN: [
-    { to: '/', label: 'Home', icon: Home },
-    { to: '/loans', label: 'Loan Management', icon: HandCoins },
-    { to: '/insurance', label: 'Insurance Management', icon: Shield },
-    { to: '/payments', label: 'MoMo Payments', icon: Wallet },
-    { to: '/farmer', label: 'Farmer Analysis', icon: FileCheck2 },
-    { to: '/admin', label: 'Admin', icon: User },
-    { to: '/audit', label: 'Audit Logs', icon: CircleHelp },
+    {
+      title: 'Overview',
+      items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
+    },
+    {
+      title: 'Management',
+      items: [
+        { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
+        { to: '/loans', label: 'Loans', icon: HandCoins },
+        { to: '/payments', label: 'Payments', icon: Wallet },
+        { to: '/insurance', label: 'Insurance', icon: Shield },
+      ],
+    },
+    {
+      title: 'Administration',
+      items: [
+        { to: '/admin', label: 'Admin Panel', icon: User },
+        { to: '/audit', label: 'Audit Logs', icon: CircleHelp },
+      ],
+    },
   ],
   FARMER: [
-    { to: '/payments', label: 'MoMo Payments', icon: Wallet },
-    { to: '/consent', label: 'Consent Management', icon: Settings },
+    {
+      title: 'Overview',
+      items: [{ to: '/payments', label: 'Dashboard', icon: Home, end: true }],
+    },
+    {
+      title: 'Account',
+      items: [{ to: '/consent', label: 'Consent & Settings', icon: Settings }],
+    },
   ],
 }
 
 // Page title shown in the header for each route.
 const PAGE_TITLES = {
   '/': 'Dashboard',
-  '/loans': 'Loan Management',
-  '/payments': 'MoMo Payments',
-  '/farmer': 'Farmer Analysis',
-  '/insurer': 'Insurer Dashboard',
-  '/insurance': 'Insurance Management',
+  '/loans': 'Loans',
+  '/payments': 'Payments',
+  '/farmer': 'Farmers',
+  '/insurer': 'Dashboard',
+  '/insurance': 'Insurance',
   '/admin': 'Admin Panel',
   '/audit': 'Audit Logs',
-  '/consent': 'Consent Management',
+  '/consent': 'Consent & Settings',
   '/notifications': 'Notifications',
 }
 
@@ -75,7 +110,7 @@ function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const currentRole = getCurrentUser()?.role || 'BANK'
-  const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
+  const navSections = navSectionsByRole[currentRole] || navSectionsByRole.BANK
   const canSearchFarmers = currentRole === 'BANK' || currentRole === 'ADMIN'
   const user = getCurrentUser()
   const userInitials = getUserInitials(user)
@@ -121,30 +156,40 @@ function MainLayout() {
           Agri Trust
         </Link>
         <span className="brand-sub">Institutional portal</span>
-        <nav>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-            >
-              <item.icon size={16} />
-              {item.label}
-            </NavLink>
+        <nav className="sidebar-nav">
+          {navSections.map((section) => (
+            <div className="nav-section" key={section.title}>
+              <span className="nav-section__title">{section.title}</span>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-footer">
-          {(currentRole === 'FARMER' || currentRole === 'ADMIN') && (
+          {currentRole === 'ADMIN' ? (
             <NavLink
               to="/consent"
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
               <Settings size={16} />
-              Settings
+              Consent settings
             </NavLink>
-          )}
+          ) : null}
+          <button type="button" className="nav-link nav-link--logout" onClick={handleLogout}>
+            <LogOut size={16} />
+            Logout
+          </button>
         </div>
       </aside>
 
