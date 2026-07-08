@@ -2,94 +2,98 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   ChevronDown,
-  CircleHelp,
-  FileCheck2,
-  HandCoins,
+  CreditCard,
   Home,
+  Landmark,
   LogOut,
   Menu,
+  ScrollText,
   Search,
   Settings,
-  Shield,
+  ShieldCheck,
   User,
-  Wallet,
+  UserRound,
+  Users,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { clearSession, getCurrentUser, hydrateSessionUser } from '../services/auth'
 import ThemeSwitch from '../components/layout/ThemeSwitch'
 import { PortalThemeContext } from '../context/PortalThemeContext'
-import { getUserInitials, ROLE_LABELS } from '../utils/roles'
+import { getHomePathForRole, getUserInitials, ROLE_LABELS } from '../utils/roles'
 
 const navSectionsByRole = {
   BANK: [
     {
-      id: 'overview',
-      title: 'Overview',
+      id: 'dashboard',
+      title: 'Dashboard',
+      single: true,
       items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
     },
     {
-      id: 'management',
-      title: 'Management',
+      id: 'operations',
+      title: 'Operations',
       items: [
-        { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
-        { to: '/loans', label: 'Loans', icon: HandCoins },
-        { to: '/payments', label: 'Payments', icon: Wallet },
+        { to: '/farmer', label: 'Farmers', icon: UserRound },
+        { to: '/loans', label: 'Loans', icon: Landmark },
+        { to: '/payments', label: 'Payments', icon: CreditCard },
       ],
     },
   ],
   INSURER: [
     {
-      id: 'overview',
-      title: 'Overview',
+      id: 'dashboard',
+      title: 'Dashboard',
+      single: true,
       items: [{ to: '/insurer', label: 'Dashboard', icon: Home, end: true }],
     },
     {
-      id: 'management',
-      title: 'Management',
+      id: 'operations',
+      title: 'Operations',
       items: [
-        { to: '/insurance', label: 'Insurance', icon: Shield },
-        { to: '/payments', label: 'Payments', icon: Wallet },
+        { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
+        { to: '/payments', label: 'Payments', icon: CreditCard },
       ],
     },
   ],
   ADMIN: [
     {
-      id: 'overview',
-      title: 'Overview',
+      id: 'dashboard',
+      title: 'Dashboard',
+      single: true,
       items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
     },
     {
-      id: 'management',
-      title: 'Management',
+      id: 'operations',
+      title: 'Operations',
       items: [
-        { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
-        { to: '/loans', label: 'Loans', icon: HandCoins },
-        { to: '/payments', label: 'Payments', icon: Wallet },
-        { to: '/insurance', label: 'Insurance', icon: Shield },
+        { to: '/farmer', label: 'Farmers', icon: UserRound },
+        { to: '/loans', label: 'Loans', icon: Landmark },
+        { to: '/payments', label: 'Payments', icon: CreditCard },
+        { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
       ],
     },
     {
-      id: 'admin',
-      title: 'Administration',
+      id: 'system',
+      title: 'System',
       items: [
-        { to: '/admin', label: 'Admin Panel', icon: User },
-        { to: '/audit', label: 'Audit Logs', icon: CircleHelp },
-        { to: '/consent', label: 'Consent settings', icon: Settings },
+        { to: '/admin', label: 'Users', icon: Users },
+        { to: '/audit', label: 'Audit Logs', icon: ScrollText },
       ],
     },
   ],
   FARMER: [
     {
-      id: 'overview',
-      title: 'Overview',
+      id: 'dashboard',
+      title: 'Dashboard',
+      single: true,
       items: [{ to: '/payments', label: 'Dashboard', icon: Home, end: true }],
     },
     {
       id: 'account',
       title: 'Account',
-      items: [{ to: '/consent', label: 'Consent & Settings', icon: Settings }],
+      items: [{ to: '/consent', label: 'Settings', icon: Settings }],
     },
   ],
 }
@@ -101,15 +105,48 @@ const PAGE_TITLES = {
   '/farmer': 'Farmers',
   '/insurer': 'Dashboard',
   '/insurance': 'Insurance',
-  '/admin': 'Admin Panel',
+  '/admin': 'Users',
   '/audit': 'Audit Logs',
-  '/consent': 'Consent & Settings',
+  '/consent': 'Settings',
   '/notifications': 'Notifications',
+}
+
+const SEARCH_CONFIG = {
+  '/farmer': { placeholder: 'Search farmers…', target: '/farmer', label: 'Search farmers' },
+  '/loans': { placeholder: 'Search loans…', target: '/loans', label: 'Search loans' },
+  '/payments': { placeholder: 'Search transactions…', target: '/payments', label: 'Search transactions' },
+  default: { placeholder: 'Search farmers…', target: '/farmer', label: 'Search farmers' },
 }
 
 function getPageTitle(pathname) {
   if (pathname.startsWith('/farmer/')) return 'Farmer Profile'
   return PAGE_TITLES[pathname] || 'Portal'
+}
+
+function getBreadcrumbs(pathname, homePath) {
+  const crumbs = [{ label: 'Home', to: homePath }]
+
+  if (pathname === '/' || pathname === '/insurer' || (pathname === '/payments' && homePath === '/payments')) {
+    crumbs.push({ label: 'Dashboard' })
+    return crumbs
+  }
+
+  if (pathname.startsWith('/farmer/')) {
+    crumbs.push({ label: 'Farmers', to: '/farmer' })
+    crumbs.push({ label: 'Farmer Profile' })
+    return crumbs
+  }
+
+  const title = PAGE_TITLES[pathname]
+  if (title) crumbs.push({ label: title })
+  return crumbs
+}
+
+function getSearchConfig(pathname) {
+  if (pathname.startsWith('/farmer')) return SEARCH_CONFIG['/farmer']
+  if (pathname.startsWith('/loans')) return SEARCH_CONFIG['/loans']
+  if (pathname.startsWith('/payments')) return SEARCH_CONFIG['/payments']
+  return SEARCH_CONFIG.default
 }
 
 function sectionContainsPath(section, pathname) {
@@ -120,45 +157,72 @@ function sectionContainsPath(section, pathname) {
   })
 }
 
+function defaultSectionOpen(section, pathname) {
+  return sectionContainsPath(section, pathname) || section.id === 'operations'
+}
+
 function MainLayout() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const profileRef = useRef(null)
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
-  const [openMenus, setOpenMenus] = useState(() => {
-    const initial = {}
-    Object.values(navSectionsByRole).flat().forEach((section) => {
-      initial[section.id] = section.id === 'overview' || section.id === 'management'
-    })
-    return initial
-  })
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [menuOverrides, setMenuOverrides] = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [routePath, setRoutePath] = useState(location.pathname)
+
+  // Adjust UI state during render when the route changes (avoids setState-in-effect).
+  if (location.pathname !== routePath) {
+    setRoutePath(location.pathname)
+    setMenuOpen(false)
+    setProfileOpen(false)
+    setMenuOverrides({})
+  }
+
   const currentRole = getCurrentUser()?.role || 'BANK'
   const navSections = navSectionsByRole[currentRole] || navSectionsByRole.BANK
-  const canSearchFarmers = currentRole === 'BANK' || currentRole === 'ADMIN'
+  const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
   const user = getCurrentUser()
   const userInitials = getUserInitials(user)
   const roleLabel = ROLE_LABELS[currentRole] || currentRole
-  const [searchQuery, setSearchQuery] = useState('')
+  const homePath = getHomePathForRole(currentRole)
   const pageTitle = useMemo(() => getPageTitle(location.pathname), [location.pathname])
+  const breadcrumbs = useMemo(
+    () => getBreadcrumbs(location.pathname, homePath),
+    [location.pathname, homePath],
+  )
+  const searchConfig = useMemo(() => getSearchConfig(location.pathname), [location.pathname])
+  const settingsPath = currentRole === 'FARMER' || currentRole === 'ADMIN' ? '/consent' : '/notifications'
+
+  const isSectionOpen = (section) => {
+    if (menuOverrides[section.id] !== undefined) return menuOverrides[section.id]
+    return defaultSectionOpen(section, location.pathname)
+  }
 
   const handleSearchSubmit = (event) => {
     event.preventDefault()
     const query = searchQuery.trim()
     if (!query) return
-    navigate('/farmer', { state: { search: query } })
+    navigate(searchConfig.target, { state: { search: query } })
     setSearchQuery('')
   }
 
-  const handleLogout = () => setShowLogoutModal(true)
+  const handleLogout = () => {
+    setProfileOpen(false)
+    setShowLogoutModal(true)
+  }
 
   const confirmLogout = () => {
     clearSession()
     navigate('/login', { replace: true })
   }
 
-  const toggleMenu = (sectionId) => {
-    setOpenMenus((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  const toggleMenu = (section) => {
+    const currentlyOpen = isSectionOpen(section)
+    setMenuOverrides((prev) => ({ ...prev, [section.id]: !currentlyOpen }))
   }
 
   useEffect(() => {
@@ -166,30 +230,21 @@ function MainLayout() {
   }, [])
 
   useEffect(() => {
-    setMenuOpen(false)
-  }, [location.pathname])
-
-  useEffect(() => {
-    setOpenMenus((prev) => {
-      const next = { ...prev }
-      navSections.forEach((section) => {
-        if (sectionContainsPath(section, location.pathname)) {
-          next[section.id] = true
-        } else if (next[section.id] === undefined) {
-          next[section.id] = section.id === 'overview'
-        }
-      })
-      return next
-    })
-  }, [location.pathname, currentRole])
-
-  useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
     localStorage.setItem('theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
 
+  useEffect(() => {
+    const onPointerDown = (event) => {
+      if (!profileRef.current?.contains(event.target)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [])
+
   const shellThemeClass = darkMode ? 'neon-dashboard' : 'portal-light'
-  const homePath = currentRole === 'INSURER' ? '/insurer' : currentRole === 'FARMER' ? '/payments' : '/'
 
   return (
     <PortalThemeContext.Provider value={{ isDark: darkMode }}>
@@ -201,7 +256,23 @@ function MainLayout() {
         <span className="brand-sub">Institutional portal</span>
         <nav className="sidebar-nav">
           {navSections.map((section) => {
-            const isOpen = Boolean(openMenus[section.id])
+            if (section.single) {
+              const item = section.items[0]
+              return (
+                <NavLink
+                  key={section.id}
+                  to={item.to}
+                  end={item.end}
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </NavLink>
+              )
+            }
+
+            const isOpen = isSectionOpen(section)
             const sectionActive = sectionContainsPath(section, location.pathname)
 
             return (
@@ -212,7 +283,7 @@ function MainLayout() {
                 <button
                   type="button"
                   className="nav-dropdown__toggle"
-                  onClick={() => toggleMenu(section.id)}
+                  onClick={() => toggleMenu(section)}
                   aria-expanded={isOpen}
                 >
                   <span>{section.title}</span>
@@ -238,12 +309,6 @@ function MainLayout() {
             )
           })}
         </nav>
-        <div className="sidebar-footer">
-          <button type="button" className="nav-link nav-link--logout" onClick={handleLogout}>
-            <LogOut size={16} />
-            Logout
-          </button>
-        </div>
       </aside>
 
       {menuOpen ? (
@@ -267,20 +332,34 @@ function MainLayout() {
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
             <div className="topbar__heading">
-              <span className="topbar__eyebrow">Agri Trust</span>
+              <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
+                {breadcrumbs.map((crumb, index) => {
+                  const isLast = index === breadcrumbs.length - 1
+                  return (
+                    <span key={`${crumb.label}-${index}`} className="topbar-breadcrumb__item">
+                      {index > 0 ? <span className="topbar-breadcrumb__sep">›</span> : null}
+                      {crumb.to && !isLast ? (
+                        <Link to={crumb.to}>{crumb.label}</Link>
+                      ) : (
+                        <span aria-current={isLast ? 'page' : undefined}>{crumb.label}</span>
+                      )}
+                    </span>
+                  )
+                })}
+              </nav>
               <h1 className="topbar__title">{pageTitle}</h1>
             </div>
           </div>
 
-          {canSearchFarmers ? (
+          {canSearch ? (
             <form className="topbar__search" onSubmit={handleSearchSubmit}>
               <Search size={14} className="topbar__search-icon" aria-hidden />
               <input
                 type="search"
-                placeholder="Search farmers by name or ID…"
+                placeholder={searchConfig.placeholder}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                aria-label="Search farmers"
+                aria-label={searchConfig.label}
               />
             </form>
           ) : (
@@ -292,33 +371,74 @@ function MainLayout() {
               <ThemeSwitch isDark={darkMode} onChange={setDarkMode} />
               <button
                 type="button"
-                className="topbar-icon topbar-icon--notify"
+                className="topbar-icon"
                 onClick={() => navigate('/notifications')}
                 aria-label="Notifications"
                 title="Notifications"
               >
                 <Bell size={16} />
-                <span className="topbar-icon__dot" aria-hidden />
               </button>
             </div>
 
-            <div className="topbar__profile">
-              <span className="topbar-avatar" title={user?.username || 'User'}>
-                {userInitials}
-              </span>
-              <div className="topbar-user__meta">
-                <strong>{user?.fullName || user?.username || 'User'}</strong>
-                <small>{roleLabel}</small>
-              </div>
+            <div className={`topbar__profile-menu${profileOpen ? ' open' : ''}`} ref={profileRef}>
               <button
                 type="button"
-                className="topbar-icon topbar-icon--logout"
-                onClick={handleLogout}
-                aria-label="Sign out"
-                title="Sign out"
+                className="topbar-profile-trigger"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
               >
-                <LogOut size={15} />
+                <span className="topbar-avatar" aria-hidden>
+                  {userInitials}
+                </span>
+                <div className="topbar-user__meta">
+                  <strong>{user?.fullName || user?.username || 'User'}</strong>
+                  <small>{roleLabel}</small>
+                </div>
+                <ChevronDown size={14} className="topbar-profile-trigger__chevron" aria-hidden />
               </button>
+
+              {profileOpen ? (
+                <div className="profile-dropdown" role="menu">
+                  <div className="profile-dropdown__head">
+                    <strong>{user?.fullName || user?.username || 'User'}</strong>
+                    <small>{roleLabel}</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="profile-dropdown__item"
+                    role="menuitem"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      navigate('/notifications')
+                    }}
+                  >
+                    <User size={15} />
+                    Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-dropdown__item"
+                    role="menuitem"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      navigate(settingsPath)
+                    }}
+                  >
+                    <Settings size={15} />
+                    Settings
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-dropdown__item profile-dropdown__item--danger"
+                    role="menuitem"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={15} />
+                    Logout
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </header>

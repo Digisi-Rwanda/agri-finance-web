@@ -87,6 +87,7 @@ function BankDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
+        breadcrumb="Home › Dashboard"
         subtitle="Portfolio overview at a glance."
         actions={
           <>

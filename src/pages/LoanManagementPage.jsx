@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { toast } from 'react-toastify'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -11,13 +11,21 @@ import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
 function LoanManagementPage() {
+  const location = useLocation()
   const [loans, setLoans] = useState([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('All Applications')
   const [riskFilter, setRiskFilter] = useState('Any Risk')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(location.state?.search || '')
   const [page, setPage] = useState(1)
   const pageSize = 10
+
+  useEffect(() => {
+    if (location.state?.search) {
+      setSearchQuery(location.state.search)
+      setPage(1)
+    }
+  }, [location.state?.search])
 
   useEffect(() => {
     const load = async () => {

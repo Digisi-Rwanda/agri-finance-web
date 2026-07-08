@@ -88,8 +88,14 @@
   color: var(--neon-muted);
 }
 
-.portal-light .topbar__profile {
+.portal-light .topbar-profile-trigger {
   background: var(--neon-bg);
+  border-color: var(--neon-border);
+}
+
+.portal-light .topbar-profile-trigger:hover,
+.portal-light .topbar__profile-menu.open .topbar-profile-trigger {
+  background: #ffffff;
   border-color: var(--neon-border);
 }
 
