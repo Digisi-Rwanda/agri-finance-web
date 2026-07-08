@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { toast } from 'react-toastify'
+import { Link } from 'react-router-dom'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -16,7 +17,7 @@ function LoanManagementPage() {
   const [riskFilter, setRiskFilter] = useState('Any Risk')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
-  const pageSize = 5
+  const pageSize = 10
 
   useEffect(() => {
     const load = async () => {
@@ -64,6 +65,30 @@ function LoanManagementPage() {
   const riskLabelFor = (score) =>
     score >= 700 ? 'Low Risk' : score >= 620 ? 'Moderate' : 'High Risk'
 
+  const canDecide = (status) => String(status || '').toLowerCase() === 'pending'
+
+  const renderLoanActions = (loan) => {
+    if (!canDecide(loan.status)) {
+      return loan.farmerId ? (
+        <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
+          View farmer
+        </Link>
+      ) : (
+        <span className="muted">No action</span>
+      )
+    }
+    return (
+      <>
+        <button type="button" className="btn-primary" onClick={() => handleStatus(loan.id, 'Approved')}>
+          Approve
+        </button>
+        <button type="button" className="btn-secondary danger" onClick={() => handleStatus(loan.id, 'Rejected')}>
+          Reject
+        </button>
+      </>
+    )
+  }
+
   const handleExportReport = () => {
     const headers = [
       { key: 'id', label: 'Loan ID' },
@@ -99,13 +124,10 @@ function LoanManagementPage() {
         breadcrumb="Portal › Loan Management"
         title="Loan Applications"
         actions={
-          <>
-          <button type="button" className="btn-primary">+ New Entry</button>
           <button type="button" className="btn-secondary" onClick={handleExportReport}>
             <Download size={16} aria-hidden />
             Export PDF
           </button>
-          </>
         }
       />
 
@@ -191,7 +213,7 @@ function LoanManagementPage() {
             ) : pagedLoans.length === 0 ? (
               <tr>
                 <td colSpan="7" className="empty-cell">
-                  No loans found. Adjust filters or create a new application.
+                  No loans found. Adjust your filters or check back when farmers apply.
                 </td>
               </tr>
             ) : pagedLoans.map((loan) => (
@@ -202,14 +224,7 @@ function LoanManagementPage() {
                   <td>{riskLabelFor(loan.score)}</td>
                   <td>{loan.purpose || 'General'}</td>
                   <td><StatusBadge value={loan.status} /></td>
-                  <td className="action-cell">
-                    <button type="button" className="btn-primary" onClick={() => handleStatus(loan.id, 'Approved')}>
-                      Approve
-                    </button>
-                    <button type="button" className="btn-secondary danger" onClick={() => handleStatus(loan.id, 'Rejected')}>
-                      Reject
-                    </button>
-                  </td>
+                  <td className="action-cell">{renderLoanActions(loan)}</td>
                 </tr>
               ))}
           </tbody>
@@ -246,12 +261,7 @@ function LoanManagementPage() {
                   </div>
                 </div>
                 <div className="loan-mobile-card__actions">
-                  <button type="button" className="btn-primary" onClick={() => handleStatus(loan.id, 'Approved')}>
-                    Approve
-                  </button>
-                  <button type="button" className="btn-secondary danger" onClick={() => handleStatus(loan.id, 'Rejected')}>
-                    Reject
-                  </button>
+                  {renderLoanActions(loan)}
                 </div>
               </article>
             ))

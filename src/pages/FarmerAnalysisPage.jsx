@@ -21,7 +21,7 @@ import { formatRwf } from '../utils/currency'
 import { exportFarmerAnalysisReport } from '../utils/exportPdf'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
 
-const ROW_LIMIT = 8
+const PAGE_SIZE = 12
 
 const DETAIL_TABS = [
   { id: 'farms', label: 'Farms' },
@@ -46,6 +46,7 @@ function FarmerAnalysisPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [activeTab, setActiveTab] = useState('farms')
+  const [page, setPage] = useState(1)
   const [consentStatus, setConsentStatus] = useState({
     bank: null,
     transactions: null,
@@ -216,7 +217,14 @@ function FarmerAnalysisPage() {
     }
   }, [activeTab, farms, yieldRecords, loans, paymentRows, transactions])
 
-  const pagedRows = visibleRows.rows.slice(0, ROW_LIMIT)
+  const totalPages = Math.max(1, Math.ceil(visibleRows.total / PAGE_SIZE))
+  const start = (page - 1) * PAGE_SIZE
+  const pagedRows = visibleRows.rows.slice(start, start + PAGE_SIZE)
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId)
+    setPage(1)
+  }
 
   if (loading) {
     return (
@@ -272,21 +280,59 @@ function FarmerAnalysisPage() {
   return (
     <section className="dashboard-page farmer-analysis-page">
       <PageHeader
-        breadcrumb="Portal › Farmer Analysis"
-        title={farmer.fullName}
+        breadcrumb={
+          <>
+            <Link to="/farmer">Farmer directory</Link>
+            {' › '}
+            {farmer.fullName}
+          </>
+        }
         subtitle={profileSubtitle}
         actions={
           <>
+            <Link to="/farmer" className="btn-secondary">
+              Back to directory
+            </Link>
             <button type="button" className="btn-secondary" onClick={handleExportReport}>
               <Download size={16} aria-hidden />
               Export PDF
             </button>
-            <Link to="/loans" className="btn-secondary">
+            <Link to="/loans" className="btn-primary">
               Manage loans
             </Link>
           </>
         }
       />
+
+      <article className="farmer-profile-hero card">
+        <div className="farmer-profile-hero__main">
+          <div className="farmer-profile-hero__avatar" aria-hidden>
+            {(farmer.fullName || '?').slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <h2>{farmer.fullName}</h2>
+            <p className="farmer-profile-hero__meta">{profileSubtitle}</p>
+          </div>
+        </div>
+        <div className="farmer-profile-hero__stats">
+          <div>
+            <small>Credit score</small>
+            <strong>{formatScore(creditScore)}</strong>
+          </div>
+          <div>
+            <small>Farms</small>
+            <strong>{farms.length}</strong>
+          </div>
+          <div>
+            <small>Total acreage</small>
+            <strong>{totalAcreage} ac</strong>
+          </div>
+          <div>
+            <small>Loans</small>
+            <strong>{loans.length}</strong>
+          </div>
+        </div>
+      </article>
 
       <p className="farmer-consent-line">
         Bank <span className={`status-badge ${bankBadge.className}`}>{bankBadge.label}</span>
@@ -332,7 +378,7 @@ function FarmerAnalysisPage() {
                 role="tab"
                 aria-selected={activeTab === tab.id}
                 className={`detail-tab${activeTab === tab.id ? ' active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
               >
                 {tab.label}
                 {tabCounts[tab.id] > 0 ? ` (${tabCounts[tab.id]})` : ''}
@@ -341,10 +387,35 @@ function FarmerAnalysisPage() {
           </div>
         }
         footer={
-          <span>
-            Showing {pagedRows.length} of {visibleRows.total}
-            {visibleRows.total > ROW_LIMIT ? ` · first ${ROW_LIMIT} rows` : ''}
-          </span>
+          <>
+            <span>
+              Showing {visibleRows.total === 0 ? 0 : start + 1}–
+              {Math.min(start + PAGE_SIZE, visibleRows.total)} of {visibleRows.total}
+            </span>
+            {visibleRows.total > PAGE_SIZE ? (
+              <div className="page-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </button>
+                <span className="page-indicator">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </button>
+              </div>
+            ) : null}
+          </>
         }
       >
         <table className="desktop-table dashboard-table">
@@ -418,28 +489,34 @@ function FarmerAnalysisPage() {
             <>
               <thead>
                 <tr>
+                  <th>Loan ID</th>
                   <th>Purpose</th>
                   <th>Status</th>
                   <th>Amount</th>
                   <th>Interest</th>
+                  <th>Applied</th>
                 </tr>
               </thead>
               <tbody>
                 {pagedRows.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="empty-cell">
+                    <td colSpan={6} className="empty-cell">
                       No loan records found.
                     </td>
                   </tr>
                 ) : (
                   pagedRows.map((loan) => (
                     <tr key={loan.loanId}>
+                      <td>#{loan.loanId}</td>
                       <td>{loan.loanPurpose || 'General'}</td>
                       <td>
                         <StatusBadge value={loan.status || 'Unknown'} />
                       </td>
                       <td>{formatRwf(loan.amount)}</td>
                       <td>{loan.interestRate != null ? `${loan.interestRate}%` : '—'}</td>
+                      <td>
+                        {loan.createdAt?.slice(0, 10) || loan.applicationDate?.slice(0, 10) || '—'}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -469,7 +546,9 @@ function FarmerAnalysisPage() {
                     <tr key={row.id}>
                       <td>{row.date}</td>
                       <td>{row.type}</td>
-                      <td>{row.status}</td>
+                      <td>
+                        <StatusBadge value={row.status} />
+                      </td>
                       <td>{row.amount}</td>
                     </tr>
                   ))
@@ -498,7 +577,7 @@ function FarmerAnalysisPage() {
                   pagedRows.map((txn) => (
                     <tr key={txn.transactionId}>
                       <td>{txn.category || txn.description || 'Transaction'}</td>
-                      <td>{txn.transactionDate?.slice(0, 10) || '—'}</td>
+                      <td>{txn.transactionDate?.slice(0, 10) || txn.createdAt?.slice(0, 10) || '—'}</td>
                       <td>{formatRwf(txn.amount)}</td>
                     </tr>
                   ))

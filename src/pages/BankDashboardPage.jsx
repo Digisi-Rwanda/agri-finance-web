@@ -7,6 +7,7 @@ import NeonSegmentChart from '../components/dashboard/NeonSegmentChart'
 import QuickActionCard from '../components/dashboard/QuickActionCard'
 import PageHeader from '../components/ui/PageHeader'
 import StatusBadge from '../components/ui/StatusBadge'
+import { getCurrentUser } from '../services/auth'
 import { usePortalTheme } from '../context/PortalThemeContext'
 import { getAnalyticsOverview } from '../services/analyticsService'
 import { getAuditLogs } from '../services/auditService'
@@ -31,6 +32,7 @@ const LOAN_STATUS_LABELS = {
 
 function BankDashboardPage() {
   const { isDark } = usePortalTheme()
+  const isAdmin = getCurrentUser()?.role === 'ADMIN'
   const gaugeColors = getGaugeColors(isDark)
   const [farmers, setFarmers] = useState([])
   const [overview, setOverview] = useState(null)
@@ -77,7 +79,7 @@ function BankDashboardPage() {
     })
   }, [farmers, scoreFilter, riskFilter])
 
-  const previewFarmers = filteredFarmers.slice(0, 8)
+  const previewFarmers = filteredFarmers.slice(0, 15)
 
   const totalFarmers = overview?.farmers ?? farmers.length
   const activeLoans = Number(overview?.loansByStatus?.APPROVED || 0)
@@ -117,9 +119,11 @@ function BankDashboardPage() {
         subtitle="Live lending and farmer intelligence overview."
         actions={
           <>
-            <Link to="/audit" className="btn-secondary">
-              Audit log
-            </Link>
+            {isAdmin ? (
+              <Link to="/audit" className="btn-secondary">
+                Audit log
+              </Link>
+            ) : null}
             <Link to="/loans" className="btn-primary">
               Manage loans
             </Link>
@@ -178,8 +182,8 @@ function BankDashboardPage() {
         <article className="card">
           <div className="section-head">
             <div>
-              <h2>Portfolio trend</h2>
-              <p className="card-subtitle">Farmers, farms, loans, and approvals</p>
+              <h2>Portfolio snapshot</h2>
+              <p className="card-subtitle">Current totals across farmers, farms, loans, and approvals</p>
             </div>
           </div>
           <NeonAreaChart data={trendData} />
@@ -206,9 +210,11 @@ function BankDashboardPage() {
               </div>
             ))
           )}
-          <Link to="/audit" className="card-link">
-            View all activity
-          </Link>
+          {isAdmin ? (
+            <Link to="/audit" className="card-link">
+              View all activity
+            </Link>
+          ) : null}
         </article>
 
         <article className="card">
@@ -289,7 +295,9 @@ function BankDashboardPage() {
                           : 'None'}
                       </td>
                       <td>
-                        <Link to={`/farmer/${farmer.farmerId}`}>Profile</Link>
+                        <Link to={`/farmer/${farmer.farmerId}`} className="btn-view">
+                          View profile
+                        </Link>
                       </td>
                     </tr>
                   ))
@@ -311,14 +319,23 @@ function BankDashboardPage() {
           to="/farmer"
           icon={FileCheck2}
           title="Farmer analysis"
-          description="Deep dive into credit and farm data"
+          description="Browse profiles, farms, yields, and payments"
         />
-        <QuickActionCard
-          to="/audit"
-          icon={ScrollText}
-          title="Audit logs"
-          description="Track sign-ins and system events"
-        />
+        {isAdmin ? (
+          <QuickActionCard
+            to="/audit"
+            icon={ScrollText}
+            title="Audit logs"
+            description="Track sign-ins and system events"
+          />
+        ) : (
+          <QuickActionCard
+            to="/payments"
+            icon={ScrollText}
+            title="MoMo payments"
+            description="View mobile money transactions"
+          />
+        )}
       </div>
     </section>
   )

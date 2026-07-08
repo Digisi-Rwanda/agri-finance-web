@@ -76,6 +76,7 @@ function MainLayout() {
   const navigate = useNavigate()
   const currentRole = getCurrentUser()?.role || 'BANK'
   const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
+  const canSearchFarmers = currentRole === 'BANK' || currentRole === 'ADMIN'
   const user = getCurrentUser()
   const userInitials = getUserInitials(user)
   const roleLabel = ROLE_LABELS[currentRole] || currentRole
@@ -174,17 +175,21 @@ function MainLayout() {
             </div>
           </div>
 
-          {/* Center: search */}
-          <form className="topbar__search" onSubmit={handleSearchSubmit}>
-            <Search size={14} className="topbar__search-icon" aria-hidden />
-            <input
-              type="search"
-              placeholder="Search…"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              aria-label="Search farmers"
-            />
-          </form>
+          {/* Center: search (bank/admin only) */}
+          {canSearchFarmers ? (
+            <form className="topbar__search" onSubmit={handleSearchSubmit}>
+              <Search size={14} className="topbar__search-icon" aria-hidden />
+              <input
+                type="search"
+                placeholder="Search farmers by name or ID…"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                aria-label="Search farmers"
+              />
+            </form>
+          ) : (
+            <div className="topbar__search topbar__search--placeholder" aria-hidden />
+          )}
 
           {/* Right: tools + profile */}
           <div className="topbar__end">
