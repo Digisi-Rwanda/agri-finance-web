@@ -1,13 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
+  ChevronDown,
   CircleHelp,
   FileCheck2,
   HandCoins,
   Home,
   LogOut,
   Menu,
-  Moon,
   Search,
   Settings,
   Shield,
@@ -25,10 +25,12 @@ import { getUserInitials, ROLE_LABELS } from '../utils/roles'
 const navSectionsByRole = {
   BANK: [
     {
+      id: 'overview',
       title: 'Overview',
       items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
     },
     {
+      id: 'management',
       title: 'Management',
       items: [
         { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
@@ -39,10 +41,12 @@ const navSectionsByRole = {
   ],
   INSURER: [
     {
+      id: 'overview',
       title: 'Overview',
       items: [{ to: '/insurer', label: 'Dashboard', icon: Home, end: true }],
     },
     {
+      id: 'management',
       title: 'Management',
       items: [
         { to: '/insurance', label: 'Insurance', icon: Shield },
@@ -52,10 +56,12 @@ const navSectionsByRole = {
   ],
   ADMIN: [
     {
+      id: 'overview',
       title: 'Overview',
       items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
     },
     {
+      id: 'management',
       title: 'Management',
       items: [
         { to: '/farmer', label: 'Farmers', icon: FileCheck2 },
@@ -65,26 +71,29 @@ const navSectionsByRole = {
       ],
     },
     {
+      id: 'admin',
       title: 'Administration',
       items: [
         { to: '/admin', label: 'Admin Panel', icon: User },
         { to: '/audit', label: 'Audit Logs', icon: CircleHelp },
+        { to: '/consent', label: 'Consent settings', icon: Settings },
       ],
     },
   ],
   FARMER: [
     {
+      id: 'overview',
       title: 'Overview',
       items: [{ to: '/payments', label: 'Dashboard', icon: Home, end: true }],
     },
     {
+      id: 'account',
       title: 'Account',
       items: [{ to: '/consent', label: 'Consent & Settings', icon: Settings }],
     },
   ],
 }
 
-// Page title shown in the header for each route.
 const PAGE_TITLES = {
   '/': 'Dashboard',
   '/loans': 'Loans',
@@ -103,10 +112,25 @@ function getPageTitle(pathname) {
   return PAGE_TITLES[pathname] || 'Portal'
 }
 
+function sectionContainsPath(section, pathname) {
+  return section.items.some((item) => {
+    if (item.end) return pathname === item.to
+    if (item.to === '/') return pathname === '/'
+    return pathname === item.to || pathname.startsWith(`${item.to}/`)
+  })
+}
+
 function MainLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [openMenus, setOpenMenus] = useState(() => {
+    const initial = {}
+    Object.values(navSectionsByRole).flat().forEach((section) => {
+      initial[section.id] = section.id === 'overview' || section.id === 'management'
+    })
+    return initial
+  })
   const location = useLocation()
   const navigate = useNavigate()
   const currentRole = getCurrentUser()?.role || 'BANK'
@@ -133,6 +157,10 @@ function MainLayout() {
     navigate('/login', { replace: true })
   }
 
+  const toggleMenu = (sectionId) => {
+    setOpenMenus((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  }
+
   useEffect(() => {
     hydrateSessionUser().catch(() => {})
   }, [])
@@ -142,50 +170,75 @@ function MainLayout() {
   }, [location.pathname])
 
   useEffect(() => {
+    setOpenMenus((prev) => {
+      const next = { ...prev }
+      navSections.forEach((section) => {
+        if (sectionContainsPath(section, location.pathname)) {
+          next[section.id] = true
+        } else if (next[section.id] === undefined) {
+          next[section.id] = section.id === 'overview'
+        }
+      })
+      return next
+    })
+  }, [location.pathname, currentRole])
+
+  useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
     localStorage.setItem('theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
 
   const shellThemeClass = darkMode ? 'neon-dashboard' : 'portal-light'
+  const homePath = currentRole === 'INSURER' ? '/insurer' : currentRole === 'FARMER' ? '/payments' : '/'
 
   return (
     <PortalThemeContext.Provider value={{ isDark: darkMode }}>
     <div className={`app-shell ${shellThemeClass}`}>
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <Link to="/" className="brand" onClick={() => setMenuOpen(false)}>
+        <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
           Agri Trust
         </Link>
         <span className="brand-sub">Institutional portal</span>
         <nav className="sidebar-nav">
-          {navSections.map((section) => (
-            <div className="nav-section" key={section.title}>
-              <span className="nav-section__title">{section.title}</span>
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+          {navSections.map((section) => {
+            const isOpen = Boolean(openMenus[section.id])
+            const sectionActive = sectionContainsPath(section, location.pathname)
+
+            return (
+              <div
+                className={`nav-dropdown${isOpen ? ' open' : ''}${sectionActive ? ' has-active' : ''}`}
+                key={section.id}
+              >
+                <button
+                  type="button"
+                  className="nav-dropdown__toggle"
+                  onClick={() => toggleMenu(section.id)}
+                  aria-expanded={isOpen}
                 >
-                  <item.icon size={16} />
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+                  <span>{section.title}</span>
+                  <ChevronDown size={15} className="nav-dropdown__chevron" aria-hidden />
+                </button>
+                {isOpen ? (
+                  <div className="nav-dropdown__panel">
+                    {section.items.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => setMenuOpen(false)}
+                        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                      >
+                        <item.icon size={16} />
+                        {item.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
         </nav>
         <div className="sidebar-footer">
-          {currentRole === 'ADMIN' ? (
-            <NavLink
-              to="/consent"
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-            >
-              <Settings size={16} />
-              Consent settings
-            </NavLink>
-          ) : null}
           <button type="button" className="nav-link nav-link--logout" onClick={handleLogout}>
             <LogOut size={16} />
             Logout
@@ -204,7 +257,6 @@ function MainLayout() {
 
       <div className="content-shell">
         <header className="topbar">
-          {/* Left: menu + current page */}
           <div className="topbar__start">
             <button
               type="button"
@@ -220,7 +272,6 @@ function MainLayout() {
             </div>
           </div>
 
-          {/* Center: search (bank/admin only) */}
           {canSearchFarmers ? (
             <form className="topbar__search" onSubmit={handleSearchSubmit}>
               <Search size={14} className="topbar__search-icon" aria-hidden />
@@ -236,7 +287,6 @@ function MainLayout() {
             <div className="topbar__search topbar__search--placeholder" aria-hidden />
           )}
 
-          {/* Right: tools + profile */}
           <div className="topbar__end">
             <div className="topbar__tools">
               <ThemeSwitch isDark={darkMode} onChange={setDarkMode} />
