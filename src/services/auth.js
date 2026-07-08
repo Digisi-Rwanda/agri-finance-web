@@ -145,6 +145,8 @@ export const hydrateSessionUser = async () => {
         username: profile?.username,
         role: profile?.role,
         fullName: profile?.fullName,
+        email: profile?.email,
+        phone: profile?.phone,
         farmerId: profile?.farmerId,
       }),
     )

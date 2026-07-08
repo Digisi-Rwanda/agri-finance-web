@@ -8,6 +8,7 @@ import './styles/app.css'
 import './styles/neon-dashboard.css'
 import './styles/portal-light.css'
 import './styles/notifications.css'
+import './styles/account.css'
 
 function App() {
   useEffect(() => {

@@ -93,7 +93,10 @@ const navSectionsByRole = {
     {
       id: 'account',
       title: 'Account',
-      items: [{ to: '/consent', label: 'Settings', icon: Settings }],
+      items: [
+        { to: '/profile', label: 'My profile', icon: User },
+        { to: '/settings', label: 'Settings', icon: Settings },
+      ],
     },
   ],
 }
@@ -108,6 +111,8 @@ const PAGE_TITLES = {
   '/admin': 'Users',
   '/audit': 'Audit Logs',
   '/consent': 'Settings',
+  '/profile': 'My profile',
+  '/settings': 'Settings',
   '/notifications': 'Notifications',
 }
 
@@ -134,6 +139,16 @@ function getBreadcrumbs(pathname, homePath) {
   if (pathname.startsWith('/farmer/')) {
     crumbs.push({ label: 'Farmers', to: '/farmer' })
     crumbs.push({ label: 'Farmer Profile' })
+    return crumbs
+  }
+
+  if (pathname === '/profile') {
+    crumbs.push({ label: 'My profile' })
+    return crumbs
+  }
+
+  if (pathname === '/settings' || pathname === '/consent') {
+    crumbs.push({ label: 'Settings' })
     return crumbs
   }
 
@@ -195,7 +210,7 @@ function MainLayout() {
     [location.pathname, homePath],
   )
   const searchConfig = useMemo(() => getSearchConfig(location.pathname), [location.pathname])
-  const settingsPath = currentRole === 'FARMER' || currentRole === 'ADMIN' ? '/consent' : '/notifications'
+  const settingsPath = '/settings'
 
   const isSectionOpen = (section) => {
     if (menuOverrides[section.id] !== undefined) return menuOverrides[section.id]
@@ -410,7 +425,7 @@ function MainLayout() {
                     role="menuitem"
                     onClick={() => {
                       setProfileOpen(false)
-                      navigate('/notifications')
+                      navigate('/profile')
                     }}
                   >
                     <User size={15} />

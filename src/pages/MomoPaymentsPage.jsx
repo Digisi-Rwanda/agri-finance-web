@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import MomoPaymentForm from '../components/MomoPaymentForm'
+import PageHeader from '../components/ui/PageHeader'
+import StatCard from '../components/ui/StatCard'
 import { resolvePrimaryFarmerId } from '../services/auth'
 import { getFarmers, getLoansByFarmerId } from '../services/farmerService'
 import { fetchPaymentHistory, fetchWalletBalance } from '../services/momoPaymentService'
@@ -56,30 +58,20 @@ export default function MomoPaymentsPage() {
   }, [])
 
   return (
-    <section className="dashboard-page momo-page">
-      <article className="card hero-strip">
-        <div className="breadcrumb">Sandbox Integration</div>
-        <h1>MTN MoMo Payments</h1>
-        <p>Track wallet, request repayments, and monitor transaction status in one banking-grade workspace.</p>
-      </article>
+    <section className="dashboard-page momo-page dashboard-page--compact">
+      <PageHeader
+        breadcrumb="Home › Payments"
+        subtitle="Track wallet balance, repay loans, and monitor MoMo transactions."
+      />
 
-      <div className="widgets four momo-stats">
-        <article className="mini-stat">
-          <span>Wallet Balance</span>
-          <strong>{wallet ? formatRwf(wallet.balance) : '—'}</strong>
-        </article>
-        <article className="mini-stat">
-          <span>Currency</span>
-          <strong>{wallet?.currency || '—'}</strong>
-        </article>
-        <article className="mini-stat">
-          <span>Payments</span>
-          <strong>{history.length}</strong>
-        </article>
-        <article className="mini-stat">
-          <span>Successful</span>
-          <strong>{history.filter((row) => row.status === 'SUCCESSFUL').length}</strong>
-        </article>
+      <div className="widgets four">
+        <StatCard title="Wallet balance" value={wallet ? formatRwf(wallet.balance) : '—'} />
+        <StatCard title="Currency" value={wallet?.currency || '—'} />
+        <StatCard title="Payments" value={String(history.length)} />
+        <StatCard
+          title="Successful"
+          value={String(history.filter((row) => row.status === 'SUCCESSFUL').length)}
+        />
       </div>
 
       {loadError ? (

@@ -1,6 +1,8 @@
-import { ShieldCheck, UserCog, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
+import DataTableShell from '../components/ui/DataTableShell'
+import PageHeader from '../components/ui/PageHeader'
+import StatCard from '../components/ui/StatCard'
 import {
   deleteAdminUser,
   getAdminStats,
@@ -64,86 +66,87 @@ function AdminPanelPage() {
   }
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Admin Panel</h1>
-          <p className="mt-1 text-slate-600">Manage users and assign roles (ADMIN, BANK, INSURER).</p>
-        </div>
+    <section className="dashboard-page">
+      <PageHeader
+        breadcrumb="Home › System › Users"
+        subtitle="Manage portal users and assign roles."
+      />
+
+      <div className="widgets three">
+        <StatCard title="Total users" value={String(stats?.users ?? 0)} />
+        <StatCard title="Farmers" value={String(stats?.farmers ?? 0)} />
+        <StatCard
+          title="Loans & policies"
+          value={String((stats?.loans ?? 0) + (stats?.insurancePolicies ?? 0))}
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <Users className="h-5 w-5 text-green-700" />
-          <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">Total Users</p>
-          <p className="text-3xl font-semibold text-slate-900">{stats?.users ?? 0}</p>
-        </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <UserCog className="h-5 w-5 text-blue-700" />
-          <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">Farmers Managed</p>
-          <p className="text-3xl font-semibold text-slate-900">{stats?.farmers ?? 0}</p>
-        </article>
-        <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <ShieldCheck className="h-5 w-5 text-emerald-700" />
-          <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">Loans + Policies</p>
-          <p className="text-3xl font-semibold text-slate-900">{(stats?.loans ?? 0) + (stats?.insurancePolicies ?? 0)}</p>
-        </article>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="p-4 text-sm text-slate-600">Live user control panel backed by `/api/admin/users` endpoints.</div>
-        <div className="overflow-x-auto">
-          <table className="min-w-[760px] w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
+      <DataTableShell
+        title="User management"
+        footer={<span>{users.length} user account(s)</span>}
+      >
+        <div className="table-scroll">
+          <table className="desktop-table dashboard-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3">User ID</th>
-                <th className="px-4 py-3">Username</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Farmer ID</th>
-                <th className="px-4 py-3">Actions</th>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Farmer ID</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {loadingUsers ? (
-                <tr>
-                  <td className="px-4 py-3 text-slate-500" colSpan="5">Loading users...</td>
-                </tr>
+                [...Array(3)].map((_, index) => (
+                  <tr key={`sk-${index}`}>
+                    <td colSpan={5}>
+                      <div className="skeleton-row" />
+                    </td>
+                  </tr>
+                ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-3 text-slate-500" colSpan="5">No users found.</td>
-                </tr>
-              ) : users.map((user) => (
-                <tr key={user.userId} className="hover:bg-slate-50/80">
-                  <td className="px-4 py-3 font-medium text-slate-900">{user.userId}</td>
-                  <td className="px-4 py-3 text-slate-700">{user.username}</td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={user.role}
-                      onChange={(event) => handleRoleChange(user.userId, event.target.value)}
-                      disabled={busyUserId === user.userId}
-                    >
-                      {ROLES.map((role) => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700">{user.farmerId ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      className="btn-danger"
-                      onClick={() => handleDeleteUser(user.userId)}
-                      disabled={busyUserId === user.userId}
-                    >
-                      Delete
-                    </button>
+                  <td colSpan={5} className="empty-cell">
+                    No users found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <tr key={user.userId}>
+                    <td>{user.userId}</td>
+                    <td>{user.username}</td>
+                    <td>
+                      <select
+                        value={user.role}
+                        onChange={(event) => handleRoleChange(user.userId, event.target.value)}
+                        disabled={busyUserId === user.userId}
+                      >
+                        {ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>{user.farmerId ?? '—'}</td>
+                    <td className="action-cell">
+                      <button
+                        type="button"
+                        className="btn-secondary danger"
+                        onClick={() => handleDeleteUser(user.userId)}
+                        disabled={busyUserId === user.userId}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </DataTableShell>
     </section>
   )
 }

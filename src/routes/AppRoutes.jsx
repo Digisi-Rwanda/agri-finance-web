@@ -13,7 +13,9 @@ import ResetPasswordPage from '../pages/ResetPasswordPage'
 import LoanManagementPage from '../pages/LoanManagementPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import NotificationsPage from '../pages/NotificationsPage'
+import ProfilePage from '../pages/ProfilePage'
 import RegisterPage from '../pages/RegisterPage'
+import SettingsPage from '../pages/SettingsPage'
 import MomoPaymentsPage from '../pages/MomoPaymentsPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleHome from './RoleHome'
@@ -98,6 +100,8 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route
           path="payments"
