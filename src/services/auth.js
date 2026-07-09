@@ -89,6 +89,11 @@ export const validateResetToken = async (token) => {
   return response.data
 }
 
+export const verifyEmailWithToken = async (token) => {
+  const response = await authClient.post('/auth/verify-email', { token })
+  return response.data
+}
+
 const extractAuthError = (error, fallback) =>
   error?.response?.data?.error || error?.response?.data?.message || fallback
 

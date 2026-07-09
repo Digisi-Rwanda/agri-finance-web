@@ -103,6 +103,15 @@ export const forgotPasswordCopy = {
   smsFailed: 'Could not send SMS. Try email reset or try again later.',
 }
 
+export const verifyEmailCopy = {
+  title: 'Verify your email',
+  verifying: 'Verifying your email address…',
+  success: 'Your email is verified. You can sign in now.',
+  failed: 'This verification link is invalid or has expired.',
+  missingLink: 'No verification token was provided.',
+  backToSignIn: 'Back to sign in',
+}
+
 export const resetPasswordCopy = {
   title: 'New password',
   subtitle: 'Choose a strong new password for your account.',

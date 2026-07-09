@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://agri-finance.onrender.com/api/:path*"
+    }
+  ]
+}

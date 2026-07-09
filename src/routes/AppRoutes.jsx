@@ -10,6 +10,7 @@ import InsurerDashboardPage from '../pages/InsurerDashboardPage'
 import LoginPage from '../pages/LoginPage'
 import ForgotPasswordPage from '../pages/ForgotPasswordPage'
 import ResetPasswordPage from '../pages/ResetPasswordPage'
+import VerifyEmailPage from '../pages/VerifyEmailPage'
 import LoanManagementPage from '../pages/LoanManagementPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import NotificationsPage from '../pages/NotificationsPage'
@@ -27,6 +28,7 @@ function AppRoutes() {
       <Route path="register" element={<RegisterPage />} />
       <Route path="forgot-password" element={<ForgotPasswordPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
+      <Route path="verify-email" element={<VerifyEmailPage />} />
 
       <Route
         element={
