@@ -5,10 +5,10 @@ import {
   Download,
   HandCoins,
   Mail,
-  MapPin,
   Phone,
   ShieldCheck,
   ShieldOff,
+  UserRound,
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { Link, useParams } from 'react-router-dom'
@@ -93,6 +93,33 @@ function consentMeta(value) {
     return { label: 'Not granted', className: 'status-danger', Icon: ShieldOff }
   }
   return { label: 'Unknown', className: 'status-neutral', Icon: ShieldOff }
+}
+
+function formatDisplayName(name) {
+  return String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function getFarmerPhotoUrl(farmer) {
+  if (!farmer) return null
+  const raw =
+    farmer.profilePhotoUrl ||
+    farmer.profilePhoto ||
+    farmer.photoUrl ||
+    farmer.imageUrl ||
+    farmer.avatarUrl ||
+    farmer.photo ||
+    null
+  if (!raw) return null
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('data:')) return raw
+
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+  const origin = String(apiBase).replace(/\/api\/?$/, '')
+  return `${origin}${raw.startsWith('/') ? raw : `/${raw}`}`
 }
 
 function FarmerAnalysisPage() {
@@ -208,11 +235,6 @@ function FarmerAnalysisPage() {
     [farms],
   )
 
-  const cropCount = useMemo(
-    () => new Set(farms.map((farm) => farm.cropType).filter(Boolean)).size,
-    [farms],
-  )
-
   const activityCount = mobileMoneyTxns.length + paymentMovements.length + transactions.length
 
   const pendingLoan = useMemo(
@@ -264,6 +286,14 @@ function FarmerAnalysisPage() {
   const txConsent = consentMeta(consentStatus.transactions)
   const BankConsentIcon = bankConsent.Icon
   const TxConsentIcon = txConsent.Icon
+  const displayName = formatDisplayName(farmer?.fullName)
+  const photoUrl = getFarmerPhotoUrl(farmer)
+  const initials = (farmer?.fullName || '?')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || '?'
 
   const tabCounts = {
     farms: farms.length,
@@ -367,32 +397,26 @@ function FarmerAnalysisPage() {
 
   return (
     <section className="dashboard-page dashboard-page--compact farmer-profile-page">
-      <PageHeader
-        breadcrumb={
-          <>
-            <Link to="/farmer">Farmers</Link>
-            {' › '}
-            Profile
-          </>
-        }
-        title={farmer.fullName}
-        subtitle="Credit, farms, loans, and payment activity for lending review."
-        actions={
-          <>
-            <Link to="/farmer" className="btn-secondary">
-              <ArrowLeft size={16} />
-              Directory
-            </Link>
-            <button type="button" className="btn-secondary" onClick={handleExportReport}>
-              <Download size={16} aria-hidden />
-              Export PDF
-            </button>
-            <Link to="/loans" className="btn-primary">
-              Loans
-            </Link>
-          </>
-        }
-      />
+      <div className="farmer-profile-toolbar">
+        <nav className="farmer-profile-toolbar__crumb" aria-label="Breadcrumb">
+          <Link to="/farmer">Farmers</Link>
+          <span aria-hidden>/</span>
+          <span>Profile</span>
+        </nav>
+        <div className="farmer-profile-toolbar__actions">
+          <Link to="/farmer" className="btn-secondary">
+            <ArrowLeft size={16} />
+            Back
+          </Link>
+          <button type="button" className="btn-secondary" onClick={handleExportReport}>
+            <Download size={16} aria-hidden />
+            Export
+          </button>
+          <Link to="/loans" className="btn-primary">
+            Loans
+          </Link>
+        </div>
+      </div>
 
       {(risk === 'HIGH' || pendingLoan) && (
         <div className="dash-alerts">
@@ -400,7 +424,7 @@ function FarmerAnalysisPage() {
             <div className="dash-alert dash-alert--risk">
               <AlertCircle size={18} />
               <span>
-                <strong>High credit risk</strong> — score {creditScore ?? '—'} · review carefully before approving credit
+                <strong>High risk</strong> · score {creditScore ?? '—'}
               </span>
             </div>
           ) : null}
@@ -412,74 +436,76 @@ function FarmerAnalysisPage() {
             >
               <HandCoins size={18} />
               <span>
-                <strong>Pending loan</strong> · {formatRwf(pendingLoan.amount)} ·{' '}
-                {pendingLoan.loanPurpose || 'General'}
+                <strong>Pending loan</strong> · {formatRwf(pendingLoan.amount)}
               </span>
-              <span className="dash-alert__action">Open loans</span>
+              <span className="dash-alert__action">Review</span>
             </Link>
           ) : null}
         </div>
       )}
 
-      <article className="farmer-profile-hero card">
-        <div className="farmer-profile-hero__main">
-          <div className="farmer-profile-hero__avatar" aria-hidden>
-            {(farmer.fullName || '?').slice(0, 2).toUpperCase()}
-          </div>
-          <div className="farmer-profile-hero__identity">
-            <div className="farmer-profile-hero__title-row">
-              <h2>{farmer.fullName}</h2>
-              {riskLabel ? <StatusBadge value={risk} /> : null}
+      <article className="farmer-id-card">
+        <div className="farmer-id-card__photo">
+          {photoUrl ? (
+            <img src={photoUrl} alt="" className="farmer-id-card__img" />
+          ) : (
+            <div className="farmer-id-card__placeholder">
+              <UserRound size={36} strokeWidth={1.5} aria-hidden />
+              <span>{initials}</span>
+              <small>No photo</small>
             </div>
-            <p className="farmer-profile-hero__id">Farmer ID {farmer.farmerId}</p>
-            <ul className="farmer-profile-contact">
-              {farmer.location ? (
-                <li>
-                  <MapPin size={14} aria-hidden />
-                  <span>{farmer.location}</span>
-                </li>
-              ) : null}
-              {farmer.phone ? (
-                <li>
-                  <Phone size={14} aria-hidden />
-                  <a href={`tel:${farmer.phone}`}>{formatRwandaPhoneDisplay(farmer.phone)}</a>
-                </li>
-              ) : null}
-              {farmer.email ? (
-                <li>
-                  <Mail size={14} aria-hidden />
-                  <a href={`mailto:${farmer.email}`}>{farmer.email}</a>
-                </li>
-              ) : null}
-            </ul>
+          )}
+        </div>
+
+        <div className="farmer-id-card__body">
+          <div className="farmer-id-card__head">
+            <div>
+              <h1 className="farmer-id-card__name">{displayName}</h1>
+              <p className="farmer-id-card__meta">
+                ID {farmer.farmerId}
+                {farmer.location ? ` · ${farmer.location}` : ''}
+                {farmer.registrationDate ? ` · Since ${formatDateShort(farmer.registrationDate)}` : ''}
+              </p>
+            </div>
+            {riskLabel ? <StatusBadge value={risk} /> : null}
+          </div>
+
+          <div className="farmer-id-card__contacts">
+            {farmer.phone ? (
+              <a href={`tel:${farmer.phone}`} className="farmer-id-card__chip">
+                <Phone size={14} aria-hidden />
+                {formatRwandaPhoneDisplay(farmer.phone)}
+              </a>
+            ) : null}
+            {farmer.email ? (
+              <a href={`mailto:${farmer.email}`} className="farmer-id-card__chip">
+                <Mail size={14} aria-hidden />
+                {farmer.email}
+              </a>
+            ) : null}
+            {!farmer.phone && !farmer.email ? (
+              <span className="farmer-id-card__chip farmer-id-card__chip--muted">No contact on file</span>
+            ) : null}
+          </div>
+
+          <div className="farmer-id-card__consents">
+            <span className={`farmer-id-card__consent ${bankConsent.className}`}>
+              <BankConsentIcon size={13} aria-hidden />
+              Bank · {bankConsent.label}
+            </span>
+            <span className={`farmer-id-card__consent ${txConsent.className}`}>
+              <TxConsentIcon size={13} aria-hidden />
+              Transactions · {txConsent.label}
+            </span>
           </div>
         </div>
 
-        <div className="farmer-profile-hero__aside">
-          <div className="farmer-profile-score">
-            <small>Credit score</small>
-            <strong className={`score-pill score-pill--${scoreTone(creditScore)} score-pill--lg`}>
-              {creditScore ?? '—'}
-            </strong>
-            <span>{riskLabel ? `${riskLabel} risk` : 'No risk rating yet'}</span>
-          </div>
-          <div className="farmer-profile-consents">
-            <div>
-              <BankConsentIcon size={14} aria-hidden />
-              <span>Bank</span>
-              <span className={`status-badge ${bankConsent.className}`}>{bankConsent.label}</span>
-            </div>
-            <div>
-              <TxConsentIcon size={14} aria-hidden />
-              <span>Transactions</span>
-              <span className={`status-badge ${txConsent.className}`}>{txConsent.label}</span>
-            </div>
-            {farmer.registrationDate ? (
-              <p className="farmer-profile-member">
-                Member since {formatDateShort(farmer.registrationDate)}
-              </p>
-            ) : null}
-          </div>
+        <div className="farmer-id-card__score">
+          <small>Credit score</small>
+          <strong className={`farmer-id-card__score-value farmer-id-card__score-value--${scoreTone(creditScore)}`}>
+            {creditScore ?? '—'}
+          </strong>
+          <span>{riskLabel ? `${riskLabel} risk` : 'Not scored'}</span>
         </div>
       </article>
 
@@ -487,30 +513,29 @@ function FarmerAnalysisPage() {
         <StatCard
           title="Farms"
           value={String(farms.length)}
-          meta={`${formatAcreage(totalAcreage)} acres · ${cropCount} crop type${cropCount === 1 ? '' : 's'}`}
+          meta={`${formatAcreage(totalAcreage)} acres`}
         />
         <StatCard
           title="Active loan"
           value={activeLoan ? formatRwfCompact(activeLoan.amount) : 'None'}
-          meta={activeLoan ? formatLoanStatus(activeLoan.status) : 'No pending or open loan'}
+          meta={activeLoan ? formatLoanStatus(activeLoan.status) : 'No open loan'}
           accent="amber"
         />
         <StatCard
           title="Booked credit"
           value={formatRwfCompact(loanBook)}
-          meta={`${loans.length} application${loans.length === 1 ? '' : 's'} total`}
+          meta={`${loans.length} loan${loans.length === 1 ? '' : 's'}`}
           accent="blue"
         />
         <StatCard
           title="Activity"
           value={String(activityCount)}
-          meta={`${mobileMoneyTxns.length} MoMo · ${paymentMovements.length} payments · ${transactions.length} ledger`}
+          meta="Payments & ledger"
           accent="slate"
         />
       </div>
 
       <DataTableShell
-        title="Farmer records"
         filters={
           <div className="detail-tabs" role="tablist" aria-label="Farmer record sections">
             {DETAIL_TABS.map((tab) => (

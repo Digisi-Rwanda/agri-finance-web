@@ -734,34 +734,49 @@
   color: var(--neon-text);
 }
 
-.neon-dashboard .farmer-profile-hero {
-  background: linear-gradient(135deg, #141a14 0%, var(--neon-card) 55%);
+.neon-dashboard .farmer-id-card {
+  background: linear-gradient(180deg, #141a14 0%, var(--neon-card) 55%);
   border-color: var(--neon-border);
+  box-shadow: none;
 }
 
-.neon-dashboard .farmer-profile-hero h2 {
+.neon-dashboard .farmer-id-card__name {
   color: var(--neon-text);
 }
 
-.neon-dashboard .farmer-profile-hero__id,
-.neon-dashboard .farmer-profile-member,
-.neon-dashboard .farmer-profile-score small,
-.neon-dashboard .farmer-profile-contact li,
-.neon-dashboard .farmer-profile-consents > div {
+.neon-dashboard .farmer-id-card__meta,
+.neon-dashboard .farmer-profile-toolbar__crumb,
+.neon-dashboard .farmer-id-card__score small,
+.neon-dashboard .farmer-id-card__score > span,
+.neon-dashboard .farmer-id-card__placeholder small {
   color: var(--neon-muted);
 }
 
-.neon-dashboard .farmer-profile-contact a {
+.neon-dashboard .farmer-profile-toolbar__crumb a,
+.neon-dashboard .farmer-id-card__chip {
   color: var(--neon-cyan);
 }
 
-.neon-dashboard .farmer-profile-score {
+.neon-dashboard .farmer-id-card__photo,
+.neon-dashboard .farmer-id-card__score,
+.neon-dashboard .farmer-id-card__chip {
   background: #1a211a;
   border-color: var(--neon-border);
 }
 
-.neon-dashboard .farmer-profile-score > span {
-  color: var(--neon-text);
+.neon-dashboard .farmer-id-card__placeholder {
+  background: linear-gradient(160deg, #1a241a 0%, #141a14 100%);
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .farmer-id-card__placeholder span {
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .farmer-id-card__consent.status-success {
+  background: rgba(110, 231, 168, 0.12);
+  color: #6ee7a8;
+  border-color: rgba(110, 231, 168, 0.28);
 }
 
 .neon-dashboard .detail-tab {
