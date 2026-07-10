@@ -1,5 +1,8 @@
+import { ArrowRight, Landmark, ScrollText, ShieldCheck, UserRound, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import QuickActionCard from '../components/dashboard/QuickActionCard'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -20,10 +23,7 @@ function AdminPanelPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [statsData, usersData] = await Promise.all([
-        getAdminStats(),
-        getAdminUsers(),
-      ])
+      const [statsData, usersData] = await Promise.all([getAdminStats(), getAdminUsers()])
       setStats(statsData)
       setUsers(usersData || [])
       setLoadingUsers(false)
@@ -56,7 +56,9 @@ function AdminPanelPage() {
     try {
       await deleteAdminUser(userId)
       setUsers((prev) => prev.filter((u) => u.userId !== userId))
-      setStats((prev) => (prev ? { ...prev, users: Math.max(0, Number(prev.users || 1) - 1) } : prev))
+      setStats((prev) =>
+        prev ? { ...prev, users: Math.max(0, Number(prev.users || 1) - 1) } : prev,
+      )
       toast.success('User deleted successfully.')
     } catch {
       toast.error('Could not delete user.')
@@ -66,30 +68,80 @@ function AdminPanelPage() {
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Home › System › Users"
-        subtitle="Manage portal users and assign roles."
+        title="Admin · Users"
+        subtitle="Manage portal accounts and assign roles."
+        actions={
+          <>
+            <Link to="/audit" className="btn-secondary">
+              Audit logs
+            </Link>
+            <Link to="/farmer" className="btn-primary">
+              Farmers
+              <ArrowRight size={16} />
+            </Link>
+          </>
+        }
       />
 
-      <div className="widgets three">
-        <StatCard title="Total users" value={String(stats?.users ?? 0)} />
-        <StatCard title="Farmers" value={String(stats?.farmers ?? 0)} />
+      <div className="widgets four">
+        <StatCard title="Total users" value={String(stats?.users ?? 0)} meta="All roles" />
+        <StatCard title="Farmers" value={String(stats?.farmers ?? 0)} meta="Linked profiles" />
+        <StatCard title="Loans" value={String(stats?.loans ?? 0)} meta="All statuses" accent="blue" />
         <StatCard
-          title="Loans & policies"
-          value={String((stats?.loans ?? 0) + (stats?.insurancePolicies ?? 0))}
+          title="Policies"
+          value={String(stats?.insurancePolicies ?? 0)}
+          meta="Insurance book"
+          accent="slate"
         />
       </div>
 
-      <DataTableShell
-        title="User management"
-        footer={<span>{users.length} user account(s)</span>}
-      >
+      <div className="dash-section">
+        <div className="dash-section__head">
+          <h2>System shortcuts</h2>
+          <p>Admin operations across the portal</p>
+        </div>
+        <div className="dash-quick-grid">
+          <QuickActionCard
+            to="/admin"
+            title="Users"
+            description="Roles & account access"
+            icon={Users}
+          />
+          <QuickActionCard
+            to="/audit"
+            title="Audit logs"
+            description="Security & change trail"
+            icon={ScrollText}
+          />
+          <QuickActionCard
+            to="/farmer"
+            title="Farmers"
+            description="Directory & credit views"
+            icon={UserRound}
+          />
+          <QuickActionCard
+            to="/loans"
+            title="Loans"
+            description="Bank loan pipeline"
+            icon={Landmark}
+          />
+          <QuickActionCard
+            to="/insurance"
+            title="Insurance"
+            description="Policies overview"
+            icon={ShieldCheck}
+          />
+        </div>
+      </div>
+
+      <DataTableShell title="User management" footer={<span>{users.length} account(s)</span>}>
         <div className="table-scroll">
           <table className="desktop-table dashboard-table">
             <thead>
               <tr>
-                <th>User ID</th>
+                <th>ID</th>
                 <th>Username</th>
                 <th>Role</th>
                 <th>Farmer ID</th>
@@ -115,12 +167,16 @@ function AdminPanelPage() {
                 users.map((user) => (
                   <tr key={user.userId}>
                     <td>{user.userId}</td>
-                    <td>{user.username}</td>
+                    <td>
+                      <strong className="dash-name">{user.username}</strong>
+                    </td>
                     <td>
                       <select
+                        className="dash-role-select"
                         value={user.role}
                         onChange={(event) => handleRoleChange(user.userId, event.target.value)}
                         disabled={busyUserId === user.userId}
+                        aria-label={`Role for ${user.username}`}
                       >
                         {ROLES.map((role) => (
                           <option key={role} value={role}>

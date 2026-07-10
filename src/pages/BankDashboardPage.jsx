@@ -1,7 +1,16 @@
-import { FileCheck2, HandCoins, Wallet } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowRight,
+  CreditCard,
+  FileCheck2,
+  HandCoins,
+  Users,
+  Wallet,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import NeonSegmentChart from '../components/dashboard/NeonSegmentChart'
+import QuickActionCard from '../components/dashboard/QuickActionCard'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -45,7 +54,7 @@ function BankDashboardPage() {
 
       if (logsData.status === 'fulfilled') {
         setActivities(
-          logsData.value.slice(0, 4).map((log) => ({
+          logsData.value.slice(0, 6).map((log) => ({
             id: `log-${log.logId}`,
             title: formatAuditAction(log.action),
             time: formatTimestamp(log.timestamp),
@@ -58,7 +67,12 @@ function BankDashboardPage() {
     load()
   }, [])
 
-  const previewFarmers = useMemo(() => farmers.slice(0, 5), [farmers])
+  const previewFarmers = useMemo(() => farmers.slice(0, 6), [farmers])
+  const highRiskFarmers = useMemo(
+    () =>
+      farmers.filter((f) => (f.riskLevel || '').toLowerCase() === 'high').slice(0, 3),
+    [farmers],
+  )
 
   const totalFarmers = overview?.farmers ?? farmers.length
   const activeLoans = Number(overview?.loansByStatus?.APPROVED || 0)
@@ -74,7 +88,7 @@ function BankDashboardPage() {
   if (loading) {
     return (
       <section className="dashboard-page dashboard-page--compact">
-        <PageHeader title="Dashboard" subtitle="Loading your overview…" />
+        <PageHeader title="Bank dashboard" subtitle="Loading your overview…" />
         <div className="widgets four">
           {[1, 2, 3, 4].map((id) => (
             <article key={id} className="widget card dashboard-skeleton" />
@@ -87,34 +101,132 @@ function BankDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Home › Dashboard"
-        subtitle="Portfolio overview at a glance."
+        title="Bank dashboard"
+        subtitle="Portfolio overview — farmers, loans, and risk at a glance."
         actions={
           <>
+            {pendingCount > 0 ? (
+              <Link to="/loans" className="btn-primary">
+                Review {pendingCount} pending
+                <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <Link to="/loans" className="btn-primary">
+                Manage loans
+                <ArrowRight size={16} />
+              </Link>
+            )}
             <Link to="/farmer" className="btn-secondary">
-              Farmers
-            </Link>
-            <Link to="/loans" className="btn-primary">
-              Loans
+              Browse farmers
             </Link>
           </>
         }
       />
 
+      {pendingCount > 0 || highRiskFarmers.length > 0 ? (
+        <div className="dash-alerts">
+          {pendingCount > 0 ? (
+            <Link to="/loans" className="dash-alert dash-alert--warn">
+              <AlertCircle size={18} />
+              <span>
+                <strong>{pendingCount} loan application{pendingCount === 1 ? '' : 's'}</strong> waiting
+                for review
+              </span>
+              <span className="dash-alert__action">Open loans</span>
+            </Link>
+          ) : null}
+          {highRiskFarmers.length > 0 ? (
+            <Link to="/farmer" className="dash-alert dash-alert--risk">
+              <AlertCircle size={18} />
+              <span>
+                <strong>{highRiskFarmers.length} high-risk farmer{highRiskFarmers.length === 1 ? '' : 's'}</strong>{' '}
+                in your consented portfolio
+              </span>
+              <span className="dash-alert__action">View farmers</span>
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="widgets four">
-        <StatCard title="Farmers" value={totalFarmers.toLocaleString()} meta="With bank consent" />
-        <StatCard title="Applications" value={totalLoans.toLocaleString()} meta={`${pendingCount} pending`} />
-        <StatCard title="Active loans" value={activeLoans.toLocaleString()} meta="Approved" />
-        <StatCard title="Approval rate" value={approvalRate} meta="Approved vs rejected" />
+        <StatCard
+          title="Farmers"
+          value={totalFarmers.toLocaleString()}
+          meta="With bank consent"
+          accent="green"
+        />
+        <StatCard
+          title="Applications"
+          value={totalLoans.toLocaleString()}
+          meta={`${pendingCount} pending review`}
+          accent={pendingCount > 0 ? 'amber' : 'green'}
+        />
+        <StatCard
+          title="Active loans"
+          value={activeLoans.toLocaleString()}
+          meta="Approved status"
+          accent="blue"
+        />
+        <StatCard
+          title="Approval rate"
+          value={approvalRate}
+          meta="Approved vs rejected"
+          accent="slate"
+        />
       </div>
 
-      <div className="dashboard-grid dashboard-grid--compact">
+      <div className="dash-section">
+        <div className="dash-section__head">
+          <h2>Quick actions</h2>
+          <p>Jump to everyday bank workflows</p>
+        </div>
+        <div className="dash-quick-grid">
+          <QuickActionCard
+            to="/farmer"
+            title="Farmers"
+            description="Search profiles & credit scores"
+            icon={Users}
+          />
+          <QuickActionCard
+            to="/loans"
+            title="Loans"
+            description="Approve, reject, or track"
+            icon={HandCoins}
+          />
+          <QuickActionCard
+            to="/payments"
+            title="Payments"
+            description="MoMo & repayment history"
+            icon={Wallet}
+          />
+          {isAdmin ? (
+            <QuickActionCard
+              to="/audit"
+              title="Audit logs"
+              description="System activity trail"
+              icon={FileCheck2}
+            />
+          ) : (
+            <QuickActionCard
+              to="/payments"
+              title="Collections"
+              description="Track incoming payments"
+              icon={CreditCard}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="dashboard-grid dashboard-grid--equal dashboard-grid--compact">
         <article className="card">
           <div className="section-head">
             <div>
               <h2>Loan pipeline</h2>
-              <p className="card-subtitle">Status breakdown</p>
+              <p className="card-subtitle">Applications by status</p>
             </div>
+            <Link to="/loans" className="btn-view">
+              Open
+            </Link>
           </div>
           <NeonSegmentChart rows={loanStatusRows} emptyMessage="No loan applications yet." />
         </article>
@@ -123,19 +235,22 @@ function BankDashboardPage() {
           <div className="section-head">
             <div>
               <h2>Credit risk</h2>
-              <p className="card-subtitle">Latest farmer tiers</p>
+              <p className="card-subtitle">Latest farmer risk tiers</p>
             </div>
+            <Link to="/farmer" className="btn-view">
+              Open
+            </Link>
           </div>
           <NeonSegmentChart rows={riskRows} emptyMessage="No risk scores yet." />
         </article>
       </div>
 
-      <div className="dashboard-grid dashboard-grid--compact dashboard-grid--split">
+      <div className="dashboard-grid dashboard-grid--main dashboard-grid--compact">
         <article className="card dash-farmers-card">
           <div className="section-head">
             <div>
               <h2>Recent farmers</h2>
-              <p className="card-subtitle">{farmers.length} registered</p>
+              <p className="card-subtitle">{farmers.length} in portfolio</p>
             </div>
             <Link to="/farmer" className="btn-view">
               View all
@@ -162,7 +277,9 @@ function BankDashboardPage() {
                   ) : (
                     previewFarmers.map((farmer) => (
                       <tr key={farmer.farmerId}>
-                        <td>{farmer.fullName}</td>
+                        <td>
+                          <strong className="dash-name">{farmer.fullName}</strong>
+                        </td>
                         <td>{farmer.latestCreditScore ?? '—'}</td>
                         <td>
                           <StatusBadge value={farmer.riskLevel || 'Unknown'} />
@@ -189,12 +306,12 @@ function BankDashboardPage() {
             </div>
             {isAdmin ? (
               <Link to="/audit" className="btn-view">
-                Audit
+                Full log
               </Link>
             ) : null}
           </div>
           {activities.length === 0 ? (
-            <p className="muted">No recent activity.</p>
+            <p className="muted dashboard-empty">No recent activity.</p>
           ) : (
             <ul className="activity-list">
               {activities.map((item) => (
@@ -205,21 +322,6 @@ function BankDashboardPage() {
               ))}
             </ul>
           )}
-
-          <div className="dash-shortcuts">
-            <Link to="/farmer" className="dash-shortcut">
-              <FileCheck2 size={16} />
-              Farmers
-            </Link>
-            <Link to="/loans" className="dash-shortcut">
-              <HandCoins size={16} />
-              Loans
-            </Link>
-            <Link to="/payments" className="dash-shortcut">
-              <Wallet size={16} />
-              Payments
-            </Link>
-          </div>
         </article>
       </div>
     </section>

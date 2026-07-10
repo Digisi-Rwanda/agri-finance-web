@@ -601,6 +601,50 @@
   color: var(--neon-muted);
 }
 
+.neon-dashboard .dash-alert {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+  color: var(--neon-text);
+}
+
+.neon-dashboard .dash-alert:hover {
+  background: #252b26;
+  border-color: #3d4a3e;
+}
+
+.neon-dashboard .dash-alert--warn {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.neon-dashboard .dash-alert--risk {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.neon-dashboard .dash-alert__action {
+  color: var(--neon-cyan) !important;
+}
+
+.neon-dashboard .dash-section__head h2,
+.neon-dashboard .dash-name {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .dash-section__head p {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .dash-role-select {
+  background: #252b26;
+  border-color: var(--neon-border);
+  color: var(--neon-text);
+}
+
+.neon-dashboard .page-header h1 {
+  color: var(--neon-text);
+}
+
 .neon-dashboard .theme-switch {
   background: #252b26;
   border-color: var(--neon-border);

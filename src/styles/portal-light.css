@@ -365,6 +365,19 @@
   background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 37%, #eef2f7 63%);
 }
 
+.portal-light .dash-alert {
+  background: #ffffff;
+  color: #191c1a;
+}
+
+.portal-light .dash-section__head h2 {
+  color: #191c1a;
+}
+
+.portal-light .dash-name {
+  color: #191c1a;
+}
+
 .portal-light .theme-switch {
   background: #f0f7f1;
   border-color: #c0c9bb;
