@@ -182,7 +182,7 @@ function MainLayout() {
   const profileRef = useRef(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [menuOverrides, setMenuOverrides] = useState({})

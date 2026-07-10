@@ -1,44 +1,44 @@
 /**
- * Neon dark dashboard theme (reference: cyberpunk analytics UI).
- * Scoped under .neon-dashboard so auth pages stay on the light Agri Trust theme.
+ * Dark portal theme — matches agri-mobile-app darkColors
+ * (forest mint brand on near-black green surfaces).
+ * Class name kept as .neon-dashboard for compatibility.
  */
 
 .neon-dashboard {
-  --neon-bg: #08040f;
-  --neon-bg-panel: #12081f;
-  --neon-sidebar: #1a0b2e;
-  --neon-card: rgba(22, 10, 38, 0.92);
-  --neon-border: rgba(255, 255, 255, 0.08);
-  --neon-text: #f1ecff;
-  --neon-muted: #9f93b8;
-  --neon-cyan: #22d3ee;
-  --neon-magenta: #f472b6;
-  --neon-pink: #ff2d95;
-  --neon-lime: #a3e635;
-  --neon-yellow: #facc15;
+  --neon-bg: #0c0f0c;
+  --neon-bg-panel: #151a16;
+  --neon-sidebar: #0a120c;
+  --neon-card: #1c221d;
+  --neon-border: #2a322b;
+  --neon-text: #e8ebe6;
+  --neon-muted: #8a9780;
+  --neon-cyan: #6ee7a8;
+  --neon-magenta: #93c5fd;
+  --neon-pink: #34d399;
+  --neon-lime: #6ee7a8;
+  --neon-yellow: #fbbf24;
   --neon-orange: #fb923c;
-  --neon-violet: #a78bfa;
-  --neon-glow-cyan: 0 0 24px rgba(34, 211, 238, 0.35);
-  --neon-glow-pink: 0 0 24px rgba(255, 45, 149, 0.3);
-  --neon-ring-track: rgba(255, 255, 255, 0.08);
+  --neon-violet: #93c5fd;
+  --neon-glow-cyan: 0 2px 16px rgba(110, 231, 168, 0.18);
+  --neon-glow-pink: 0 2px 16px rgba(52, 211, 153, 0.14);
+  --neon-ring-track: #252b26;
 }
 
-/* Shell */
 .neon-dashboard.app-shell {
-  background: radial-gradient(circle at 20% 0%, #1f0d3a 0%, var(--neon-bg) 45%);
+  background: var(--neon-bg);
   color: var(--neon-text);
 }
 
 .neon-dashboard .sidebar {
-  background: linear-gradient(180deg, #221040 0%, var(--neon-sidebar) 100%);
+  background: var(--neon-sidebar);
   border-right: 1px solid var(--neon-border);
-  box-shadow: inset -1px 0 0 rgba(34, 211, 238, 0.08);
+  box-shadow: none;
 }
 
 .neon-dashboard .brand {
   color: var(--neon-cyan);
-  text-shadow: var(--neon-glow-cyan);
-  letter-spacing: 0.02em;
+  text-shadow: none;
+  letter-spacing: 0.01em;
 }
 
 .neon-dashboard .brand-sub {
@@ -46,40 +46,40 @@
 }
 
 .neon-dashboard .nav-link {
-  color: #c4b5d8;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  font-weight: 600;
+  color: #b8c4ae;
+  text-transform: none;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  font-weight: 500;
 }
 
 .neon-dashboard .nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(110, 231, 168, 0.08);
   color: #fff;
 }
 
 .neon-dashboard .nav-link.active {
-  background: linear-gradient(90deg, rgba(255, 45, 149, 0.25), rgba(167, 139, 250, 0.12));
-  color: var(--neon-pink);
-  border: 1px solid rgba(255, 45, 149, 0.35);
-  box-shadow: var(--neon-glow-pink);
+  background: rgba(110, 231, 168, 0.14);
+  color: var(--neon-cyan);
+  border: 0;
+  box-shadow: inset 3px 0 0 var(--neon-cyan);
+  font-weight: 600;
 }
 
-/* Top bar */
 .neon-dashboard .content-shell {
   background: transparent;
 }
 
 .neon-dashboard .topbar {
-  background: rgba(12, 6, 22, 0.82);
+  background: var(--neon-bg-panel);
   border-bottom: 1px solid var(--neon-border);
-  backdrop-filter: blur(14px);
+  backdrop-filter: none;
   grid-template-columns: minmax(0, 1fr) minmax(140px, 260px) auto;
 }
 
 .neon-dashboard .topbar__eyebrow {
   color: var(--neon-cyan);
-  text-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+  text-shadow: none;
 }
 
 .neon-dashboard .topbar__title {
@@ -87,8 +87,8 @@
 }
 
 .neon-dashboard .topbar__search input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(167, 139, 250, 0.28);
+  background: var(--neon-card);
+  border: 1px solid var(--neon-border);
   color: var(--neon-text);
 }
 
@@ -101,37 +101,37 @@
 }
 
 .neon-dashboard .topbar-profile-trigger {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--neon-card);
   border-color: var(--neon-border);
   color: var(--neon-text);
 }
 
 .neon-dashboard .topbar-profile-trigger:hover,
 .neon-dashboard .topbar__profile-menu.open .topbar-profile-trigger {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--neon-border);
+  background: #252b26;
+  border-color: #3d4a3e;
 }
 
 .neon-dashboard .profile-dropdown {
-  background: #111b2e;
-  border-color: #1f2a40;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
 }
 
 .neon-dashboard .profile-dropdown__head {
-  border-bottom-color: #1f2a40;
+  border-bottom-color: var(--neon-border);
 }
 
 .neon-dashboard .profile-dropdown__head strong {
-  color: #dbe6f5;
+  color: var(--neon-text);
 }
 
 .neon-dashboard .profile-dropdown__item {
-  color: #dbe6f5;
+  color: var(--neon-text);
 }
 
 .neon-dashboard .profile-dropdown__item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(110, 231, 168, 0.08);
 }
 
 .neon-dashboard .topbar-breadcrumb,
@@ -145,29 +145,31 @@
 }
 
 .neon-dashboard .topbar-icon {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--neon-card);
   border-color: var(--neon-border);
   color: var(--neon-text);
 }
 
 .neon-dashboard .topbar-actions .topbar-icon {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--neon-card) !important;
   color: var(--neon-text) !important;
   border-color: var(--neon-border) !important;
 }
 
 .neon-dashboard .topbar-actions .topbar-icon:hover {
   border-color: var(--neon-cyan) !important;
-  box-shadow: var(--neon-glow-cyan);
+  box-shadow: none;
+  background: #252b26 !important;
 }
 
 .neon-dashboard .topbar-icon__dot {
-  border-color: #1a0b2e;
+  border-color: var(--neon-bg-panel);
 }
 
 .neon-dashboard .topbar-avatar {
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-violet));
-  box-shadow: var(--neon-glow-cyan);
+  background: var(--neon-cyan);
+  color: #052210;
+  box-shadow: none;
 }
 
 .neon-dashboard .topbar-user {
@@ -187,26 +189,25 @@
   padding: 1.1rem 1.35rem 1.6rem;
 }
 
-/* Cards & widgets */
 .neon-dashboard .card,
 .neon-dashboard .widget,
 .neon-dashboard .table-shell,
 .neon-dashboard .confirm-card {
   background: var(--neon-card);
   border: 1px solid var(--neon-border);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   color: var(--neon-text);
 }
 
 .neon-dashboard .card:hover,
 .neon-dashboard .widget:hover {
-  border-color: rgba(34, 211, 238, 0.22);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45), var(--neon-glow-cyan);
+  border-color: #3d4a3e;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .neon-dashboard .page-header h1 {
-  color: var(--neon-cyan);
-  text-shadow: 0 0 20px rgba(34, 211, 238, 0.25);
+  color: var(--neon-text);
+  text-shadow: none;
 }
 
 .neon-dashboard .page-header p,
@@ -225,26 +226,30 @@
 }
 
 .neon-dashboard a:hover {
-  color: #7dd3fc;
+  color: #a7f3d0;
 }
 
-/* Buttons */
 .neon-dashboard .btn-primary {
-  background: linear-gradient(90deg, #db2777, #7c3aed);
+  background: var(--neon-cyan);
+  color: #052210;
   border: 0;
-  box-shadow: var(--neon-glow-pink);
+  box-shadow: none;
+}
+
+.neon-dashboard .btn-primary:hover {
+  background: #34d399;
 }
 
 .neon-dashboard .btn-secondary {
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   color: var(--neon-text);
-  border-color: rgba(167, 139, 250, 0.35);
+  border-color: #3d4a3e;
 }
 
 .neon-dashboard input,
 .neon-dashboard select,
 .neon-dashboard button:not(.btn-primary):not(.btn-danger):not(.topbar-icon) {
-  background: rgba(255, 255, 255, 0.05);
+  background: #252b26;
   color: var(--neon-text);
   border-color: var(--neon-border);
 }
@@ -253,57 +258,53 @@
   color: var(--neon-muted);
 }
 
-/* Tables */
 .neon-dashboard th {
   color: var(--neon-muted);
 }
 
 .neon-dashboard td {
   border-bottom-color: var(--neon-border);
-  color: #e8e0f8;
+  color: var(--neon-text);
 }
 
 .neon-dashboard .empty-cell {
   color: var(--neon-muted);
 }
 
-/* Status badges — keep readable on dark */
 .neon-dashboard .status-success {
-  background: rgba(163, 230, 53, 0.15);
+  background: rgba(110, 231, 168, 0.15);
   color: var(--neon-lime);
 }
 
 .neon-dashboard .status-warning {
-  background: rgba(250, 204, 21, 0.15);
+  background: rgba(251, 191, 36, 0.15);
   color: var(--neon-yellow);
 }
 
 .neon-dashboard .status-danger {
-  background: rgba(244, 114, 182, 0.18);
-  color: var(--neon-magenta);
+  background: rgba(248, 113, 113, 0.15);
+  color: #fca5a5;
 }
 
 .neon-dashboard .status-neutral {
-  background: rgba(167, 139, 250, 0.15);
-  color: var(--neon-violet);
+  background: rgba(138, 151, 128, 0.18);
+  color: #b8c4ae;
 }
 
-/* Bar chart */
 .neon-dashboard .bar-row__track {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--neon-ring-track);
 }
 
 .neon-dashboard .bar-row__fill {
-  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-lime));
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+  background: linear-gradient(90deg, #0a5c18, var(--neon-cyan));
+  box-shadow: none;
 }
 
 .neon-dashboard .bar-row span,
 .neon-dashboard .bar-row__count {
-  color: #ddd6f3;
+  color: var(--neon-text);
 }
 
-/* Activity feed */
 .neon-dashboard .activity-item {
   border-bottom-color: var(--neon-border);
 }
@@ -313,7 +314,26 @@
   color: var(--neon-muted);
 }
 
-/* Quick actions */
+.neon-dashboard .activity-item strong {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .dash-shortcuts {
+  border-top-color: var(--neon-border);
+}
+
+.neon-dashboard .dash-shortcut {
+  background: #252b26;
+  border-color: var(--neon-border);
+  color: var(--neon-text);
+}
+
+.neon-dashboard .dash-shortcut:hover {
+  background: rgba(110, 231, 168, 0.1);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
 .neon-dashboard .quick-action-card {
   background: var(--neon-card);
   border-color: var(--neon-border);
@@ -321,7 +341,7 @@
 }
 
 .neon-dashboard .quick-action-card:hover {
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: var(--neon-cyan);
   box-shadow: var(--neon-glow-cyan);
 }
 
@@ -334,17 +354,16 @@
 }
 
 .neon-dashboard .quick-action-card__icon {
-  background: rgba(34, 211, 238, 0.12);
+  background: rgba(110, 231, 168, 0.12);
   color: var(--neon-cyan);
 }
 
-/* Stat accents */
 .neon-dashboard .stat-card--green {
   border-left-color: var(--neon-lime);
 }
 
 .neon-dashboard .stat-card--blue {
-  border-left-color: var(--neon-cyan);
+  border-left-color: var(--neon-magenta);
 }
 
 .neon-dashboard .stat-card--amber {
@@ -352,7 +371,7 @@
 }
 
 .neon-dashboard .stat-card--slate {
-  border-left-color: var(--neon-violet);
+  border-left-color: var(--neon-muted);
 }
 
 .neon-dashboard .stat-card h3 {
@@ -367,7 +386,6 @@
   color: var(--neon-muted);
 }
 
-/* Gauge rings (top KPI row) */
 .neon-gauge {
   text-align: center;
   padding: 1rem 0.75rem 1.1rem;
@@ -398,7 +416,7 @@
       var(--neon-ring-track) calc(var(--pct) * 3.6deg),
       var(--neon-ring-track) 360deg
     );
-  box-shadow: 0 0 28px color-mix(in srgb, var(--ring-color) 40%, transparent);
+  box-shadow: 0 4px 16px rgba(110, 231, 168, 0.12);
 }
 
 .neon-gauge__ring span {
@@ -407,7 +425,6 @@
   color: var(--neon-text);
 }
 
-/* Big percent tile */
 .neon-percent-card {
   display: flex;
   flex-direction: column;
@@ -427,11 +444,10 @@
   font-size: 2.8rem;
   line-height: 1;
   color: var(--neon-cyan);
-  text-shadow: var(--neon-glow-cyan);
+  text-shadow: none;
   margin: 0.35rem 0;
 }
 
-/* Mini gradient progress rows */
 .neon-progress-list {
   display: grid;
   gap: 0.85rem;
@@ -459,18 +475,17 @@
 }
 
 .neon-progress-row__fill--a {
-  background: linear-gradient(90deg, #ff2d95, #22d3ee);
+  background: linear-gradient(90deg, #0a5c18, #6ee7a8);
 }
 
 .neon-progress-row__fill--b {
-  background: linear-gradient(90deg, #facc15, #a3e635);
+  background: linear-gradient(90deg, #2b5bb5, #93c5fd);
 }
 
 .neon-progress-row__fill--c {
-  background: linear-gradient(90deg, #a78bfa, #fb923c);
+  background: linear-gradient(90deg, #34d399, #a7f3d0);
 }
 
-/* Segmented neon bars (right chart) */
 .neon-segment-chart {
   display: flex;
   align-items: flex-end;
@@ -508,7 +523,6 @@
   text-align: center;
 }
 
-/* Recharts area wrapper */
 .neon-area-chart {
   width: 100%;
   height: 240px;
@@ -524,13 +538,11 @@
   font-size: 11px;
 }
 
-/* Confirm modal */
 .neon-dashboard .confirm-overlay {
-  background: rgba(4, 2, 10, 0.72);
+  background: rgba(12, 15, 12, 0.72);
 }
 
-.neon-dashboard .confirm-card h3,
-.neon-dashboard .confirm-card p {
+.neon-dashboard .confirm-card h3 {
   color: var(--neon-text);
 }
 
@@ -538,12 +550,15 @@
   color: var(--neon-muted);
 }
 
-/* Skeleton */
 .neon-dashboard .dashboard-skeleton {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.08) 37%, rgba(255, 255, 255, 0.04) 63%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 37%,
+    rgba(255, 255, 255, 0.04) 63%
+  );
 }
 
-/* Top KPI row — 3 gauges + percent + progress (bank) or 3 gauges (insurer) */
 .neon-top-row {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -571,17 +586,32 @@
 }
 
 .neon-dashboard .detail-tab {
-  background: rgba(255, 255, 255, 0.05);
+  background: #252b26;
   border-color: var(--neon-border);
   color: var(--neon-muted);
 }
 
 .neon-dashboard .detail-tab.active {
-  background: rgba(163, 230, 53, 0.2);
+  background: rgba(110, 231, 168, 0.16);
   border-color: var(--neon-lime);
   color: var(--neon-lime);
 }
 
 .neon-dashboard .farmer-consent-line {
   color: var(--neon-muted);
+}
+
+.neon-dashboard .theme-switch {
+  background: #252b26;
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .theme-switch__btn {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .theme-switch__btn--active {
+  background: rgba(110, 231, 168, 0.16);
+  color: var(--neon-cyan);
+  box-shadow: none;
 }

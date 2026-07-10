@@ -10,7 +10,7 @@
   --neon-card: #ffffff;
   --neon-border: #e1e3de;
   --neon-text: #191c1a;
-  --neon-muted: #64748b;
+  --neon-muted: #717a6d;
   --neon-cyan: #00450d;
   --neon-magenta: #2b5bb5;
   --neon-pink: #0a5c18;
@@ -116,7 +116,8 @@
 }
 
 .portal-light .topbar-avatar {
-  background: var(--neon-magenta);
+  background: var(--neon-cyan);
+  color: #ffffff;
   box-shadow: none;
 }
 
@@ -133,15 +134,16 @@
 .portal-light .table-shell,
 .portal-light .confirm-card {
   background: var(--neon-card);
-  border-color: var(--neon-border);
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.05);
+  border-color: #c0c9bb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   color: var(--neon-text);
+  border-radius: 12px;
 }
 
 .portal-light .card:hover,
 .portal-light .widget:hover {
   border-color: #c0c9bb;
-  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 69, 13, 0.08);
 }
 
 .portal-light .page-header h1 {
@@ -154,7 +156,7 @@
 }
 
 .portal-light .card h2 {
-  color: #0f172a;
+  color: #191c1a;
 }
 
 .portal-light .card-subtitle,
@@ -164,22 +166,27 @@
 }
 
 .portal-light a {
-  color: var(--neon-magenta);
+  color: var(--neon-cyan);
 }
 
 .portal-light a:hover {
-  color: #1d4ed8;
+  color: #0a5c18;
 }
 
 .portal-light .btn-primary {
-  background: var(--neon-magenta);
+  background: var(--neon-cyan);
+  color: #ffffff;
   box-shadow: none;
+}
+
+.portal-light .btn-primary:hover {
+  background: #0a5c18;
 }
 
 .portal-light .btn-secondary {
   background: #ffffff;
-  color: #0f172a;
-  border-color: #cbd5e1;
+  color: #191c1a;
+  border-color: #c0c9bb;
 }
 
 .portal-light input,
@@ -207,7 +214,23 @@
 }
 
 .portal-light .activity-item {
-  border-bottom-color: #edf2f7;
+  border-bottom-color: #e1e3de;
+}
+
+.portal-light .dash-shortcuts {
+  border-top-color: #e1e3de;
+}
+
+.portal-light .dash-shortcut {
+  background: #ecefea;
+  border-color: #e1e3de;
+  color: #191c1a;
+}
+
+.portal-light .dash-shortcut:hover {
+  background: #f0f7f1;
+  border-color: #b8e6c4;
+  color: #00450d;
 }
 
 .portal-light .activity-item strong {
@@ -377,17 +400,3 @@
   color: #334155;
 }
 
-.neon-dashboard .theme-switch {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--neon-border);
-}
-
-.neon-dashboard .theme-switch__btn {
-  color: var(--neon-muted);
-}
-
-.neon-dashboard .theme-switch__btn--active {
-  background: rgba(255, 45, 149, 0.2);
-  color: var(--neon-pink);
-  box-shadow: var(--neon-glow-pink);
-}

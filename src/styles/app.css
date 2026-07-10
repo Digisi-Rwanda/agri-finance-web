@@ -507,7 +507,7 @@ a {
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -530,7 +530,7 @@ a {
 }
 
 .widget small {
-  color: #64748b;
+  color: #717a6d;
 }
 
 .widgets.four {
@@ -554,7 +554,10 @@ a {
 }
 
 .stat-card {
+  background: #ffffff;
+  border: 1px solid #e1e3de;
   border-left: 3px solid #d5e8db;
+  border-radius: 12px;
 }
 
 .stat-card h3 {
@@ -563,7 +566,7 @@ a {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #64748b;
+  color: #717a6d;
 }
 
 .stat-card--green {
@@ -608,7 +611,7 @@ button {
 
 button {
   cursor: pointer;
-  background: var(--blue);
+  background: var(--green);
   color: #fff;
   border-color: transparent;
 }
@@ -643,7 +646,7 @@ button.danger {
 
 .page-header p {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: #717a6d;
 }
 
 .page-actions {
@@ -677,15 +680,19 @@ button.secondary {
 }
 
 .btn-primary {
-  background: var(--blue);
+  background: var(--green);
   color: #fff;
   border: 1px solid transparent;
 }
 
+.btn-primary:hover {
+  background: #0a5c18;
+}
+
 .btn-secondary {
   background: #fff;
-  color: #0f172a;
-  border: 1px solid #cbd5e1;
+  color: #191c1a;
+  border: 1px solid #c0c9bb;
 }
 
 .btn-danger {
@@ -904,7 +911,7 @@ button.secondary {
   gap: 0.75rem;
   align-items: baseline;
   padding: 0.35rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e1e3de;
 }
 
 .dashboard-page--compact .activity-item:last-child {
@@ -926,7 +933,7 @@ button.secondary {
   gap: 0.45rem;
   margin-top: 0.85rem;
   padding-top: 0.7rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #e1e3de;
 }
 
 .dash-shortcut {
@@ -935,10 +942,10 @@ button.secondary {
   justify-content: center;
   gap: 0.35rem;
   padding: 0.55rem 0.4rem;
-  border-radius: 9px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #0f172a;
+  border-radius: 10px;
+  background: #ecefea;
+  border: 1px solid #e1e3de;
+  color: #191c1a;
   text-decoration: none;
   font-size: 0.8rem;
   font-weight: 600;
@@ -946,8 +953,8 @@ button.secondary {
 }
 
 .dash-shortcut:hover {
-  background: #ecfdf3;
-  border-color: #bbf7d0;
+  background: #f0f7f1;
+  border-color: #b8e6c4;
   color: #00450d;
 }
 
@@ -959,12 +966,12 @@ button.secondary {
 .card h2 {
   margin: 0;
   font-size: 1.05rem;
-  color: #0f172a;
+  color: #191c1a;
 }
 
 .card-subtitle {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: #717a6d;
   font-size: 0.88rem;
 }
 

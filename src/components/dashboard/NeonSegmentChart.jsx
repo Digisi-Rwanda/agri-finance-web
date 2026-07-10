@@ -1,6 +1,6 @@
 import { usePortalTheme } from '../../context/PortalThemeContext'
 
-const BLOCK_COLORS_DARK = ['#ff2d95', '#22d3ee', '#facc15', '#a3e635', '#fb923c', '#a78bfa']
+const BLOCK_COLORS_DARK = ['#6ee7a8', '#34d399', '#93c5fd', '#a7f3d0', '#fbbf24', '#b8c4ae']
 const BLOCK_COLORS_LIGHT = ['#00450d', '#0a5c18', '#2b5bb5', '#6fbf73', '#4a7c59', '#60a5fa']
 
 /** Vertical stacked bars — palette switches with portal theme. */
