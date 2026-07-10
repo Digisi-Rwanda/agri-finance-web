@@ -816,3 +816,59 @@
 .neon-dashboard .detail-tab__count {
   background: rgba(255, 255, 255, 0.08);
 }
+
+.neon-dashboard .account-toolbar h1,
+.neon-dashboard .account-id-card__name,
+.neon-dashboard .account-id-card__status strong,
+.neon-dashboard .account-details dd,
+.neon-dashboard .account-panel__head h3,
+.neon-dashboard .settings-panel__head h3,
+.neon-dashboard .settings-row__text strong,
+.neon-dashboard .settings-account-summary strong {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .account-id-card,
+.neon-dashboard .settings-row {
+  background: linear-gradient(180deg, #141a14 0%, var(--neon-card) 55%);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .account-id-card__photo,
+.neon-dashboard .account-id-card__status,
+.neon-dashboard .account-chip,
+.neon-dashboard .settings-theme__btn {
+  background: #1a211a;
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .account-chip,
+.neon-dashboard .account-toolbar__crumb a,
+.neon-dashboard .settings-theme__btn {
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .settings-theme__btn--active {
+  background: rgba(110, 231, 168, 0.18);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .account-id-card__meta,
+.neon-dashboard .account-toolbar__crumb,
+.neon-dashboard .settings-panel__head p,
+.neon-dashboard .settings-row__text p,
+.neon-dashboard .account-details dt,
+.neon-dashboard .settings-account-summary small,
+.neon-dashboard .account-id-card__status small {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .account-security-list li {
+  border-bottom-color: var(--neon-border);
+  color: var(--neon-text);
+}
+
+.neon-dashboard .settings-switch input:checked + .settings-switch__track {
+  background: var(--neon-cyan);
+}

@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
-  ChevronDown,
   Contact,
   CreditCard,
   Home,
@@ -23,7 +22,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { clearSession, getCurrentUser, hydrateSessionUser } from '../services/auth'
 import ThemeSwitch from '../components/layout/ThemeSwitch'
 import { PortalThemeContext } from '../context/PortalThemeContext'
-import { getHomePathForRole, getUserInitials, ROLE_LABELS } from '../utils/roles'
+import { getHomePathForRole } from '../utils/roles'
 import { getLastFarmerMeta } from '../pages/FarmerProfileRedirect'
 
 const navItemsByRole = {
@@ -140,13 +139,11 @@ function isNavItemActive(item, pathname, isActive) {
 function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const profileRef = useRef(null)
   const moreRef = useRef(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
-  const [profileOpen, setProfileOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [routePath, setRoutePath] = useState(location.pathname)
@@ -155,7 +152,6 @@ function MainLayout() {
   if (location.pathname !== routePath) {
     setRoutePath(location.pathname)
     setMenuOpen(false)
-    setProfileOpen(false)
     setMoreOpen(false)
     setLastFarmer(getLastFarmerMeta())
   }
@@ -163,9 +159,6 @@ function MainLayout() {
   const currentRole = getCurrentUser()?.role || 'BANK'
   const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
   const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
-  const user = getCurrentUser()
-  const userInitials = getUserInitials(user)
-  const roleLabel = ROLE_LABELS[currentRole] || currentRole
   const homePath = getHomePathForRole(currentRole)
   const pageTitle = useMemo(() => getPageTitle(location.pathname), [location.pathname])
   const breadcrumbs = useMemo(
@@ -184,7 +177,6 @@ function MainLayout() {
   }
 
   const handleLogout = () => {
-    setProfileOpen(false)
     setMoreOpen(false)
     setShowLogoutModal(true)
   }
@@ -205,7 +197,6 @@ function MainLayout() {
 
   useEffect(() => {
     const onPointerDown = (event) => {
-      if (!profileRef.current?.contains(event.target)) setProfileOpen(false)
       if (!moreRef.current?.contains(event.target)) setMoreOpen(false)
     }
     document.addEventListener('mousedown', onPointerDown)
@@ -221,7 +212,7 @@ function MainLayout() {
     .join('')
 
   return (
-    <PortalThemeContext.Provider value={{ isDark: darkMode }}>
+    <PortalThemeContext.Provider value={{ isDark: darkMode, setIsDark: setDarkMode }}>
       <div className={`app-shell ${shellThemeClass}`}>
         <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
           <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
@@ -379,67 +370,6 @@ function MainLayout() {
                 >
                   <Bell size={16} />
                 </button>
-              </div>
-
-              <div className={`topbar__profile-menu${profileOpen ? ' open' : ''}`} ref={profileRef}>
-                <button
-                  type="button"
-                  className="topbar-profile-trigger"
-                  onClick={() => setProfileOpen((prev) => !prev)}
-                  aria-expanded={profileOpen}
-                  aria-haspopup="menu"
-                >
-                  <span className="topbar-avatar" aria-hidden>
-                    {userInitials}
-                  </span>
-                  <div className="topbar-user__meta">
-                    <strong>{user?.fullName || user?.username || 'User'}</strong>
-                    <small>{roleLabel}</small>
-                  </div>
-                  <ChevronDown size={14} className="topbar-profile-trigger__chevron" aria-hidden />
-                </button>
-
-                {profileOpen ? (
-                  <div className="profile-dropdown" role="menu">
-                    <div className="profile-dropdown__head">
-                      <strong>{user?.fullName || user?.username || 'User'}</strong>
-                      <small>{roleLabel}</small>
-                    </div>
-                    <button
-                      type="button"
-                      className="profile-dropdown__item"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false)
-                        navigate('/profile')
-                      }}
-                    >
-                      <User size={15} />
-                      Profile
-                    </button>
-                    <button
-                      type="button"
-                      className="profile-dropdown__item"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileOpen(false)
-                        navigate(settingsPath)
-                      }}
-                    >
-                      <Settings size={15} />
-                      Settings
-                    </button>
-                    <button
-                      type="button"
-                      className="profile-dropdown__item profile-dropdown__item--danger"
-                      role="menuitem"
-                      onClick={handleLogout}
-                    >
-                      <LogOut size={15} />
-                      Logout
-                    </button>
-                  </div>
-                ) : null}
               </div>
             </div>
           </header>

@@ -1,11 +1,29 @@
-import { Building2, Mail, MapPin, Phone, Shield, UserRound } from 'lucide-react'
+import {
+  ArrowLeft,
+  Building2,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  Phone,
+  Settings,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PageHeader from '../components/ui/PageHeader'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getProfile } from '../services/auth'
 import { getUserInitials, ROLE_LABELS } from '../utils/roles'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
+
+function formatDisplayName(name) {
+  return String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
 
 function ProfilePage() {
   const [profile, setProfile] = useState(null)
@@ -31,7 +49,9 @@ function ProfilePage() {
   if (loading) {
     return (
       <section className="dashboard-page account-page">
-        <PageHeader title="My profile" subtitle="Loading account details…" />
+        <div className="account-toolbar">
+          <h1>Profile</h1>
+        </div>
         <div className="account-skeleton card" />
       </section>
     )
@@ -40,68 +60,113 @@ function ProfilePage() {
   if (error || !profile) {
     return (
       <section className="dashboard-page account-page">
-        <PageHeader title="My profile" />
+        <div className="account-toolbar">
+          <h1>Profile</h1>
+          <Link to="/" className="btn-secondary">
+            <ArrowLeft size={16} />
+            Home
+          </Link>
+        </div>
         <article className="card account-alert">{error || 'Profile unavailable.'}</article>
       </section>
     )
   }
 
-  const displayName = profile.fullName || profile.username || 'User'
+  const displayName = formatDisplayName(profile.fullName || profile.username || 'User')
   const initials = getUserInitials(profile)
   const roleLabel = ROLE_LABELS[profile.role] || profile.role
+  const isBank = profile.role === 'BANK' || profile.role === 'ADMIN'
 
   return (
-    <section className="dashboard-page account-page">
-      <PageHeader
-        breadcrumb="Home › Profile"
-        subtitle="Your account details and portal access."
-        actions={
+    <section className="dashboard-page dashboard-page--compact account-page">
+      <div className="account-toolbar">
+        <div>
+          <nav className="account-toolbar__crumb" aria-label="Breadcrumb">
+            <Link to="/">Home</Link>
+            <span aria-hidden>/</span>
+            <span>Profile</span>
+          </nav>
+          <h1>Profile</h1>
+        </div>
+        <div className="account-toolbar__actions">
           <Link to="/settings" className="btn-primary">
-            Account settings
+            <Settings size={16} />
+            Settings
           </Link>
-        }
-      />
+        </div>
+      </div>
 
-      <article className="card account-hero">
-        <div className="account-hero__main">
+      <article className="account-id-card">
+        <div className="account-id-card__photo">
           {profile.profilePhoto ? (
-            <img src={profile.profilePhoto} alt="" className="account-hero__photo" />
+            <img src={profile.profilePhoto} alt="" className="account-id-card__img" />
           ) : (
-            <span className="account-hero__avatar" aria-hidden>
-              {initials}
-            </span>
+            <div className="account-id-card__placeholder">
+              <UserRound size={36} strokeWidth={1.5} aria-hidden />
+              <span>{initials}</span>
+            </div>
           )}
-          <div>
-            <h2>{displayName}</h2>
-            <p className="account-hero__meta">@{profile.username}</p>
+        </div>
+
+        <div className="account-id-card__body">
+          <div className="account-id-card__head">
+            <div>
+              <h2 className="account-id-card__name">{displayName}</h2>
+              <p className="account-id-card__meta">
+                @{profile.username}
+                {profile.institution ? ` · ${profile.institution}` : ''}
+              </p>
+            </div>
             <StatusBadge value={roleLabel} />
           </div>
-        </div>
-        <div className="account-hero__stats">
-          <div>
-            <small>Email verified</small>
-            <strong>{profile.emailVerified ? 'Yes' : 'Pending'}</strong>
+
+          <div className="account-id-card__chips">
+            {profile.email ? (
+              <a href={`mailto:${profile.email}`} className="account-chip">
+                <Mail size={14} aria-hidden />
+                {profile.email}
+              </a>
+            ) : null}
+            {profile.phone ? (
+              <a href={`tel:${profile.phone}`} className="account-chip">
+                <Phone size={14} aria-hidden />
+                {formatRwandaPhoneDisplay(profile.phone)}
+              </a>
+            ) : null}
+            {profile.location ? (
+              <span className="account-chip account-chip--muted">
+                <MapPin size={14} aria-hidden />
+                {profile.location}
+              </span>
+            ) : null}
           </div>
-          {profile.farmerId ? (
-            <div>
-              <small>Farmer ID</small>
-              <strong>{profile.farmerId}</strong>
-            </div>
-          ) : null}
+        </div>
+
+        <div className="account-id-card__status">
+          <div>
+            <small>Email</small>
+            <strong>{profile.emailVerified ? 'Verified' : 'Pending'}</strong>
+          </div>
           {profile.registrationDate ? (
             <div>
               <small>Member since</small>
               <strong>{String(profile.registrationDate).slice(0, 10)}</strong>
             </div>
           ) : null}
+          {profile.farmerId ? (
+            <div>
+              <small>Farmer ID</small>
+              <strong>{profile.farmerId}</strong>
+            </div>
+          ) : null}
         </div>
       </article>
 
       <div className="account-grid">
-        <article className="card account-card">
-          <div className="account-card__head">
+        <article className="card account-panel">
+          <div className="account-panel__head">
             <UserRound size={18} />
-            <h3>Personal information</h3>
+            <h3>Account details</h3>
           </div>
           <dl className="account-details">
             <div>
@@ -113,59 +178,60 @@ function ProfilePage() {
               <dd>{profile.username || '—'}</dd>
             </div>
             <div>
-              <dt>
-                <Mail size={14} aria-hidden />
-                Email
-              </dt>
+              <dt>Email</dt>
               <dd>{profile.email || '—'}</dd>
             </div>
             <div>
-              <dt>
-                <Phone size={14} aria-hidden />
-                Phone
-              </dt>
+              <dt>Phone</dt>
               <dd>{profile.phone ? formatRwandaPhoneDisplay(profile.phone) : '—'}</dd>
             </div>
           </dl>
         </article>
 
-        <article className="card account-card">
-          <div className="account-card__head">
+        <article className="card account-panel">
+          <div className="account-panel__head">
             <Building2 size={18} />
-            <h3>Location & identity</h3>
+            <h3>{isBank ? 'Institution' : 'Identity'}</h3>
           </div>
           <dl className="account-details">
             <div>
-              <dt>
-                <MapPin size={14} aria-hidden />
-                Location
-              </dt>
+              <dt>Portal role</dt>
+              <dd>{roleLabel}</dd>
+            </div>
+            <div>
+              <dt>Institution</dt>
+              <dd>{profile.institution || (isBank ? 'Bank partner' : '—')}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
               <dd>{profile.location || '—'}</dd>
             </div>
             <div>
               <dt>National ID</dt>
               <dd>{profile.nationalId || '—'}</dd>
             </div>
-            <div>
-              <dt>Portal role</dt>
-              <dd>{roleLabel}</dd>
-            </div>
           </dl>
         </article>
 
-        <article className="card account-card">
-          <div className="account-card__head">
-            <Shield size={18} />
+        <article className="card account-panel account-panel--wide">
+          <div className="account-panel__head">
+            <ShieldCheck size={18} />
             <h3>Security</h3>
           </div>
           <ul className="account-security-list">
             <li>
-              <span>Secure session</span>
+              <span>
+                <LockKeyhole size={15} aria-hidden />
+                Secure session
+              </span>
               <StatusBadge value="Active" />
             </li>
             <li>
-              <span>Two-factor auth</span>
-              <span className="muted">Coming soon</span>
+              <span>
+                <ShieldCheck size={15} aria-hidden />
+                Email verification
+              </span>
+              <StatusBadge value={profile.emailVerified ? 'Verified' : 'Pending'} />
             </li>
             <li>
               <span>Password</span>
