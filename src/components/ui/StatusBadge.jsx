@@ -1,16 +1,40 @@
 function StatusBadge({ value }) {
-  const normalized = String(value || '').toLowerCase()
+  const normalized = String(value || '').toLowerCase().trim()
 
-  const toneClass =
-    normalized.includes('approve') || normalized.includes('success') || normalized.includes('active')
-      ? 'status-success'
-      : normalized.includes('reject') || normalized.includes('alert')
-        ? 'status-danger'
-        : normalized.includes('pending') || normalized.includes('moderate')
-          ? 'status-warning'
-          : 'status-neutral'
+  let toneClass = 'status-neutral'
+  let label = value
 
-  return <span className={`status-badge ${toneClass}`}>{value}</span>
+  if (
+    normalized === 'low' ||
+    normalized.includes('approve') ||
+    normalized.includes('success') ||
+    normalized.includes('active') ||
+    normalized.includes('disburs') ||
+    normalized.includes('repaid')
+  ) {
+    toneClass = 'status-success'
+  } else if (
+    normalized === 'high' ||
+    normalized.includes('reject') ||
+    normalized.includes('alert') ||
+    normalized.includes('danger') ||
+    normalized.includes('overdue')
+  ) {
+    toneClass = 'status-danger'
+  } else if (
+    normalized === 'medium' ||
+    normalized.includes('pending') ||
+    normalized.includes('moderate') ||
+    normalized.includes('warn')
+  ) {
+    toneClass = 'status-warning'
+  }
+
+  if (normalized === 'high' || normalized === 'medium' || normalized === 'low') {
+    label = normalized.charAt(0).toUpperCase() + normalized.slice(1)
+  }
+
+  return <span className={`status-badge ${toneClass}`}>{label || '—'}</span>
 }
 
 export default StatusBadge

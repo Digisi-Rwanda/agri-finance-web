@@ -762,7 +762,7 @@ button.secondary {
 }
 
 .loan-mobile-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e1e3de;
   border-radius: 12px;
   padding: 0.85rem;
   background: #fff;
@@ -778,8 +778,16 @@ button.secondary {
 }
 
 .loan-mobile-card__head strong {
+  display: block;
   font-size: 0.98rem;
-  color: #0f172a;
+  color: #191c1a;
+}
+
+.loan-mobile-card__head small {
+  display: block;
+  color: #717a6d;
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
 }
 
 .loan-mobile-card__meta {
@@ -787,7 +795,7 @@ button.secondary {
   grid-template-columns: 1fr 1fr;
   gap: 0.45rem 0.75rem;
   font-size: 0.86rem;
-  color: #475569;
+  color: #41493e;
 }
 
 .loan-mobile-card__meta span {
@@ -795,19 +803,22 @@ button.secondary {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #717a6d;
   margin-bottom: 0.15rem;
 }
 
 .loan-mobile-card__actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.25rem;
 }
 
-.loan-mobile-card__actions button {
-  width: 100%;
+.loan-mobile-card__actions button,
+.loan-mobile-card__actions .btn-view {
+  flex: 1 1 auto;
+  min-width: calc(50% - 0.25rem);
+  justify-content: center;
 }
 
 .sidebar-backdrop {
@@ -1374,9 +1385,170 @@ button.secondary {
   gap: 0.1rem;
 }
 
+.farmer-directory-page .table-shell > .table-scroll {
+  padding: 0;
+}
+
+.farmer-directory-page .filters {
+  display: block;
+  margin: 0.75rem 0 1rem;
+}
+
+.farmer-filters {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.farmer-filters__search {
+  max-width: 420px;
+}
+
+.farmer-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filter-chip {
+  border: 1px solid #c0c9bb;
+  background: #ffffff;
+  color: #41493e;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filter-chip:hover {
+  border-color: #00450d;
+  color: #00450d;
+  background: #f0f7f1;
+}
+
+.filter-chip--active {
+  background: #00450d;
+  border-color: #00450d;
+  color: #ffffff;
+}
+
+.farmer-filters__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.farmer-filters__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 38px;
+  white-space: nowrap;
+}
+
+.loan-directory-page .table-shell > .table-scroll {
+  padding: 0;
+}
+
+.loan-directory-page .filters {
+  display: block;
+  margin: 0.75rem 0 1rem;
+}
+
+.loan-filters {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.loan-filters__search {
+  max-width: 420px;
+}
+
+.loan-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.loan-filters__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.loan-filters__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 38px;
+  white-space: nowrap;
+}
+
+.loan-amount-cell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.loan-purpose-cell {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-pill--good {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.score-pill--mid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.score-pill--low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.score-pill--muted {
+  background: #ecefea;
+  color: #717a6d;
+}
+
+.farmer-location-cell {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .farmer-directory-alert {
   margin-bottom: 1rem;
   border-left: 4px solid #f59e0b;
+}
+
+.dash-alert {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
 }
 
 .farmer-mobile-list {
@@ -1384,7 +1556,7 @@ button.secondary {
 }
 
 .farmer-mobile-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e1e3de;
   border-radius: 12px;
   padding: 0.85rem;
   background: #fff;
@@ -1401,11 +1573,11 @@ button.secondary {
 .farmer-mobile-card__head strong {
   display: block;
   font-size: 0.98rem;
-  color: #0f172a;
+  color: #191c1a;
 }
 
 .farmer-mobile-card__head small {
-  color: #94a3b8;
+  color: #717a6d;
   font-size: 0.78rem;
 }
 
@@ -1414,7 +1586,7 @@ button.secondary {
   grid-template-columns: 1fr 1fr;
   gap: 0.45rem 0.75rem;
   font-size: 0.86rem;
-  color: #475569;
+  color: #41493e;
   margin-bottom: 0.35rem;
 }
 
@@ -1423,8 +1595,38 @@ button.secondary {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #717a6d;
   margin-bottom: 0.15rem;
+}
+
+@media (max-width: 960px) {
+  .farmer-filters__row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .farmer-filters__clear {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .loan-filters__row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .loan-filters__clear {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .farmer-filters__row {
+    grid-template-columns: 1fr;
+  }
+
+  .loan-filters__row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .farmer-profile-hero {

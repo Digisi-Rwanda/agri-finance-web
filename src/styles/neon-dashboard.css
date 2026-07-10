@@ -659,3 +659,77 @@
   color: var(--neon-cyan);
   box-shadow: none;
 }
+
+.neon-dashboard .filter-chip {
+  background: #252b26;
+  border-color: var(--neon-border);
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .filter-chip:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  background: rgba(110, 231, 168, 0.08);
+}
+
+.neon-dashboard .filter-chip--active {
+  background: rgba(110, 231, 168, 0.18);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .score-pill--good {
+  background: rgba(110, 231, 168, 0.16);
+  color: #6ee7a8;
+}
+
+.neon-dashboard .score-pill--mid {
+  background: rgba(251, 191, 36, 0.14);
+  color: #fbbf24;
+}
+
+.neon-dashboard .score-pill--low {
+  background: rgba(248, 113, 113, 0.14);
+  color: #f87171;
+}
+
+.neon-dashboard .score-pill--muted {
+  background: #252b26;
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .farmer-mobile-card {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .farmer-mobile-card__head strong {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .farmer-mobile-card__head small,
+.neon-dashboard .farmer-mobile-card__meta span {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .farmer-mobile-card__meta {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .loan-mobile-card {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .loan-mobile-card__head strong {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .loan-mobile-card__head small,
+.neon-dashboard .loan-mobile-card__meta span {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .loan-mobile-card__meta {
+  color: var(--neon-text);
+}

@@ -13,6 +13,8 @@ const toDisplayStatus = (status) => {
   if (upper === 'APPROVED') return 'Approved'
   if (upper === 'REJECTED') return 'Rejected'
   if (upper === 'PENDING') return 'Pending'
+  if (upper === 'DISBURSED') return 'Disbursed'
+  if (upper === 'REPAID') return 'Repaid'
   return status
 }
 
@@ -30,7 +32,13 @@ export const getLoans = async () => {
   const scoreEntries = await Promise.allSettled(
     farmerIds.map(async (farmerId) => {
       const response = await apiClient.get(`/credit-scores/farmer/${farmerId}/latest`)
-      return [farmerId, Number(response.data?.score || 0)]
+      return [
+        farmerId,
+        {
+          score: Number(response.data?.score || 0),
+          riskLevel: String(response.data?.riskLevel || '').toUpperCase() || null,
+        },
+      ]
     }),
   )
 
@@ -40,15 +48,20 @@ export const getLoans = async () => {
       .map((entry) => entry.value),
   )
 
-  return loanResponse.data.map((loan) => ({
-    id: loan.loanId,
-    farmerId: loan.farmerId,
-    farmer: farmersById[loan.farmerId]?.fullName || `Farmer #${loan.farmerId}`,
-    amount: Number(loan.amount || 0),
-    score: Number(scoresByFarmerId[loan.farmerId] || 0),
-    status: toDisplayStatus(loan.status),
-    purpose: loan.loanPurpose || 'General',
-  }))
+  return loanResponse.data.map((loan) => {
+    const insight = scoresByFarmerId[loan.farmerId] || {}
+    return {
+      id: loan.loanId,
+      farmerId: loan.farmerId,
+      farmer: farmersById[loan.farmerId]?.fullName || `Farmer #${loan.farmerId}`,
+      amount: Number(loan.amount || 0),
+      score: Number(insight.score || 0),
+      riskLevel: insight.riskLevel || null,
+      status: toDisplayStatus(loan.status),
+      purpose: loan.loanPurpose || 'General',
+      createdAt: loan.createdAt || loan.applicationDate || null,
+    }
+  })
 }
 
 export const updateLoanStatus = async (loanId, status) => {
@@ -59,6 +72,6 @@ export const updateLoanStatus = async (loanId, status) => {
     farmerId: response.data.farmerId,
     amount: Number(response.data.amount || 0),
     score: Number(response.data.creditScore || 0),
-    status: response.data.status || status,
+    status: toDisplayStatus(response.data.status || status),
   }
 }
