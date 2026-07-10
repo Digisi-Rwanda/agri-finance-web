@@ -733,3 +733,54 @@
 .neon-dashboard .loan-mobile-card__meta {
   color: var(--neon-text);
 }
+
+.neon-dashboard .farmer-profile-hero {
+  background: linear-gradient(135deg, #141a14 0%, var(--neon-card) 55%);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .farmer-profile-hero h2 {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .farmer-profile-hero__id,
+.neon-dashboard .farmer-profile-member,
+.neon-dashboard .farmer-profile-score small,
+.neon-dashboard .farmer-profile-contact li,
+.neon-dashboard .farmer-profile-consents > div {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .farmer-profile-contact a {
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .farmer-profile-score {
+  background: #1a211a;
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .farmer-profile-score > span {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .detail-tab {
+  background: #252b26;
+  border-color: var(--neon-border);
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .detail-tab:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .detail-tab.active {
+  background: rgba(110, 231, 168, 0.18);
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .detail-tab__count {
+  background: rgba(255, 255, 255, 0.08);
+}
