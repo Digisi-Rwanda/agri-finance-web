@@ -12,6 +12,7 @@ import { toast } from 'react-toastify'
 import { getNotifications } from '../services/notificationService'
 
 const READ_KEY = 'agri_finance_notification_read'
+
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'unread', label: 'Unread' },
@@ -65,11 +66,7 @@ function NotificationsPage() {
   }, [])
 
   const enriched = useMemo(
-    () =>
-      items.map((item) => ({
-        ...item,
-        read: readIds.has(item.id),
-      })),
+    () => items.map((item) => ({ ...item, read: readIds.has(item.id) })),
     [items, readIds],
   )
 
@@ -182,7 +179,7 @@ function NotificationsPage() {
           <p>
             {enriched.length === 0
               ? 'Loan decisions and system alerts will appear here.'
-              : 'Try another filter or mark items unread by refreshing after new activity.'}
+              : 'Try another filter to see more alerts.'}
           </p>
         </article>
       ) : (
@@ -201,13 +198,17 @@ function NotificationsPage() {
                   className="notification-item__main"
                   onClick={() => openItem(item)}
                 >
-                  <span className={`notification-item__icon notification-item__icon--${item.tone || 'neutral'}`}>
+                  <span
+                    className={`notification-item__icon notification-item__icon--${item.tone || 'neutral'}`}
+                  >
                     <Icon size={18} />
                   </span>
                   <div className="notification-item__body">
                     <div className="notification-item__top">
                       <h3 className="notification-item__title">{item.title}</h3>
-                      {!item.read ? <span className="notification-item__dot" aria-label="Unread" /> : null}
+                      {!item.read ? (
+                        <span className="notification-item__dot" aria-label="Unread" />
+                      ) : null}
                     </div>
                     <p className="notification-item__message">{item.message}</p>
                     {item.timeLabel ? (
