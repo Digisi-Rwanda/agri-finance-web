@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   ChevronDown,
+  Contact,
   CreditCard,
   Home,
   Landmark,
@@ -35,9 +36,15 @@ const navSectionsByRole = {
       id: 'operations',
       title: 'Operations',
       items: [
-        { to: '/farmer', label: 'Farmers', icon: UserRound },
+        { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
         { to: '/loans', label: 'Loans', icon: Landmark },
         { to: '/payments', label: 'Payments', icon: CreditCard },
+        {
+          to: '/farmer/profile',
+          label: 'Farmer Profile',
+          icon: Contact,
+          isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
+        },
       ],
     },
   ],
@@ -68,9 +75,15 @@ const navSectionsByRole = {
       id: 'operations',
       title: 'Operations',
       items: [
-        { to: '/farmer', label: 'Farmers', icon: UserRound },
+        { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
         { to: '/loans', label: 'Loans', icon: Landmark },
         { to: '/payments', label: 'Payments', icon: CreditCard },
+        {
+          to: '/farmer/profile',
+          label: 'Farmer Profile',
+          icon: Contact,
+          isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
+        },
         { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
       ],
     },
@@ -124,7 +137,8 @@ const SEARCH_CONFIG = {
 }
 
 function getPageTitle(pathname) {
-  if (pathname.startsWith('/farmer/')) return 'Farmer Profile'
+  if (pathname.startsWith('/farmer/') && pathname !== '/farmer/profile') return 'Farmer Profile'
+  if (pathname === '/farmer/profile') return 'Farmer Profile'
   return PAGE_TITLES[pathname] || 'Portal'
 }
 
@@ -166,10 +180,16 @@ function getSearchConfig(pathname) {
 
 function sectionContainsPath(section, pathname) {
   return section.items.some((item) => {
+    if (typeof item.isActivePath === 'function') return item.isActivePath(pathname)
     if (item.end) return pathname === item.to
     if (item.to === '/') return pathname === '/'
     return pathname === item.to || pathname.startsWith(`${item.to}/`)
   })
+}
+
+function isNavItemActive(item, pathname, isActive) {
+  if (typeof item.isActivePath === 'function') return item.isActivePath(pathname)
+  return isActive
 }
 
 function defaultSectionOpen(section, pathname) {
@@ -308,11 +328,15 @@ function MainLayout() {
                   <div className="nav-dropdown__panel">
                     {section.items.map((item) => (
                       <NavLink
-                        key={item.to}
+                        key={`${item.label}-${item.to}`}
                         to={item.to}
                         end={item.end}
                         onClick={() => setMenuOpen(false)}
-                        className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                        className={({ isActive }) =>
+                          isNavItemActive(item, location.pathname, isActive)
+                            ? 'nav-link active'
+                            : 'nav-link'
+                        }
                       >
                         <item.icon size={16} />
                         {item.label}

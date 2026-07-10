@@ -5,6 +5,7 @@ import AuditLogsPage from '../pages/AuditLogsPage'
 import ConsentPage from '../pages/ConsentPage'
 import FarmerAnalysisPage from '../pages/FarmerAnalysisPage'
 import FarmerAnalysisEntryPage from '../pages/FarmerAnalysisEntryPage'
+import FarmerProfileRedirect from '../pages/FarmerProfileRedirect'
 import InsuranceManagementPage from '../pages/InsuranceManagementPage'
 import InsurerDashboardPage from '../pages/InsurerDashboardPage'
 import LoginPage from '../pages/LoginPage'
@@ -51,6 +52,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
               <FarmerAnalysisEntryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="farmer/profile"
+          element={
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+              <FarmerProfileRedirect />
             </ProtectedRoute>
           }
         />

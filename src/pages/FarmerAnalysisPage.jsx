@@ -31,6 +31,7 @@ import {
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportFarmerAnalysisReport } from '../utils/exportPdf'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
+import { rememberLastFarmerId } from './FarmerProfileRedirect'
 
 const PAGE_SIZE = 10
 
@@ -152,6 +153,8 @@ function FarmerAnalysisPage() {
         setLoading(false)
         return
       }
+
+      rememberLastFarmerId(normalizedId)
 
       try {
         setLoading(true)
