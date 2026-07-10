@@ -46,24 +46,41 @@
 }
 
 .neon-dashboard .nav-link {
-  color: #b8c4ae;
+  color: #d7ddd2;
   text-transform: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
   letter-spacing: normal;
   font-weight: 500;
 }
 
 .neon-dashboard .nav-link:hover {
-  background: rgba(110, 231, 168, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
 
 .neon-dashboard .nav-link.active {
-  background: rgba(110, 231, 168, 0.14);
-  color: var(--neon-cyan);
+  background: transparent;
+  color: #ffffff;
   border: 0;
-  box-shadow: inset 3px 0 0 var(--neon-cyan);
-  font-weight: 600;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.neon-dashboard .sidebar-more__menu {
+  background: #151a16;
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .sidebar-more__item {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .nav-avatar {
+  background: #252b26;
+}
+
+.neon-dashboard .nav-avatar--active {
+  border-color: #ffffff;
 }
 
 .neon-dashboard .content-shell {

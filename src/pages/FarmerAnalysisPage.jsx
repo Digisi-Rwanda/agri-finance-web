@@ -177,6 +177,7 @@ function FarmerAnalysisPage() {
         }
 
         setFarmer(farmerValue)
+        rememberLastFarmerId(normalizedId, farmerValue)
 
         const [
           farmsResult,

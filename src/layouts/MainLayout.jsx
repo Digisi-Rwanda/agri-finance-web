@@ -8,6 +8,7 @@ import {
   Landmark,
   LogOut,
   Menu,
+  MoreHorizontal,
   ScrollText,
   Search,
   Settings,
@@ -23,94 +24,47 @@ import { clearSession, getCurrentUser, hydrateSessionUser } from '../services/au
 import ThemeSwitch from '../components/layout/ThemeSwitch'
 import { PortalThemeContext } from '../context/PortalThemeContext'
 import { getHomePathForRole, getUserInitials, ROLE_LABELS } from '../utils/roles'
+import { getLastFarmerMeta } from '../pages/FarmerProfileRedirect'
 
-const navSectionsByRole = {
+const navItemsByRole = {
   BANK: [
+    { to: '/', label: 'Home', icon: Home, end: true },
+    { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
+    { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/payments', label: 'Payments', icon: CreditCard },
     {
-      id: 'dashboard',
-      title: 'Dashboard',
-      single: true,
-      items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
-    },
-    {
-      id: 'operations',
-      title: 'Operations',
-      items: [
-        { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
-        { to: '/loans', label: 'Loans', icon: Landmark },
-        { to: '/payments', label: 'Payments', icon: CreditCard },
-        {
-          to: '/farmer/profile',
-          label: 'Farmer Profile',
-          icon: Contact,
-          isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
-        },
-      ],
+      to: '/farmer/profile',
+      label: 'Farmer Profile',
+      icon: Contact,
+      profile: true,
+      isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
     },
   ],
   INSURER: [
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      single: true,
-      items: [{ to: '/insurer', label: 'Dashboard', icon: Home, end: true }],
-    },
-    {
-      id: 'operations',
-      title: 'Operations',
-      items: [
-        { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-        { to: '/payments', label: 'Payments', icon: CreditCard },
-      ],
-    },
+    { to: '/insurer', label: 'Home', icon: Home, end: true },
+    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
+    { to: '/payments', label: 'Payments', icon: CreditCard },
   ],
   ADMIN: [
+    { to: '/', label: 'Home', icon: Home, end: true },
+    { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
+    { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/payments', label: 'Payments', icon: CreditCard },
+    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     {
-      id: 'dashboard',
-      title: 'Dashboard',
-      single: true,
-      items: [{ to: '/', label: 'Dashboard', icon: Home, end: true }],
+      to: '/farmer/profile',
+      label: 'Farmer Profile',
+      icon: Contact,
+      profile: true,
+      isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
     },
-    {
-      id: 'operations',
-      title: 'Operations',
-      items: [
-        { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
-        { to: '/loans', label: 'Loans', icon: Landmark },
-        { to: '/payments', label: 'Payments', icon: CreditCard },
-        {
-          to: '/farmer/profile',
-          label: 'Farmer Profile',
-          icon: Contact,
-          isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
-        },
-        { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-      ],
-    },
-    {
-      id: 'system',
-      title: 'System',
-      items: [
-        { to: '/admin', label: 'Users', icon: Users },
-        { to: '/audit', label: 'Audit Logs', icon: ScrollText },
-      ],
-    },
+    { to: '/admin', label: 'Users', icon: Users },
+    { to: '/audit', label: 'Audit Logs', icon: ScrollText },
   ],
   FARMER: [
-    {
-      id: 'dashboard',
-      title: 'Dashboard',
-      single: true,
-      items: [{ to: '/payments', label: 'Dashboard', icon: Home, end: true }],
-    },
-    {
-      id: 'account',
-      title: 'Account',
-      items: [
-        { to: '/profile', label: 'My profile', icon: User },
-        { to: '/settings', label: 'Settings', icon: Settings },
-      ],
-    },
+    { to: '/payments', label: 'Home', icon: Home, end: true },
+    { to: '/profile', label: 'Profile', icon: User },
+    { to: '/settings', label: 'Settings', icon: Settings },
   ],
 }
 
@@ -178,47 +132,36 @@ function getSearchConfig(pathname) {
   return SEARCH_CONFIG.default
 }
 
-function sectionContainsPath(section, pathname) {
-  return section.items.some((item) => {
-    if (typeof item.isActivePath === 'function') return item.isActivePath(pathname)
-    if (item.end) return pathname === item.to
-    if (item.to === '/') return pathname === '/'
-    return pathname === item.to || pathname.startsWith(`${item.to}/`)
-  })
-}
-
 function isNavItemActive(item, pathname, isActive) {
   if (typeof item.isActivePath === 'function') return item.isActivePath(pathname)
   return isActive
-}
-
-function defaultSectionOpen(section, pathname) {
-  return sectionContainsPath(section, pathname) || section.id === 'operations'
 }
 
 function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const profileRef = useRef(null)
+  const moreRef = useRef(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [menuOverrides, setMenuOverrides] = useState({})
+  const [moreOpen, setMoreOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [routePath, setRoutePath] = useState(location.pathname)
+  const [lastFarmer, setLastFarmer] = useState(() => getLastFarmerMeta())
 
-  // Adjust UI state during render when the route changes (avoids setState-in-effect).
   if (location.pathname !== routePath) {
     setRoutePath(location.pathname)
     setMenuOpen(false)
     setProfileOpen(false)
-    setMenuOverrides({})
+    setMoreOpen(false)
+    setLastFarmer(getLastFarmerMeta())
   }
 
   const currentRole = getCurrentUser()?.role || 'BANK'
-  const navSections = navSectionsByRole[currentRole] || navSectionsByRole.BANK
+  const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
   const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
   const user = getCurrentUser()
   const userInitials = getUserInitials(user)
@@ -232,11 +175,6 @@ function MainLayout() {
   const searchConfig = useMemo(() => getSearchConfig(location.pathname), [location.pathname])
   const settingsPath = '/settings'
 
-  const isSectionOpen = (section) => {
-    if (menuOverrides[section.id] !== undefined) return menuOverrides[section.id]
-    return defaultSectionOpen(section, location.pathname)
-  }
-
   const handleSearchSubmit = (event) => {
     event.preventDefault()
     const query = searchQuery.trim()
@@ -247,17 +185,13 @@ function MainLayout() {
 
   const handleLogout = () => {
     setProfileOpen(false)
+    setMoreOpen(false)
     setShowLogoutModal(true)
   }
 
   const confirmLogout = () => {
     clearSession()
     navigate('/login', { replace: true })
-  }
-
-  const toggleMenu = (section) => {
-    const currentlyOpen = isSectionOpen(section)
-    setMenuOverrides((prev) => ({ ...prev, [section.id]: !currentlyOpen }))
   }
 
   useEffect(() => {
@@ -271,249 +205,277 @@ function MainLayout() {
 
   useEffect(() => {
     const onPointerDown = (event) => {
-      if (!profileRef.current?.contains(event.target)) {
-        setProfileOpen(false)
-      }
+      if (!profileRef.current?.contains(event.target)) setProfileOpen(false)
+      if (!moreRef.current?.contains(event.target)) setMoreOpen(false)
     }
     document.addEventListener('mousedown', onPointerDown)
     return () => document.removeEventListener('mousedown', onPointerDown)
   }, [])
 
   const shellThemeClass = darkMode ? 'neon-dashboard' : 'portal-light'
+  const farmerInitials = (lastFarmer?.name || 'F')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('')
 
   return (
     <PortalThemeContext.Provider value={{ isDark: darkMode }}>
-    <div className={`app-shell ${shellThemeClass}`}>
-      <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
-          Agri Trust
-        </Link>
-        <span className="brand-sub">Institutional portal</span>
-        <nav className="sidebar-nav">
-          {navSections.map((section) => {
-            if (section.single) {
-              const item = section.items[0]
+      <div className={`app-shell ${shellThemeClass}`}>
+        <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
+          <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
+            Agri Trust
+          </Link>
+
+          <nav className="sidebar-nav" aria-label="Main">
+            {navItems.map((item) => {
+              const active = isNavItemActive(item, location.pathname, false)
               return (
                 <NavLink
-                  key={section.id}
+                  key={`${item.label}-${item.to}`}
                   to={item.to}
                   end={item.end}
                   onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                  className={({ isActive }) =>
+                    `nav-link nav-link--flat${
+                      isNavItemActive(item, location.pathname, isActive) ? ' active' : ''
+                    }${item.profile ? ' nav-link--profile' : ''}`
+                  }
                 >
-                  <item.icon size={16} />
-                  {item.label}
-                </NavLink>
-              )
-            }
-
-            const isOpen = isSectionOpen(section)
-            const sectionActive = sectionContainsPath(section, location.pathname)
-
-            return (
-              <div
-                className={`nav-dropdown${isOpen ? ' open' : ''}${sectionActive ? ' has-active' : ''}`}
-                key={section.id}
-              >
-                <button
-                  type="button"
-                  className="nav-dropdown__toggle"
-                  onClick={() => toggleMenu(section)}
-                  aria-expanded={isOpen}
-                >
-                  <span>{section.title}</span>
-                  <ChevronDown size={15} className="nav-dropdown__chevron" aria-hidden />
-                </button>
-                {isOpen ? (
-                  <div className="nav-dropdown__panel">
-                    {section.items.map((item) => (
-                      <NavLink
-                        key={`${item.label}-${item.to}`}
-                        to={item.to}
-                        end={item.end}
-                        onClick={() => setMenuOpen(false)}
-                        className={({ isActive }) =>
-                          isNavItemActive(item, location.pathname, isActive)
-                            ? 'nav-link active'
-                            : 'nav-link'
-                        }
-                      >
-                        <item.icon size={16} />
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            )
-          })}
-        </nav>
-      </aside>
-
-      {menuOpen ? (
-        <button
-          type="button"
-          className="sidebar-backdrop"
-          aria-label="Close menu"
-          onClick={() => setMenuOpen(false)}
-        />
-      ) : null}
-
-      <div className="content-shell">
-        <header className="topbar">
-          <div className="topbar__start">
-            <button
-              type="button"
-              className="topbar-icon mobile-only"
-              onClick={() => setMenuOpen((prev) => !prev)}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {menuOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-            <div className="topbar__heading">
-              <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
-                {breadcrumbs.map((crumb, index) => {
-                  const isLast = index === breadcrumbs.length - 1
-                  return (
-                    <span key={`${crumb.label}-${index}`} className="topbar-breadcrumb__item">
-                      {index > 0 ? <span className="topbar-breadcrumb__sep">›</span> : null}
-                      {crumb.to && !isLast ? (
-                        <Link to={crumb.to}>{crumb.label}</Link>
+                  {item.profile ? (
+                    <span className={`nav-avatar${active || location.pathname.startsWith('/farmer/') ? ' nav-avatar--active' : ''}`}>
+                      {lastFarmer?.photo ? (
+                        <img src={lastFarmer.photo} alt="" />
                       ) : (
-                        <span aria-current={isLast ? 'page' : undefined}>{crumb.label}</span>
+                        <span>{farmerInitials}</span>
                       )}
                     </span>
-                  )
-                })}
-              </nav>
-              <h1 className="topbar__title">{pageTitle}</h1>
-            </div>
+                  ) : (
+                    <item.icon size={24} strokeWidth={1.75} />
+                  )}
+                  <span className="nav-link__label">{item.label}</span>
+                </NavLink>
+              )
+            })}
+          </nav>
+
+          <div className="sidebar-more" ref={moreRef}>
+            <button
+              type="button"
+              className={`nav-link nav-link--flat nav-link--button${moreOpen ? ' active' : ''}`}
+              onClick={() => setMoreOpen((prev) => !prev)}
+              aria-expanded={moreOpen}
+            >
+              <MoreHorizontal size={24} strokeWidth={1.75} />
+              <span className="nav-link__label">More</span>
+            </button>
+            {moreOpen ? (
+              <div className="sidebar-more__menu" role="menu">
+                <button
+                  type="button"
+                  className="sidebar-more__item"
+                  role="menuitem"
+                  onClick={() => {
+                    setMoreOpen(false)
+                    setMenuOpen(false)
+                    navigate('/profile')
+                  }}
+                >
+                  <User size={16} />
+                  Account
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-more__item"
+                  role="menuitem"
+                  onClick={() => {
+                    setMoreOpen(false)
+                    setMenuOpen(false)
+                    navigate(settingsPath)
+                  }}
+                >
+                  <Settings size={16} />
+                  Settings
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-more__item sidebar-more__item--danger"
+                  role="menuitem"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            ) : null}
           </div>
+        </aside>
 
-          {canSearch ? (
-            <form className="topbar__search" onSubmit={handleSearchSubmit}>
-              <Search size={14} className="topbar__search-icon" aria-hidden />
-              <input
-                type="search"
-                placeholder={searchConfig.placeholder}
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                aria-label={searchConfig.label}
-              />
-            </form>
-          ) : (
-            <div className="topbar__search topbar__search--placeholder" aria-hidden />
-          )}
+        {menuOpen ? (
+          <button
+            type="button"
+            className="sidebar-backdrop"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+          />
+        ) : null}
 
-          <div className="topbar__end">
-            <div className="topbar__tools">
-              <ThemeSwitch isDark={darkMode} onChange={setDarkMode} />
+        <div className="content-shell">
+          <header className="topbar">
+            <div className="topbar__start">
               <button
                 type="button"
-                className="topbar-icon"
-                onClick={() => navigate('/notifications')}
-                aria-label="Notifications"
-                title="Notifications"
+                className="topbar-icon mobile-only"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               >
-                <Bell size={16} />
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
+              <div className="topbar__heading">
+                <nav className="topbar-breadcrumb" aria-label="Breadcrumb">
+                  {breadcrumbs.map((crumb, index) => {
+                    const isLast = index === breadcrumbs.length - 1
+                    return (
+                      <span key={`${crumb.label}-${index}`} className="topbar-breadcrumb__item">
+                        {index > 0 ? <span className="topbar-breadcrumb__sep">›</span> : null}
+                        {crumb.to && !isLast ? (
+                          <Link to={crumb.to}>{crumb.label}</Link>
+                        ) : (
+                          <span aria-current={isLast ? 'page' : undefined}>{crumb.label}</span>
+                        )}
+                      </span>
+                    )
+                  })}
+                </nav>
+                <h1 className="topbar__title">{pageTitle}</h1>
+              </div>
             </div>
 
-            <div className={`topbar__profile-menu${profileOpen ? ' open' : ''}`} ref={profileRef}>
-              <button
-                type="button"
-                className="topbar-profile-trigger"
-                onClick={() => setProfileOpen((prev) => !prev)}
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-              >
-                <span className="topbar-avatar" aria-hidden>
-                  {userInitials}
-                </span>
-                <div className="topbar-user__meta">
-                  <strong>{user?.fullName || user?.username || 'User'}</strong>
-                  <small>{roleLabel}</small>
-                </div>
-                <ChevronDown size={14} className="topbar-profile-trigger__chevron" aria-hidden />
-              </button>
+            {canSearch ? (
+              <form className="topbar__search" onSubmit={handleSearchSubmit}>
+                <Search size={14} className="topbar__search-icon" aria-hidden />
+                <input
+                  type="search"
+                  placeholder={searchConfig.placeholder}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  aria-label={searchConfig.label}
+                />
+              </form>
+            ) : (
+              <div className="topbar__search topbar__search--placeholder" aria-hidden />
+            )}
 
-              {profileOpen ? (
-                <div className="profile-dropdown" role="menu">
-                  <div className="profile-dropdown__head">
+            <div className="topbar__end">
+              <div className="topbar__tools">
+                <ThemeSwitch isDark={darkMode} onChange={setDarkMode} />
+                <button
+                  type="button"
+                  className="topbar-icon"
+                  onClick={() => navigate('/notifications')}
+                  aria-label="Notifications"
+                  title="Notifications"
+                >
+                  <Bell size={16} />
+                </button>
+              </div>
+
+              <div className={`topbar__profile-menu${profileOpen ? ' open' : ''}`} ref={profileRef}>
+                <button
+                  type="button"
+                  className="topbar-profile-trigger"
+                  onClick={() => setProfileOpen((prev) => !prev)}
+                  aria-expanded={profileOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="topbar-avatar" aria-hidden>
+                    {userInitials}
+                  </span>
+                  <div className="topbar-user__meta">
                     <strong>{user?.fullName || user?.username || 'User'}</strong>
                     <small>{roleLabel}</small>
                   </div>
-                  <button
-                    type="button"
-                    className="profile-dropdown__item"
-                    role="menuitem"
-                    onClick={() => {
-                      setProfileOpen(false)
-                      navigate('/profile')
-                    }}
-                  >
-                    <User size={15} />
-                    Profile
-                  </button>
-                  <button
-                    type="button"
-                    className="profile-dropdown__item"
-                    role="menuitem"
-                    onClick={() => {
-                      setProfileOpen(false)
-                      navigate(settingsPath)
-                    }}
-                  >
-                    <Settings size={15} />
-                    Settings
-                  </button>
-                  <button
-                    type="button"
-                    className="profile-dropdown__item profile-dropdown__item--danger"
-                    role="menuitem"
-                    onClick={handleLogout}
-                  >
-                    <LogOut size={15} />
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </header>
+                  <ChevronDown size={14} className="topbar-profile-trigger__chevron" aria-hidden />
+                </button>
 
-        <main className="main-content">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </div>
-
-      {showLogoutModal && (
-        <div className="confirm-overlay" onClick={() => setShowLogoutModal(false)}>
-          <div className="confirm-card" onClick={(event) => event.stopPropagation()}>
-            <h3>Sign out?</h3>
-            <p>You will leave the institutional portal. Unsaved changes may be lost.</p>
-            <div className="confirm-actions">
-              <button type="button" className="btn-secondary" onClick={() => setShowLogoutModal(false)}>
-                Cancel
-              </button>
-              <button type="button" className="btn-danger" onClick={confirmLogout}>
-                Logout
-              </button>
+                {profileOpen ? (
+                  <div className="profile-dropdown" role="menu">
+                    <div className="profile-dropdown__head">
+                      <strong>{user?.fullName || user?.username || 'User'}</strong>
+                      <small>{roleLabel}</small>
+                    </div>
+                    <button
+                      type="button"
+                      className="profile-dropdown__item"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false)
+                        navigate('/profile')
+                      }}
+                    >
+                      <User size={15} />
+                      Profile
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-dropdown__item"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileOpen(false)
+                        navigate(settingsPath)
+                      }}
+                    >
+                      <Settings size={15} />
+                      Settings
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-dropdown__item profile-dropdown__item--danger"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={15} />
+                      Logout
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
+          </header>
+
+          <main className="main-content">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+          </main>
         </div>
-      )}
-    </div>
+
+        {showLogoutModal && (
+          <div className="confirm-overlay" onClick={() => setShowLogoutModal(false)}>
+            <div className="confirm-card" onClick={(event) => event.stopPropagation()}>
+              <h3>Sign out?</h3>
+              <p>You will leave the institutional portal. Unsaved changes may be lost.</p>
+              <div className="confirm-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowLogoutModal(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmLogout}>
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </PortalThemeContext.Provider>
   )
 }

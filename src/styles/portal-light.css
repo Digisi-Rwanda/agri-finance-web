@@ -45,7 +45,7 @@
 .portal-light .nav-link {
   color: #d6f0de;
   text-transform: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
   letter-spacing: normal;
   font-weight: 500;
 }
@@ -56,11 +56,16 @@
 }
 
 .portal-light .nav-link.active {
-  background: #0b5a18;
+  background: transparent;
   color: #ffffff;
   border: 0;
   box-shadow: none;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.portal-light .sidebar-more__menu {
+  background: #0b3d12;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .portal-light .topbar {
