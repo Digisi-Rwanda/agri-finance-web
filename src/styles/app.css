@@ -1967,6 +1967,388 @@ button.secondary {
   color: #41493e;
 }
 
+.lending-review {
+  margin: 0.35rem 0 1.15rem;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border: 1px solid #dce5d8;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(247, 251, 246, 0.95) 0%, #ffffff 36%),
+    #ffffff;
+}
+
+.lending-review__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lending-review__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f6b5c;
+}
+
+.lending-review__title {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  color: #191c1a;
+  letter-spacing: -0.01em;
+}
+
+.lending-review__subtitle {
+  margin: 0.3rem 0 0;
+  max-width: 42rem;
+  font-size: 0.88rem;
+  color: #5f6b5c;
+}
+
+.lending-review__loading {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #717a6d;
+}
+
+.lending-review__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.lending-panel {
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid #e3eadf;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.lending-panel--wide {
+  grid-column: 1 / -1;
+}
+
+.lending-panel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+}
+
+.lending-panel__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.lending-panel__icon--kyc {
+  color: #00450d;
+  background: rgba(0, 69, 13, 0.08);
+}
+
+.lending-panel__icon--score {
+  color: #1d4ed8;
+  background: rgba(29, 78, 216, 0.08);
+}
+
+.lending-panel__icon--repay {
+  color: #92400e;
+  background: rgba(146, 64, 14, 0.1);
+}
+
+.lending-panel__title {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #191c1a;
+}
+
+.lending-panel__meta {
+  margin: 0.18rem 0 0;
+  font-size: 0.8rem;
+  color: #717a6d;
+}
+
+.lending-panel__footnote {
+  margin: 0.75rem 0 0;
+  font-size: 0.74rem;
+  color: #8a9386;
+}
+
+.lending-kyc-list {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.lending-kyc-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  background: #f7faf6;
+}
+
+.lending-kyc-list li span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
+.lending-kyc-list li strong {
+  font-size: 0.82rem;
+  color: #191c1a;
+}
+
+.lending-kyc-list li small {
+  font-size: 0.75rem;
+  color: #717a6d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lending-kyc-list li.is-ok svg {
+  color: #166534;
+  margin-top: 0.1rem;
+}
+
+.lending-kyc-list li.is-missing svg {
+  color: #b45309;
+  margin-top: 0.1rem;
+}
+
+.lending-fraud__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: #f8faf7;
+  font-size: 0.8rem;
+  color: #5f6b5c;
+}
+
+.lending-fraud__summary strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  color: #191c1a;
+}
+
+.lending-flag-list,
+.lending-factor-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.lending-flag {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.lending-flag strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #191c1a;
+}
+
+.lending-flag span {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.78rem;
+  color: #5f6b5c;
+}
+
+.lending-flag em {
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lending-flag--high {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.lending-flag--mid {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.lending-flag--low {
+  background: #f8faf7;
+  border-color: #e3eadf;
+  color: #41493e;
+}
+
+.lending-insight-summary {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #41493e;
+}
+
+.lending-factor-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: #f4f7fb;
+  color: #1e3a5f;
+  font-size: 0.82rem;
+}
+
+.lending-factor-list li svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: #3b82f6;
+}
+
+.lending-empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #717a6d;
+}
+
+.lending-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lending-pill--warn {
+  color: #92400e;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+.lending-repay-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+.lending-repay-stats > div {
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: #f7faf6;
+  border: 1px solid #e8efe5;
+}
+
+.lending-repay-stats span {
+  display: block;
+  font-size: 0.72rem;
+  color: #717a6d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lending-repay-stats strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  color: #191c1a;
+}
+
+.lending-repay-tables {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.lending-repay-block h4 {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  color: #41493e;
+}
+
+.lending-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e3eadf;
+  border-radius: 10px;
+}
+
+.lending-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.lending-table th,
+.lending-table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid #eef3ea;
+  white-space: nowrap;
+}
+
+.lending-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #717a6d;
+  background: #f7faf6;
+}
+
+.lending-table tr:last-child td {
+  border-bottom: none;
+}
+
+.lending-overdue-days {
+  display: block;
+  margin-top: 0.15rem;
+  color: #b45309;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 980px) {
+  .lending-review__grid,
+  .lending-repay-tables,
+  .lending-repay-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .lending-panel--wide {
+    grid-column: auto;
+  }
+}
+
 .farmer-profile-empty {
   padding: 1.25rem;
 }
@@ -2924,6 +3306,66 @@ th {
 
 .dark .farmer-id-card__placeholder span {
   color: #86efac;
+}
+
+.dark .lending-review,
+.dark .lending-panel {
+  background: #111b2e;
+  border-color: #1f2a40;
+}
+
+.dark .lending-review {
+  background: linear-gradient(180deg, #0f1a2b 0%, #111b2e 40%);
+}
+
+.dark .lending-review__title,
+.dark .lending-panel__title,
+.dark .lending-kyc-list li strong,
+.dark .lending-fraud__summary strong,
+.dark .lending-flag strong,
+.dark .lending-repay-stats strong,
+.dark .lending-repay-block h4 {
+  color: #dbe6f5;
+}
+
+.dark .lending-review__eyebrow,
+.dark .lending-review__subtitle,
+.dark .lending-panel__meta,
+.dark .lending-empty,
+.dark .lending-kyc-list li small,
+.dark .lending-fraud__summary,
+.dark .lending-flag span,
+.dark .lending-repay-stats span,
+.dark .lending-table th,
+.dark .lending-panel__footnote {
+  color: #94a3b8;
+}
+
+.dark .lending-kyc-list li,
+.dark .lending-fraud__summary,
+.dark .lending-repay-stats > div,
+.dark .lending-table th {
+  background: #0f172a;
+  border-color: #1f2a40;
+}
+
+.dark .lending-table-wrap,
+.dark .lending-repay-stats > div {
+  border-color: #1f2a40;
+}
+
+.dark .lending-table th,
+.dark .lending-table td {
+  border-bottom-color: #1f2a40;
+}
+
+.dark .lending-insight-summary {
+  color: #cbd5e1;
+}
+
+.dark .lending-factor-list li {
+  background: #0f172a;
+  color: #bfdbfe;
 }
 
 @keyframes shimmer {

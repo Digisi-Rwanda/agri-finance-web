@@ -13,18 +13,23 @@ import {
 import { toast } from 'react-toastify'
 import { Link, useParams } from 'react-router-dom'
 import { apiClient } from '../api/client'
+import FarmerLendingReview from '../components/farmer/FarmerLendingReview'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import {
+  getCreditInsight,
   getFarmerById,
   getFarmsByFarmerId,
+  getFraudAssessment,
   getInsurancePoliciesByFarmerId,
   getLatestCreditScore,
   getLoansByFarmerId,
   getMobileMoneyByFarmerId,
   getPaymentMovementsByFarmerId,
+  getRepaymentHealth,
+  getRepaymentsByLoanId,
   getTransactionsByFarmerId,
   getYieldHistoryForFarms,
 } from '../services/farmerService'
@@ -123,6 +128,25 @@ function getFarmerPhotoUrl(farmer) {
   return `${origin}${raw.startsWith('/') ? raw : `/${raw}`}`
 }
 
+function pickHealthLoan(loans) {
+  const list = Array.isArray(loans) ? loans : []
+  const rank = (status) => {
+    const value = String(status || '').toUpperCase()
+    if (value === 'DISBURSED') return 4
+    if (value === 'APPROVED') return 3
+    if (value === 'PENDING') return 2
+    if (value === 'REPAID' || value === 'CLOSED' || value === 'COMPLETED') return 1
+    return 0
+  }
+  return [...list]
+    .filter((loan) => loan?.loanId != null)
+    .sort((a, b) => {
+      const rankDiff = rank(b.status) - rank(a.status)
+      if (rankDiff !== 0) return rankDiff
+      return Number(b.loanId || 0) - Number(a.loanId || 0)
+    })[0] || null
+}
+
 function FarmerAnalysisPage() {
   const { farmerId } = useParams()
   const [farmer, setFarmer] = useState(null)
@@ -135,6 +159,11 @@ function FarmerAnalysisPage() {
   const [creditScore, setCreditScore] = useState(null)
   const [creditRiskLevel, setCreditRiskLevel] = useState(null)
   const [loans, setLoans] = useState([])
+  const [creditInsight, setCreditInsight] = useState(null)
+  const [fraudAssessment, setFraudAssessment] = useState(null)
+  const [repayments, setRepayments] = useState([])
+  const [repaymentHealth, setRepaymentHealth] = useState(null)
+  const [lendingReviewLoading, setLendingReviewLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [activeTab, setActiveTab] = useState('farms')
@@ -158,8 +187,13 @@ function FarmerAnalysisPage() {
 
       try {
         setLoading(true)
+        setLendingReviewLoading(true)
         setLoadError('')
         setConsentStatus({ bank: null, transactions: null })
+        setCreditInsight(null)
+        setFraudAssessment(null)
+        setRepayments([])
+        setRepaymentHealth(null)
 
         let farmerValue
         try {
@@ -189,6 +223,8 @@ function FarmerAnalysisPage() {
           policiesResult,
           bankConsentResult,
           txConsentResult,
+          insightResult,
+          fraudResult,
         ] = await Promise.allSettled([
           getFarmsByFarmerId(normalizedId),
           getTransactionsByFarmerId(normalizedId),
@@ -199,6 +235,8 @@ function FarmerAnalysisPage() {
           getInsurancePoliciesByFarmerId(normalizedId),
           apiClient.get('/consents/latest', { params: { farmerId: normalizedId, dataType: 'BANK' } }),
           apiClient.get('/consents/latest', { params: { farmerId: normalizedId, dataType: 'TRANSACTIONS' } }),
+          getCreditInsight(normalizedId),
+          getFraudAssessment(normalizedId),
         ])
 
         setConsentStatus({
@@ -217,17 +255,42 @@ function FarmerAnalysisPage() {
           setYieldRecords([])
         }
 
+        const loanList = loansResult.status === 'fulfilled' ? loansResult.value || [] : []
+
         setTransactions(txnsResult.status === 'fulfilled' ? txnsResult.value || [] : [])
         setCreditScore(scoreResult.status === 'fulfilled' ? scoreResult.value?.score ?? null : null)
         setCreditRiskLevel(scoreResult.status === 'fulfilled' ? scoreResult.value?.riskLevel || null : null)
-        setLoans(loansResult.status === 'fulfilled' ? loansResult.value || [] : [])
+        setLoans(loanList)
         setPaymentMovements(paymentResult.status === 'fulfilled' ? paymentResult.value || [] : [])
         setMobileMoneyTxns(momoResult.status === 'fulfilled' ? momoResult.value || [] : [])
         setPolicies(policiesResult.status === 'fulfilled' ? policiesResult.value || [] : [])
+        setCreditInsight(insightResult.status === 'fulfilled' ? insightResult.value : null)
+        setFraudAssessment(fraudResult.status === 'fulfilled' ? fraudResult.value : null)
+
+        const healthLoan = pickHealthLoan(loanList)
+        const repaymentResults = await Promise.allSettled(
+          loanList
+            .map((loan) => loan?.loanId)
+            .filter(Boolean)
+            .map((loanId) => getRepaymentsByLoanId(loanId)),
+        )
+        const allRepayments = repaymentResults
+          .filter((result) => result.status === 'fulfilled')
+          .flatMap((result) => result.value || [])
+          .sort((a, b) => String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')))
+        setRepayments(allRepayments)
+
+        if (healthLoan?.loanId) {
+          const health = await getRepaymentHealth(healthLoan.loanId).catch(() => null)
+          setRepaymentHealth(health)
+        } else {
+          setRepaymentHealth(null)
+        }
       } catch {
         setLoadError('Failed to load farmer profile data.')
         toast.error('Failed to load farmer profile data.')
       } finally {
+        setLendingReviewLoading(false)
         setLoading(false)
       }
     }
@@ -422,13 +485,24 @@ function FarmerAnalysisPage() {
         </div>
       </div>
 
-      {(risk === 'HIGH' || pendingLoan) && (
+      {(risk === 'HIGH' || pendingLoan || normalizeRisk(fraudAssessment?.riskLevel) === 'HIGH') && (
         <div className="dash-alerts">
           {risk === 'HIGH' ? (
             <div className="dash-alert dash-alert--risk">
               <AlertCircle size={18} />
               <span>
                 <strong>High risk</strong> · score {creditScore ?? '—'}
+              </span>
+            </div>
+          ) : null}
+          {normalizeRisk(fraudAssessment?.riskLevel) === 'HIGH' ? (
+            <div className="dash-alert dash-alert--risk">
+              <AlertCircle size={18} />
+              <span>
+                <strong>Fraud alert</strong>
+                {fraudAssessment?.flags?.length
+                  ? ` · ${fraudAssessment.flags.length} flag${fraudAssessment.flags.length === 1 ? '' : 's'}`
+                  : ` · score ${fraudAssessment?.riskScore ?? '—'}`}
               </span>
             </div>
           ) : null}
@@ -467,6 +541,7 @@ function FarmerAnalysisPage() {
               <h1 className="farmer-id-card__name">{displayName}</h1>
               <p className="farmer-id-card__meta">
                 ID {farmer.farmerId}
+                {farmer.nationalId ? ` · NID ${farmer.nationalId}` : ''}
                 {farmer.location ? ` · ${farmer.location}` : ''}
                 {farmer.registrationDate ? ` · Since ${formatDateShort(farmer.registrationDate)}` : ''}
               </p>
@@ -538,6 +613,16 @@ function FarmerAnalysisPage() {
           accent="slate"
         />
       </div>
+
+      <FarmerLendingReview
+        farmer={farmer}
+        consentStatus={consentStatus}
+        creditInsight={creditInsight}
+        fraudAssessment={fraudAssessment}
+        repayments={repayments}
+        repaymentHealth={repaymentHealth}
+        loading={lendingReviewLoading}
+      />
 
       <DataTableShell
         filters={

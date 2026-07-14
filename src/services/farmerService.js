@@ -140,3 +140,29 @@ export const getInsurancePoliciesByFarmerId = async (farmerId) => {
   const response = await apiClient.get('/insurance-policies', { params: { farmerId } })
   return response.data
 }
+
+export const getCreditInsight = async (farmerId) => {
+  const response = await apiClient.get('/ai/credit-insight', {
+    params: { farmerId },
+  })
+  return response.data
+}
+
+export const getFraudAssessment = async (farmerId) => {
+  const response = await apiClient.get('/ai/fraud-assessment', {
+    params: { farmerId },
+  })
+  return response.data
+}
+
+export const getRepaymentsByLoanId = async (loanId) => {
+  const response = await apiClient.get('/repayments', {
+    params: { loanId },
+  })
+  return response.data
+}
+
+export const getRepaymentHealth = async (loanId) => {
+  const response = await apiClient.get(`/loans/${loanId}/repayment-health`)
+  return response.data
+}
