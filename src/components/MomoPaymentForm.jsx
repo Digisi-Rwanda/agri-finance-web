@@ -22,7 +22,7 @@ export default function MomoPaymentForm({ farmerId, loanId, onPaymentCreated }) 
         farmerId,
         loanId,
         amount: Number(amount),
-        currency: 'EUR',
+        currency: 'RWF',
         phoneNumber,
         payerMessage: 'Loan repayment',
         payeeNote: 'AgriFinance',
@@ -41,7 +41,7 @@ export default function MomoPaymentForm({ farmerId, loanId, onPaymentCreated }) 
   return (
     <div className="card momo-form-card">
       <h3>MTN MoMo Loan Repayment</h3>
-      <p className="muted">Enter a farmer phone number and repayment amount to trigger MTN sandbox prompt.</p>
+      <p className="muted">Enter a phone number and repayment amount in RWF to trigger the MoMo prompt.</p>
       <form onSubmit={onPay} className="momo-form-grid">
         <input
           placeholder="Phone number (+250...)"

@@ -508,6 +508,9 @@ function FarmerAnalysisPage() {
             <Download size={16} aria-hidden />
             Export
           </button>
+          <Link to={`/payments?farmerId=${farmer.farmerId}`} className="btn-secondary">
+            Payments
+          </Link>
           <Link to="/loans" className="btn-primary">
             Loans
           </Link>

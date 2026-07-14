@@ -1,13 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import MomoPaymentForm from '../components/MomoPaymentForm'
+import BankFarmerPaymentsView from '../components/payments/BankFarmerPaymentsView'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import { resolvePrimaryFarmerId } from '../services/auth'
-import { getFarmers, getLoansByFarmerId } from '../services/farmerService'
+import { getCurrentUser, resolvePrimaryFarmerId } from '../services/auth'
+import { getFarmerById, getFarmers, getLoansByFarmerId } from '../services/farmerService'
 import { fetchPaymentHistory, fetchWalletBalance } from '../services/momoPaymentService'
 import { formatRwf } from '../utils/currency'
+import { rememberLastFarmerId } from './FarmerProfileRedirect'
+
+function formatDisplayName(name) {
+  return String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
 
 export default function MomoPaymentsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const role = getCurrentUser()?.role || 'BANK'
+  const isBankViewer = role === 'BANK' || role === 'ADMIN'
+
+  const [farmers, setFarmers] = useState([])
+  const [farmerQuery, setFarmerQuery] = useState('')
+  const [selectedFarmer, setSelectedFarmer] = useState(null)
   const [farmerId, setFarmerId] = useState(null)
   const [loanId, setLoanId] = useState(null)
   const [wallet, setWallet] = useState(null)
@@ -15,7 +34,69 @@ export default function MomoPaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  const load = async () => {
+  const filteredFarmers = useMemo(() => {
+    const q = farmerQuery.trim().toLowerCase()
+    if (!q) return farmers
+    return farmers.filter((farmer) => {
+      const hay = `${farmer.fullName || ''} ${farmer.farmerId || ''} ${farmer.phone || ''} ${farmer.nationalId || ''}`.toLowerCase()
+      return hay.includes(q)
+    })
+  }, [farmers, farmerQuery])
+
+  const selectFarmer = async (id) => {
+    const normalized = Number(id)
+    if (!normalized) {
+      setSelectedFarmer(null)
+      setFarmerId(null)
+      setSearchParams({})
+      return
+    }
+    setFarmerId(normalized)
+    setSearchParams({ farmerId: String(normalized) })
+    rememberLastFarmerId(normalized)
+    try {
+      const farmer = await getFarmerById(normalized)
+      setSelectedFarmer(farmer)
+      rememberLastFarmerId(normalized, farmer)
+    } catch {
+      const fallback = farmers.find((row) => Number(row.farmerId) === normalized) || null
+      setSelectedFarmer(fallback)
+    }
+  }
+
+  useEffect(() => {
+    if (!isBankViewer) return undefined
+
+    const boot = async () => {
+      try {
+        setLoading(true)
+        setLoadError('')
+        const list = await getFarmers()
+        setFarmers(list || [])
+
+        const fromQuery = Number(searchParams.get('farmerId'))
+        const initialId =
+          fromQuery ||
+          Number(list?.[0]?.farmerId) ||
+          null
+
+        if (initialId) {
+          await selectFarmer(initialId)
+        } else {
+          setLoadError('No consented farmers available to view payment activity.')
+        }
+      } catch {
+        setLoadError('Unable to load farmers for payment overview.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    boot()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBankViewer])
+
+  const loadFarmerSelf = async () => {
     try {
       setLoading(true)
       setLoadError('')
@@ -23,8 +104,8 @@ export default function MomoPaymentsPage() {
       if (!activeFarmerId) {
         activeFarmerId = await resolvePrimaryFarmerId()
         if (!activeFarmerId) {
-          const farmers = await getFarmers()
-          activeFarmerId = farmers?.[0]?.farmerId || null
+          const farmerList = await getFarmers()
+          activeFarmerId = farmerList?.[0]?.farmerId || null
         }
         setFarmerId(activeFarmerId)
       }
@@ -54,8 +135,69 @@ export default function MomoPaymentsPage() {
   }
 
   useEffect(() => {
-    load().catch(() => {})
-  }, [])
+    if (isBankViewer) return undefined
+    loadFarmerSelf().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBankViewer])
+
+  if (isBankViewer) {
+    return (
+      <section className="dashboard-page momo-page dashboard-page--compact bank-payments-page">
+        <PageHeader
+          breadcrumb="Home › Payments"
+          title="Farmer payments"
+          subtitle="View-only access to the same payment history, MoMo ledger, eKash, and repayment schedule the farmer sees in the app."
+        />
+
+        <article className="card bank-pay-picker">
+          <div className="bank-pay-picker__row">
+            <label htmlFor="bank-pay-farmer-search">
+              Farmer
+              <input
+                id="bank-pay-farmer-search"
+                type="search"
+                placeholder="Search name, ID, phone, NID…"
+                value={farmerQuery}
+                onChange={(event) => setFarmerQuery(event.target.value)}
+              />
+            </label>
+            <label htmlFor="bank-pay-farmer-select">
+              Select
+              <select
+                id="bank-pay-farmer-select"
+                value={farmerId || ''}
+                onChange={(event) => selectFarmer(event.target.value)}
+                disabled={loading && !farmers.length}
+              >
+                <option value="">Choose farmer…</option>
+                {filteredFarmers.map((farmer) => (
+                  <option key={farmer.farmerId} value={farmer.farmerId}>
+                    {formatDisplayName(farmer.fullName) || `Farmer #${farmer.farmerId}`} · #{farmer.farmerId}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {farmerId ? (
+              <Link to={`/farmer/${farmerId}`} className="btn-secondary bank-pay-picker__profile">
+                Open profile
+              </Link>
+            ) : null}
+          </div>
+          <p className="bank-pay-picker__hint">
+            Banks can only view consented farmers. No repay or disbursement is started from this screen.
+          </p>
+        </article>
+
+        {loadError && !selectedFarmer ? (
+          <article className="card">
+            <p>{loadError}</p>
+          </article>
+        ) : null}
+
+        <BankFarmerPaymentsView farmer={selectedFarmer} />
+      </section>
+    )
+  }
 
   return (
     <section className="dashboard-page momo-page dashboard-page--compact">
@@ -66,7 +208,7 @@ export default function MomoPaymentsPage() {
 
       <div className="widgets four">
         <StatCard title="Wallet balance" value={wallet ? formatRwf(wallet.balance) : '—'} />
-        <StatCard title="Currency" value={wallet?.currency || '—'} />
+        <StatCard title="Currency" value={wallet?.currency || 'RWF'} />
         <StatCard title="Payments" value={String(history.length)} />
         <StatCard
           title="Successful"
@@ -81,7 +223,7 @@ export default function MomoPaymentsPage() {
       ) : null}
 
       <div className="dashboard-grid momo-grid">
-        <MomoPaymentForm farmerId={farmerId} loanId={loanId} onPaymentCreated={load} />
+        <MomoPaymentForm farmerId={farmerId} loanId={loanId} onPaymentCreated={loadFarmerSelf} />
         {!loanId && !loading ? (
           <p className="muted momo-form-hint">No active loan found for repayment.</p>
         ) : null}
@@ -108,7 +250,9 @@ export default function MomoPaymentsPage() {
                     <tr key={row.paymentId}>
                       <td>{row.paymentType?.replaceAll('_', ' ')}</td>
                       <td>{row.status}</td>
-                      <td>{formatRwf(row.amount)} {row.currency}</td>
+                      <td>
+                        {formatRwf(row.amount)} {row.currency || 'RWF'}
+                      </td>
                       <td>{row.phoneNumber}</td>
                     </tr>
                   ))}
