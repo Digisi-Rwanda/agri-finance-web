@@ -166,3 +166,17 @@ export const getRepaymentHealth = async (loanId) => {
   const response = await apiClient.get(`/loans/${loanId}/repayment-health`)
   return response.data
 }
+
+export const getEnhancedRiskProfile = async (farmerId, loanId) => {
+  const response = await apiClient.get('/risk/enhanced-profile', {
+    params: { farmerId, ...(loanId ? { loanId } : {}) },
+  })
+  return response.data
+}
+
+export const getWeatherRiskByFarmId = async (farmId) => {
+  const response = await apiClient.get('/weather/risk', {
+    params: { farmId },
+  })
+  return response.data
+}

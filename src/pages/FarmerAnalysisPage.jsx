@@ -20,6 +20,7 @@ import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import {
   getCreditInsight,
+  getEnhancedRiskProfile,
   getFarmerById,
   getFarmsByFarmerId,
   getFraudAssessment,
@@ -31,8 +32,10 @@ import {
   getRepaymentHealth,
   getRepaymentsByLoanId,
   getTransactionsByFarmerId,
+  getWeatherRiskByFarmId,
   getYieldHistoryForFarms,
 } from '../services/farmerService'
+import { getCurrentUser } from '../services/auth'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportFarmerAnalysisReport } from '../utils/exportPdf'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
@@ -147,6 +150,13 @@ function pickHealthLoan(loans) {
     })[0] || null
 }
 
+function pendingLoanId(loans) {
+  const pending = (Array.isArray(loans) ? loans : []).find(
+    (loan) => String(loan.status || '').toUpperCase() === 'PENDING' && loan?.loanId != null,
+  )
+  return pending?.loanId || null
+}
+
 function FarmerAnalysisPage() {
   const { farmerId } = useParams()
   const [farmer, setFarmer] = useState(null)
@@ -160,9 +170,11 @@ function FarmerAnalysisPage() {
   const [creditRiskLevel, setCreditRiskLevel] = useState(null)
   const [loans, setLoans] = useState([])
   const [creditInsight, setCreditInsight] = useState(null)
+  const [enhancedRisk, setEnhancedRisk] = useState(null)
   const [fraudAssessment, setFraudAssessment] = useState(null)
   const [repayments, setRepayments] = useState([])
   const [repaymentHealth, setRepaymentHealth] = useState(null)
+  const [weatherRisk, setWeatherRisk] = useState(null)
   const [lendingReviewLoading, setLendingReviewLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -171,7 +183,10 @@ function FarmerAnalysisPage() {
   const [consentStatus, setConsentStatus] = useState({
     bank: null,
     transactions: null,
+    satellite: null,
   })
+  const currentUser = getCurrentUser()
+  const officerName = currentUser?.fullName || currentUser?.username || currentUser?.email || 'Bank officer'
 
   useEffect(() => {
     const load = async () => {
@@ -189,11 +204,13 @@ function FarmerAnalysisPage() {
         setLoading(true)
         setLendingReviewLoading(true)
         setLoadError('')
-        setConsentStatus({ bank: null, transactions: null })
+        setConsentStatus({ bank: null, transactions: null, satellite: null })
         setCreditInsight(null)
+        setEnhancedRisk(null)
         setFraudAssessment(null)
         setRepayments([])
         setRepaymentHealth(null)
+        setWeatherRisk(null)
 
         let farmerValue
         try {
@@ -223,6 +240,7 @@ function FarmerAnalysisPage() {
           policiesResult,
           bankConsentResult,
           txConsentResult,
+          satConsentResult,
           insightResult,
           fraudResult,
         ] = await Promise.allSettled([
@@ -235,6 +253,7 @@ function FarmerAnalysisPage() {
           getInsurancePoliciesByFarmerId(normalizedId),
           apiClient.get('/consents/latest', { params: { farmerId: normalizedId, dataType: 'BANK' } }),
           apiClient.get('/consents/latest', { params: { farmerId: normalizedId, dataType: 'TRANSACTIONS' } }),
+          apiClient.get('/consents/latest', { params: { farmerId: normalizedId, dataType: 'SATELLITE' } }),
           getCreditInsight(normalizedId),
           getFraudAssessment(normalizedId),
         ])
@@ -243,10 +262,13 @@ function FarmerAnalysisPage() {
           bank: bankConsentResult.status === 'fulfilled' ? Boolean(bankConsentResult.value?.data?.granted) : null,
           transactions:
             txConsentResult.status === 'fulfilled' ? Boolean(txConsentResult.value?.data?.granted) : null,
+          satellite:
+            satConsentResult.status === 'fulfilled' ? Boolean(satConsentResult.value?.data?.granted) : null,
         })
 
+        let farmList = []
         if (farmsResult.status === 'fulfilled') {
-          const farmList = farmsResult.value || []
+          farmList = farmsResult.value || []
           setFarms(farmList)
           const yields = await getYieldHistoryForFarms(farmList).catch(() => [])
           setYieldRecords(yields)
@@ -280,12 +302,19 @@ function FarmerAnalysisPage() {
           .sort((a, b) => String(b.paymentDate || '').localeCompare(String(a.paymentDate || '')))
         setRepayments(allRepayments)
 
-        if (healthLoan?.loanId) {
-          const health = await getRepaymentHealth(healthLoan.loanId).catch(() => null)
-          setRepaymentHealth(health)
-        } else {
-          setRepaymentHealth(null)
-        }
+        const weatherFarm =
+          farmList.find((farm) => farm?.farmId != null && farm?.latitude != null && farm?.longitude != null) ||
+          farmList.find((farm) => farm?.farmId != null)
+
+        const [healthResult, enhancedResult, weatherResult] = await Promise.allSettled([
+          healthLoan?.loanId ? getRepaymentHealth(healthLoan.loanId) : Promise.resolve(null),
+          getEnhancedRiskProfile(normalizedId, healthLoan?.loanId || pendingLoanId(loanList)),
+          weatherFarm?.farmId ? getWeatherRiskByFarmId(weatherFarm.farmId) : Promise.resolve(null),
+        ])
+
+        setRepaymentHealth(healthResult.status === 'fulfilled' ? healthResult.value : null)
+        setEnhancedRisk(enhancedResult.status === 'fulfilled' ? enhancedResult.value : null)
+        setWeatherRisk(weatherResult.status === 'fulfilled' ? weatherResult.value : null)
       } catch {
         setLoadError('Failed to load farmer profile data.')
         toast.error('Failed to load farmer profile data.')
@@ -616,11 +645,21 @@ function FarmerAnalysisPage() {
 
       <FarmerLendingReview
         farmer={farmer}
+        farms={farms}
+        yieldRecords={yieldRecords}
+        loans={loans}
         consentStatus={consentStatus}
+        creditScore={creditScore}
+        creditRiskLevel={creditRiskLevel}
         creditInsight={creditInsight}
+        enhancedRisk={enhancedRisk}
         fraudAssessment={fraudAssessment}
         repayments={repayments}
         repaymentHealth={repaymentHealth}
+        weatherRisk={weatherRisk}
+        activityCount={activityCount}
+        totalAcreage={totalAcreage}
+        officerName={officerName}
         loading={lendingReviewLoading}
       />
 
