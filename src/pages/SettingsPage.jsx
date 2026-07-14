@@ -1,20 +1,10 @@
-import {
-  ArrowLeft,
-  Bell,
-  LockKeyhole,
-  Moon,
-  ShieldCheck,
-  Sun,
-  UserRound,
-} from 'lucide-react'
+import { Bell, LockKeyhole, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import StatusBadge from '../components/ui/StatusBadge'
 import { usePortalTheme } from '../context/PortalThemeContext'
 import { getCurrentUser, getProfile } from '../services/auth'
 import { getConsent, updateConsent } from '../services/consentService'
-import { ROLE_LABELS } from '../utils/roles'
 
 const NOTIFICATION_PREFS_KEY = 'agri_finance_notification_prefs'
 
@@ -52,10 +42,8 @@ function SettingToggle({ label, description, checked, onChange, disabled }) {
 function SettingsPage() {
   const currentRole = getCurrentUser()?.role || 'BANK'
   const isFarmer = currentRole === 'FARMER'
-  const isBankLike = currentRole === 'BANK' || currentRole === 'ADMIN'
   const { isDark, setIsDark } = usePortalTheme()
 
-  const [profile, setProfile] = useState(null)
   const [consent, setConsent] = useState({
     shareTransactions: false,
     shareSatelliteData: false,
@@ -68,11 +56,9 @@ function SettingsPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const profileData = await getProfile()
-        setProfile(profileData)
+        await getProfile()
         if (isFarmer) {
-          const consentData = await getConsent()
-          setConsent(consentData)
+          setConsent(await getConsent())
         }
       } catch {
         toast.error('Unable to load settings.')
@@ -97,11 +83,13 @@ function SettingsPage() {
     try {
       await updateConsent({ [key]: nextValue })
       toast.success(
-        `${key === 'shareTransactions' ? 'Transactions' : 'Satellite data'} sharing ${nextValue ? 'enabled' : 'disabled'}.`,
+        `${key === 'shareTransactions' ? 'Transactions' : 'Satellite data'} sharing ${
+          nextValue ? 'enabled' : 'disabled'
+        }.`,
       )
     } catch {
       setConsent((prev) => ({ ...prev, [key]: !nextValue }))
-      toast.error('Failed to update consent preference.')
+      toast.error('Failed to update consent.')
     } finally {
       setConsentBusy(false)
     }
@@ -135,61 +123,16 @@ function SettingsPage() {
           </nav>
           <h1>Settings</h1>
         </div>
-        <div className="account-toolbar__actions">
-          <Link to="/profile" className="btn-secondary">
-            <ArrowLeft size={16} />
-            Profile
-          </Link>
-        </div>
+        <Link to="/profile" className="btn-secondary">
+          Account
+        </Link>
       </div>
 
       <div className="settings-layout">
         <article className="card settings-panel">
           <div className="settings-panel__head">
-            <UserRound size={18} />
-            <div>
-              <h3>Account</h3>
-              <p>Sign-in details for this portal.</p>
-            </div>
-          </div>
-
-          <div className="settings-account-summary">
-            <div>
-              <small>Name</small>
-              <strong>{profile?.fullName || profile?.username || '—'}</strong>
-            </div>
-            <div>
-              <small>Email</small>
-              <strong>{profile?.email || '—'}</strong>
-            </div>
-            <div>
-              <small>Role</small>
-              <strong>{ROLE_LABELS[profile?.role] || profile?.role || '—'}</strong>
-            </div>
-            <div>
-              <small>Verification</small>
-              <StatusBadge value={profile?.emailVerified ? 'Verified' : 'Pending'} />
-            </div>
-          </div>
-
-          <div className="settings-panel__actions">
-            <Link to="/forgot-password" className="btn-secondary">
-              <LockKeyhole size={15} />
-              Change password
-            </Link>
-            <Link to="/profile" className="btn-view">
-              View full profile
-            </Link>
-          </div>
-        </article>
-
-        <article className="card settings-panel">
-          <div className="settings-panel__head">
             {isDark ? <Moon size={18} /> : <Sun size={18} />}
-            <div>
-              <h3>Appearance</h3>
-              <p>Choose light or dark for the portal.</p>
-            </div>
+            <h3>Appearance</h3>
           </div>
           <div className="settings-theme" role="group" aria-label="Theme">
             <button
@@ -214,23 +157,12 @@ function SettingsPage() {
         <article className="card settings-panel">
           <div className="settings-panel__head">
             <Bell size={18} />
-            <div>
-              <h3>Notifications</h3>
-              <p>
-                {isBankLike
-                  ? 'Alerts for lending and payment activity.'
-                  : 'Choose which alerts you receive.'}
-              </p>
-            </div>
+            <h3>Notifications</h3>
           </div>
           <div className="settings-toggle-list">
             <SettingToggle
               label="Loan updates"
-              description={
-                isBankLike
-                  ? 'New applications, approvals, and status changes.'
-                  : 'Approvals, rejections, and disbursement notices.'
-              }
+              description="Applications, approvals, and status changes."
               checked={notifications.loanUpdates}
               onChange={(value) => saveNotificationPref('loanUpdates', value)}
             />
@@ -248,7 +180,7 @@ function SettingsPage() {
             />
           </div>
           <Link to="/notifications" className="btn-view settings-panel__link">
-            Open notification inbox
+            Open inbox
           </Link>
         </article>
 
@@ -256,10 +188,7 @@ function SettingsPage() {
           <article className="card settings-panel">
             <div className="settings-panel__head">
               <LockKeyhole size={18} />
-              <div>
-                <h3>Data sharing</h3>
-                <p>Control what partners can access.</p>
-              </div>
+              <h3>Data sharing</h3>
             </div>
             <div className="settings-toggle-list">
               <SettingToggle
@@ -271,63 +200,26 @@ function SettingsPage() {
               />
               <SettingToggle
                 label="Share satellite data"
-                description="Allow insurers and lenders to use farm imagery for risk."
+                description="Allow insurers and lenders to use farm imagery."
                 checked={consent.shareSatelliteData}
                 disabled={consentBusy}
                 onChange={() => handleConsentToggle('shareSatelliteData')}
               />
             </div>
           </article>
-        ) : (
-          <article className="card settings-panel">
-            <div className="settings-panel__head">
-              <ShieldCheck size={18} />
-              <div>
-                <h3>Partner access</h3>
-                <p>How farmer data reaches your institution.</p>
-              </div>
-            </div>
-            <ul className="account-security-list">
-              <li>
-                <span>Bank consent required</span>
-                <StatusBadge value="Enforced" />
-              </li>
-              <li>
-                <span>Only consented farmers visible</span>
-                <StatusBadge value="Active" />
-              </li>
-              <li>
-                <span>Actions logged in audit trail</span>
-                <StatusBadge value="Active" />
-              </li>
-            </ul>
-          </article>
-        )}
+        ) : null}
 
         <article className="card settings-panel">
           <div className="settings-panel__head">
-            <ShieldCheck size={18} />
-            <div>
-              <h3>Security</h3>
-              <p>Protections on this account.</p>
-            </div>
+            <LockKeyhole size={18} />
+            <h3>Password</h3>
           </div>
-          <ul className="account-security-list">
-            <li>
-              <span>Encrypted API requests</span>
-              <StatusBadge value="Enabled" />
-            </li>
-            <li>
-              <span>Auto logout on session expiry</span>
-              <StatusBadge value="Enabled" />
-            </li>
-            <li>
-              <span>Password reset via email</span>
-              <Link to="/forgot-password" className="btn-view">
-                Reset
-              </Link>
-            </li>
-          </ul>
+          <div className="account-password-row">
+            <p>Change your sign-in password by email.</p>
+            <Link to="/forgot-password" className="btn-secondary">
+              Reset password
+            </Link>
+          </div>
         </article>
       </div>
     </section>

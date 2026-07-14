@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+:root { 
   --agri-font: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   --agri-brand: #00450d;
   --agri-brand-soft: #0a5c18;

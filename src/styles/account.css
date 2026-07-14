@@ -64,6 +64,75 @@
     #ffffff;
 }
 
+.account-id-card--simple {
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+
+.account-id-card--simple .account-id-card__photo {
+  width: 112px;
+  min-height: 128px;
+}
+
+.account-id-card--simple .account-id-card__img,
+.account-id-card--simple .account-id-card__placeholder {
+  min-height: 128px;
+}
+
+.account-id-card__verify {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  font-size: 0.84rem;
+  color: #717a6d;
+}
+
+.account-details--rows {
+  gap: 0;
+}
+
+.account-details--rows > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #e8ece4;
+}
+
+.account-details--rows > div:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.account-details--rows > div:first-child {
+  padding-top: 0;
+}
+
+.account-password-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.account-password-row p {
+  margin: 0;
+  color: #717a6d;
+  font-size: 0.9rem;
+}
+
+.settings-panel__head h3 {
+  margin: 0;
+}
+
+.settings-layout {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 720px;
+}
+
 .account-id-card__photo {
   width: 132px;
   min-height: 148px;
@@ -485,7 +554,8 @@
 }
 
 @media (max-width: 900px) {
-  .account-id-card {
+  .account-id-card,
+  .account-id-card--simple {
     grid-template-columns: 1fr;
   }
 
@@ -500,5 +570,10 @@
 
   .account-panel--wide {
     grid-column: auto;
+  }
+
+  .account-details--rows > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 }
