@@ -22,6 +22,8 @@ import MomoPaymentsPage from '../pages/MomoPaymentsPage'
 import InspectionQueuePage from '../pages/InspectionQueuePage'
 import BankabilityOpsPage from '../pages/BankabilityOpsPage'
 import ContractsPage from '../pages/ContractsPage'
+import SpecV2OpsPage from '../pages/SpecV2OpsPage'
+import BuyerVerificationPage from '../pages/BuyerVerificationPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleHome from './RoleHome'
 
@@ -33,6 +35,7 @@ function AppRoutes() {
       <Route path="forgot-password" element={<ForgotPasswordPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
       <Route path="verify-email" element={<VerifyEmailPage />} />
+      <Route path="buyer-verify" element={<BuyerVerificationPage />} />
 
       <Route
         element={
@@ -128,6 +131,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <BankabilityOpsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="bankability/v2"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <SpecV2OpsPage />
             </ProtectedRoute>
           }
         />

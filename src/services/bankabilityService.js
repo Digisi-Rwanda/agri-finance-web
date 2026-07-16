@@ -61,3 +61,42 @@ export const listExpiringReceipts = (withinDays = 30) =>
   apiClient.get('/bankability/receipts/expiring', { params: { withinDays } }).then((r) => r.data)
 
 export const listBanks = () => apiClient.get('/banks').then((r) => r.data)
+
+export const createBank = (payload) => apiClient.post('/banks', payload).then((r) => r.data)
+
+export const updateBank = (id, payload) => apiClient.put(`/banks/${id}`, payload).then((r) => r.data)
+
+export const suggestLoanPackage = (farmerId) =>
+  apiClient.post('/loan-packages/suggest', { farmerId }).then((r) => r.data)
+
+export const exportLoanPackage = (packageId) =>
+  apiClient.get(`/loan-packages/${packageId}/export`).then((r) => r.data)
+
+export const listWarehouses = (status) =>
+  apiClient.get('/bankability/v2/warehouses', { params: status ? { status } : {} }).then((r) => r.data)
+
+export const applyWarehouse = (payload) =>
+  apiClient.post('/bankability/v2/warehouses', payload).then((r) => r.data)
+
+export const decideWarehouse = (id, status) =>
+  apiClient.post(`/bankability/v2/warehouses/${id}/decide`, { status }).then((r) => r.data)
+
+export const listInputLoans = (farmerId) =>
+  apiClient.get('/bankability/v2/input-loans', { params: farmerId ? { farmerId } : {} }).then((r) => r.data)
+
+export const registerInputLoan = (payload) =>
+  apiClient.post('/bankability/v2/input-loans', payload).then((r) => r.data)
+
+export const attachInputInsurance = (id, insuranceReferenceId) =>
+  apiClient.post(`/bankability/v2/input-loans/${id}/insurance`, { insuranceReferenceId }).then((r) => r.data)
+
+export const deliverInputLoan = (id) =>
+  apiClient.post(`/bankability/v2/input-loans/${id}/deliver`).then((r) => r.data)
+
+export const listGuaranteeRequests = (status) =>
+  apiClient
+    .get('/bankability/v2/guarantee-requests', { params: status ? { status } : {} })
+    .then((r) => r.data)
+
+export const decideGuaranteeRequest = (id, payload) =>
+  apiClient.post(`/bankability/v2/guarantee-requests/${id}/decide`, payload).then((r) => r.data)

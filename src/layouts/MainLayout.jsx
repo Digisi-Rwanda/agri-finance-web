@@ -55,6 +55,7 @@ const navItemsByRole = {
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/bankability', label: 'Bankability', icon: Warehouse },
+    { to: '/bankability/v2', label: 'Spec v2 ops', icon: ClipboardCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     {
@@ -91,6 +92,7 @@ const PAGE_TITLES = {
   '/contracts': 'Receivables',
   '/inspections': 'Inspections',
   '/bankability': 'Bankability ops',
+  '/bankability/v2': 'Spec v2 ops',
 }
 
 const SEARCH_CONFIG = {

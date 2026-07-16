@@ -205,3 +205,108 @@ export function exportFarmerAnalysisReport({
   const filename = `${slugifyFilename(farmer.fullName)}-farmer-${farmer.farmerId}-report`
   savePdf(doc, filename)
 }
+
+/**
+ * Spec v2 Feature 4 — professional loan package PDF for manual bank submission.
+ * Distinct guarantee line item included when present.
+ */
+export function exportLoanPackagePdf(pkg) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  let y = addReportHeader(
+    doc,
+    'Loan application package',
+    pkg?.title || 'Digisi Agri Trust bankability file',
+  )
+
+  y = addSectionTitle(doc, '1. Application summary', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Package ID', pkg.packageId],
+      ['Status', pkg.status],
+      ['Submission method', pkg.submissionMethod],
+      ['Suggested amount (RWF)', pkg.suggestedAmount],
+      ['Duration (months)', pkg.suggestedDurationMonths],
+      ['Repayment plan', pkg.suggestedRepaymentPlan],
+      ['Collateral type', pkg.suggestedCollateralType],
+      ['Generated', pkg.generatedAt],
+    ],
+    y,
+  )
+
+  y = addSectionTitle(doc, '2. Farmer', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Name', pkg.farmer?.fullName],
+      ['Phone', pkg.farmer?.phone],
+      ['Location', pkg.farmer?.location],
+      ['Farmer ID', pkg.farmer?.farmerId],
+    ],
+    y,
+  )
+
+  y = addSectionTitle(doc, '3. Credit summary (bank-readable)', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Score snapshot', pkg.creditScoreSnapshot],
+      ['Reasoning', pkg.reasoning],
+    ],
+    y,
+  )
+
+  y = addSectionTitle(doc, '4. Collateral proof', y)
+  const contracts = Array.isArray(pkg.contracts) ? pkg.contracts : []
+  const receipts = Array.isArray(pkg.receipts) ? pkg.receipts : []
+  y = addDataTable(
+    doc,
+    ['Type', 'ID', 'Detail', 'Status/Value'],
+    [
+      ...contracts.map((c) => [
+        'Verified contract',
+        c.contractId,
+        c.buyerName,
+        `${c.status} / ${c.contractValue ?? '—'}`,
+      ]),
+      ...receipts.map((r) => [
+        'Warehouse receipt',
+        r.receiptId,
+        `${r.commodity} @ ${r.cooperativeName}`,
+        `${r.status} / qty ${r.quantity}`,
+      ]),
+    ],
+    y,
+  )
+
+  // Distinct guarantee line — must not be buried
+  y = addSectionTitle(doc, '5. CREDIT GUARANTEE (BDF/RDB)', y)
+  if (pkg.guarantee && (pkg.guarantee.guaranteeRequestId || pkg.guarantee.recommended)) {
+    y = addKeyValueTable(
+      doc,
+      [
+        ['Guarantee body', pkg.guarantee.body || 'BDF/RDB'],
+        ['Coverage %', pkg.guarantee.coveragePercent],
+        ['Status', pkg.guarantee.status],
+        ['Reference number', pkg.guarantee.referenceNumber || 'Pending admin approval'],
+        ['Recommendation', pkg.guarantee.reason],
+      ],
+      y,
+    )
+  } else {
+    y = addKeyValueTable(doc, [['Guarantee', 'Not attached to this package']], y)
+  }
+
+  y = addSectionTitle(doc, '6. Partner bank', y)
+  addKeyValueTable(
+    doc,
+    [
+      ['Bank', pkg.bank?.bankName || 'Not selected'],
+      ['Integration', pkg.bank?.integrationStatus || 'not_integrated'],
+      ['Contact', pkg.bank?.contactInfo],
+    ],
+    y,
+  )
+
+  savePdf(doc, `loan-package-${pkg.packageId || 'draft'}`)
+}
