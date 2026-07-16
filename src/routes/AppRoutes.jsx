@@ -19,6 +19,9 @@ import ProfilePage from '../pages/ProfilePage'
 import RegisterPage from '../pages/RegisterPage'
 import SettingsPage from '../pages/SettingsPage'
 import MomoPaymentsPage from '../pages/MomoPaymentsPage'
+import InspectionQueuePage from '../pages/InspectionQueuePage'
+import BankabilityOpsPage from '../pages/BankabilityOpsPage'
+import ContractsPage from '../pages/ContractsPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleHome from './RoleHome'
 
@@ -100,6 +103,31 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AuditLogsPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* New bankability routes */}
+        <Route
+          path="contracts"
+          element={
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+              <ContractsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="inspections"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <InspectionQueuePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="bankability"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <BankabilityOpsPage />
             </ProtectedRoute>
           }
         />

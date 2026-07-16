@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
+  Briefcase,
+  ClipboardCheck,
   Contact,
   CreditCard,
   Home,
@@ -15,6 +17,7 @@ import {
   User,
   UserRound,
   Users,
+  Warehouse,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -30,6 +33,7 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     {
       to: '/farmer/profile',
@@ -48,6 +52,9 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/contracts', label: 'Receivables', icon: Briefcase },
+    { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
+    { to: '/bankability', label: 'Bankability', icon: Warehouse },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     {
@@ -80,6 +87,10 @@ const PAGE_TITLES = {
   '/profile': 'My profile',
   '/settings': 'Settings',
   '/notifications': 'Notifications',
+  // New bankability pages
+  '/contracts': 'Receivables',
+  '/inspections': 'Inspections',
+  '/bankability': 'Bankability ops',
 }
 
 const SEARCH_CONFIG = {
