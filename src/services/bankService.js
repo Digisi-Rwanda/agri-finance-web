@@ -65,7 +65,9 @@ export const getLoans = async () => {
 }
 
 export const updateLoanStatus = async (loanId, status) => {
-  const endpoint = status === 'Approved' ? 'approve' : 'reject'
+  let endpoint = 'reject'
+  if (status === 'Approved') endpoint = 'approve'
+  if (status === 'Disbursed') endpoint = 'disburse'
   const response = await apiClient.patch(`/loans/${loanId}/${endpoint}`)
   return {
     id: response.data.loanId,

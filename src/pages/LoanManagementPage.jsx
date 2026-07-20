@@ -203,7 +203,10 @@ function LoanManagementPage() {
     setPage(1)
   }
 
-  const canDecide = (status) => String(status || '').toLowerCase() === 'pending'
+  const canDecide = (status) => {
+    const s = String(status || '').toLowerCase()
+    return s === 'pending' || s === 'approved'
+  }
 
   const renderLoanActions = (loan) => {
     if (!canDecide(loan.status)) {
@@ -218,6 +221,25 @@ function LoanManagementPage() {
     }
 
     const busy = busyId === loan.id
+    if (String(loan.status).toLowerCase() === 'approved') {
+      return (
+        <>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={busy}
+            onClick={() => handleStatus(loan.id, 'Disbursed')}
+          >
+            {busy ? 'Saving…' : 'Disburse'}
+          </button>
+          {loan.farmerId ? (
+            <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
+              Profile
+            </Link>
+          ) : null}
+        </>
+      )
+    }
     return (
       <>
         <button

@@ -36,7 +36,12 @@ function ContractsPage() {
   const onStartOtp = async (id) => {
     try {
       const res = await startBuyerConsent(id)
-      toast.info(`Buyer OTP (demo): ${res.otpCode}`)
+      const link = res.verificationLink || `/buyer-verify?contractId=${id}`
+      toast.info(
+        res.otpCode
+          ? `OTP ${res.otpCode} · link ${link}`
+          : `Verification sent · ${link}`,
+      )
     } catch (e) {
       toast.error(e?.response?.data?.error || 'OTP failed')
     }

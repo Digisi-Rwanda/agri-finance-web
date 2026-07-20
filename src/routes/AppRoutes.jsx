@@ -24,6 +24,7 @@ import BankabilityOpsPage from '../pages/BankabilityOpsPage'
 import ContractsPage from '../pages/ContractsPage'
 import SpecV2OpsPage from '../pages/SpecV2OpsPage'
 import BuyerVerificationPage from '../pages/BuyerVerificationPage'
+import BankLoanPackagesPage from '../pages/BankLoanPackagesPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleHome from './RoleHome'
 
@@ -50,6 +51,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
               <LoanManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="loan-packages"
+          element={
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+              <BankLoanPackagesPage />
             </ProtectedRoute>
           }
         />

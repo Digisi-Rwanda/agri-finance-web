@@ -33,6 +33,7 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     {
@@ -52,6 +53,7 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/bankability', label: 'Bankability', icon: Warehouse },
@@ -78,6 +80,7 @@ const navItemsByRole = {
 const PAGE_TITLES = {
   '/': 'Dashboard',
   '/loans': 'Loans',
+  '/loan-packages': 'Loan packages',
   '/payments': 'Payments',
   '/farmer': 'Farmers',
   '/insurer': 'Dashboard',

@@ -333,3 +333,35 @@ export function exportLoanPackagePdf(pkg) {
 
   savePdf(doc, `loan-package-${pkg.packageId || 'draft'}`)
 }
+
+/** Bank export of farmers with verified purchase contracts. */
+export function exportVerifiedFarmersPdf(payload) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  let y = addReportHeader(
+    doc,
+    'Verified farmer records',
+    payload?.title || 'Digisi Agri Trust — bank submission pack',
+  )
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Farmers', payload?.count],
+      ['Generated', payload?.generatedAt],
+    ],
+    y,
+  )
+  const farmers = Array.isArray(payload?.farmers) ? payload.farmers : []
+  y = addDataTable(
+    doc,
+    ['Farmer', 'Phone', 'Score', 'Risk', 'Verified contracts'],
+    farmers.map((f) => [
+      f.fullName || `#${f.farmerId}`,
+      f.phone,
+      f.creditScore,
+      f.riskLevel,
+      f.verifiedContracts,
+    ]),
+    y,
+  )
+  savePdf(doc, 'verified-farmers-export')
+}

@@ -88,6 +88,21 @@ export const submitLoanPackage = (packageId) =>
 export const exportLoanPackage = (packageId) =>
   apiClient.get(`/loan-packages/${packageId}/export`).then((r) => r.data)
 
+export const listBankLoanPackages = (params = {}) =>
+  apiClient.get('/loan-packages', { params: { inbox: true, ...params } }).then((r) => r.data)
+
+export const approveLoanPackage = (packageId, notes) =>
+  apiClient.post(`/loan-packages/${packageId}/approve`, { notes }).then((r) => r.data)
+
+export const rejectLoanPackage = (packageId, notes) =>
+  apiClient.post(`/loan-packages/${packageId}/reject`, { notes }).then((r) => r.data)
+
+export const disburseLoanPackage = (packageId) =>
+  apiClient.post(`/loan-packages/${packageId}/disburse`).then((r) => r.data)
+
+export const exportVerifiedFarmers = () =>
+  apiClient.get('/bankability/exports/verified-farmers').then((r) => r.data)
+
 export const listWarehouses = (status) =>
   apiClient.get('/bankability/v2/warehouses', { params: status ? { status } : {} }).then((r) => r.data)
 
