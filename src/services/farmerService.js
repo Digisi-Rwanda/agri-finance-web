@@ -105,6 +105,16 @@ export const getYieldHistoryForFarms = async (farms = []) => {
     })
 }
 
+/** Digisi / bank staff verifies a harvest claim. */
+export const verifyHarvestYield = async (yieldId, { status, reviewerId, notes } = {}) => {
+  const response = await apiClient.post(`/yield-history/${yieldId}/verify`, {
+    status,
+    reviewerId,
+    notes,
+  })
+  return response.data
+}
+
 export const getTransactionsByFarmerId = async (farmerId) => {
   const response = await apiClient.get(`/transactions/farmer/${farmerId}`, {
     params: { requireTransactionsConsent: true },

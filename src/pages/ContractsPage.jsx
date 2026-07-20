@@ -98,6 +98,7 @@ function ContractsPage() {
                 <th>Buyer</th>
                 <th>Value</th>
                 <th>Status</th>
+                <th>Document</th>
                 <th />
               </tr>
             </thead>
@@ -110,6 +111,15 @@ function ContractsPage() {
                   <td>{c.contractValue}</td>
                   <td>
                     <StatusBadge status={c.status} />
+                  </td>
+                  <td>
+                    {c.documentUrl ? (
+                      <a href={c.documentUrl.startsWith('http') ? c.documentUrl : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${c.documentUrl}`} target="_blank" rel="noreferrer">
+                        View
+                      </a>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td>
                     <button type="button" className="btn-secondary" onClick={() => onStartOtp(c.contractId)}>

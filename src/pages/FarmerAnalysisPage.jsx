@@ -34,6 +34,7 @@ import {
   getTransactionsByFarmerId,
   getWeatherRiskByFarmId,
   getYieldHistoryForFarms,
+  verifyHarvestYield,
 } from '../services/farmerService'
 import { getCurrentUser } from '../services/auth'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
@@ -187,6 +188,23 @@ function FarmerAnalysisPage() {
   })
   const currentUser = getCurrentUser()
   const officerName = currentUser?.fullName || currentUser?.username || currentUser?.email || 'Bank officer'
+  const reviewerId = currentUser?.userId || currentUser?.id || null
+
+  const handleVerifyHarvest = async (yieldId, status) => {
+    try {
+      const updated = await verifyHarvestYield(yieldId, {
+        status,
+        reviewerId,
+        notes: status === 'verified' ? 'Verified by Digisi staff' : 'Disputed by Digisi staff',
+      })
+      setYieldRecords((prev) =>
+        prev.map((y) => (y.yieldId === yieldId ? { ...y, ...updated } : y)),
+      )
+      toast.success(status === 'verified' ? 'Harvest verified' : 'Harvest marked disputed')
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Could not update harvest verification')
+    }
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -761,12 +779,14 @@ function FarmerAnalysisPage() {
                   <th>Crop</th>
                   <th>Farm</th>
                   <th>Quantity</th>
+                  <th>Verification</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {pagedRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="empty-cell">
+                    <td colSpan={7} className="empty-cell">
                       No yield records logged yet.
                     </td>
                   </tr>
@@ -778,6 +798,29 @@ function FarmerAnalysisPage() {
                       <td>{item.cropType || '—'}</td>
                       <td>{item.farmName || `Farm #${item.farmId}`}</td>
                       <td>{item.quantity ?? '—'}</td>
+                      <td>
+                        <StatusBadge
+                          value={item.verificationStatus || 'pending_verification'}
+                        />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => handleVerifyHarvest(item.yieldId, 'verified')}
+                          >
+                            Verify
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => handleVerifyHarvest(item.yieldId, 'disputed')}
+                          >
+                            Dispute
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -977,6 +1020,7 @@ function FarmerAnalysisPage() {
                         <strong>{row.season || 'Season'} {row.year || ''}</strong>
                         <small>{row.farmName || `Farm #${row.farmId}`}</small>
                       </div>
+                      <StatusBadge value={row.verificationStatus || 'pending_verification'} />
                     </div>
                     <div className="farmer-mobile-card__meta">
                       <div>
@@ -987,6 +1031,22 @@ function FarmerAnalysisPage() {
                         <span>Quantity</span>
                         {row.quantity ?? '—'}
                       </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => handleVerifyHarvest(row.yieldId, 'verified')}
+                      >
+                        Verify
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => handleVerifyHarvest(row.yieldId, 'disputed')}
+                      >
+                        Dispute
+                      </button>
                     </div>
                   </article>
                 )

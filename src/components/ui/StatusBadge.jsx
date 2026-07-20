@@ -6,6 +6,7 @@ function StatusBadge({ value }) {
 
   if (
     normalized === 'low' ||
+    normalized === 'verified' ||
     normalized.includes('approve') ||
     normalized.includes('success') ||
     normalized.includes('active') ||
@@ -15,6 +16,7 @@ function StatusBadge({ value }) {
     toneClass = 'status-success'
   } else if (
     normalized === 'high' ||
+    normalized === 'disputed' ||
     normalized.includes('reject') ||
     normalized.includes('alert') ||
     normalized.includes('danger') ||
