@@ -8,7 +8,7 @@ export const authIllustration = {
   headline: 'Smarter lending for farmers and partners',
   body: 'Manage loans, review farmer profiles, and track mobile money — securely, in one place.',
   stats: [
-    { value: '4 roles', label: 'Bank · Insurer · Farmer · Admin' },
+    { value: '5 roles', label: 'Bank · Insurer · Coop · Farmer · Admin' },
     { value: '24/7', label: 'Secure cloud access' },
   ],
 }
@@ -43,7 +43,7 @@ export const loginCopy = {
 
 export const registerCopy = {
   title: 'Create an account',
-  subtitle: 'Set up your bank, insurer, or farmer access.',
+  subtitle: 'Set up your bank, insurer, cooperative, or farmer access.',
   fullNameLabel: 'Full name',
   fullNamePlaceholder: 'e.g. Jean Baptiste',
   emailLabel: 'Email address',
@@ -54,6 +54,7 @@ export const registerCopy = {
   roles: {
     BANK: 'Bank partner',
     INSURER: 'Insurance partner',
+    COOPERATIVE: 'Cooperative',
     FARMER: 'Farmer',
   },
   passwordLabel: 'Password',

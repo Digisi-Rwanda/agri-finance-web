@@ -13,7 +13,7 @@ import {
   updateAdminUserRole,
 } from '../services/auditService'
 
-const ROLES = ['ADMIN', 'BANK', 'INSURER', 'FARMER']
+const ROLES = ['ADMIN', 'BANK', 'INSURER', 'FARMER', 'COOPERATIVE']
 
 function AdminPanelPage() {
   const [stats, setStats] = useState(null)

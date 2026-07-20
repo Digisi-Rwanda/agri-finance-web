@@ -58,6 +58,7 @@ const navItemsByRole = {
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/bankability', label: 'Bankability', icon: Warehouse },
     { to: '/bankability/v2', label: 'Spec v2 ops', icon: ClipboardCheck },
+    { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     {
@@ -72,6 +73,12 @@ const navItemsByRole = {
   ],
   FARMER: [
     { to: '/payments', label: 'Home', icon: Home, end: true },
+    { to: '/profile', label: 'Profile', icon: User },
+    { to: '/settings', label: 'Settings', icon: Settings },
+  ],
+  COOPERATIVE: [
+    { to: '/cooperative', label: 'Home', icon: Warehouse, end: true },
+    { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/profile', label: 'Profile', icon: User },
     { to: '/settings', label: 'Settings', icon: Settings },
   ],
@@ -96,6 +103,7 @@ const PAGE_TITLES = {
   '/inspections': 'Inspections',
   '/bankability': 'Bankability ops',
   '/bankability/v2': 'Spec v2 ops',
+  '/cooperative': 'Cooperative',
 }
 
 const SEARCH_CONFIG = {
@@ -114,7 +122,7 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  if (pathname === '/' || pathname === '/insurer' || (pathname === '/payments' && homePath === '/payments')) {
+  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || (pathname === '/payments' && homePath === '/payments')) {
     crumbs.push({ label: 'Dashboard' })
     return crumbs
   }

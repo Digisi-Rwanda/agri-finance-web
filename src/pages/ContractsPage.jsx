@@ -4,7 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
-import { listContracts, listLoanMessages, postLoanMessage, startBuyerConsent } from '../services/bankabilityService'
+import { listContracts, listContractConsents, listLoanMessages, postLoanMessage, startBuyerConsent } from '../services/bankabilityService'
 
 /**
  * Contracts / receivables overview for bank + admin.
@@ -44,6 +44,28 @@ function ContractsPage() {
       )
     } catch (e) {
       toast.error(e?.response?.data?.error || 'OTP failed')
+    }
+  }
+
+  const onViewConsent = async (id) => {
+    try {
+      const list = await listContractConsents(id)
+      const consent = Array.isArray(list) ? list[0] : null
+      if (!consent) {
+        toast.info('No consent recorded yet')
+        return
+      }
+      const doc = consent.consentDocumentUrl
+      const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')
+      if (doc) {
+        window.open(doc.startsWith('http') ? doc : `${base}${doc}`, '_blank')
+      } else {
+        toast.info(
+          `Consent ${consent.otpVerified ? 'verified' : 'pending'} · ${consent.verifiedAt || 'no timestamp'}`,
+        )
+      }
+    } catch {
+      toast.error('Could not load consent')
     }
   }
 
@@ -89,8 +111,11 @@ function ContractsPage() {
       <div className="widgets four">
         <StatCard title="All contracts" value={String(contracts.length)} />
         <StatCard title="Verified" value={String(contracts.filter((c) => c.status === 'verified').length)} />
+        <StatCard
+          title="Field inspection"
+          value={String(contracts.filter((c) => c.status === 'field_inspection_pending').length)}
+        />
         <StatCard title="Pending buyer" value={String(contracts.filter((c) => c.status === 'buyer_verification_pending').length)} />
-        <StatCard title="Disputed" value={String(contracts.filter((c) => c.status === 'disputed').length)} />
       </div>
 
       <div className="mt-6 space-y-6">
@@ -127,9 +152,14 @@ function ContractsPage() {
                     )}
                   </td>
                   <td>
-                    <button type="button" className="btn-secondary" onClick={() => onStartOtp(c.contractId)}>
-                      Start buyer OTP
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className="btn-secondary" onClick={() => onStartOtp(c.contractId)}>
+                        Start buyer OTP
+                      </button>
+                      <button type="button" className="btn-secondary" onClick={() => onViewConsent(c.contractId)}>
+                        Consent doc
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

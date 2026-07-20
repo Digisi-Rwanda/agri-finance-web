@@ -25,6 +25,21 @@ export const updateInspection = (id, payload) =>
 export const decideInspection = (id, outcome, adminId) =>
   apiClient.post(`/inspections/${id}/decide`, { outcome, adminId }).then((r) => r.data)
 
+export const listInspectors = () => apiClient.get('/inspections/inspectors').then((r) => r.data)
+
+export const uploadInspectionEvidence = (id, file) => {
+  const form = new FormData()
+  form.append('file', file)
+  return apiClient
+    .post(`/inspections/${id}/evidence`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((r) => r.data)
+}
+
+export const listContractConsents = (contractId) =>
+  apiClient.get(`/contracts/${contractId}/consents`).then((r) => r.data)
+
 export const listBankProducts = (bankId) =>
   apiClient.get('/bankability/bank-products', { params: bankId ? { bankId } : {} }).then((r) => r.data)
 
@@ -131,3 +146,25 @@ export const listGuaranteeRequests = (status) =>
 
 export const decideGuaranteeRequest = (id, payload) =>
   apiClient.post(`/bankability/v2/guarantee-requests/${id}/decide`, payload).then((r) => r.data)
+
+export const listCoopWarehouses = (operatorUserId) =>
+  apiClient
+    .get('/bankability/v2/coop/warehouses', { params: { operatorUserId } })
+    .then((r) => r.data)
+
+export const claimCoopWarehouse = (id, operatorUserId) =>
+  apiClient.post(`/bankability/v2/coop/warehouses/${id}/claim`, { operatorUserId }).then((r) => r.data)
+
+export const getCoopDashboard = (id) =>
+  apiClient.get(`/bankability/v2/coop/warehouses/${id}/dashboard`).then((r) => r.data)
+
+export const addCoopMember = (warehouseId, farmerId, notes) =>
+  apiClient
+    .post(`/bankability/v2/coop/warehouses/${warehouseId}/members`, { farmerId, notes })
+    .then((r) => r.data)
+
+export const recordCoopStorage = (payload) =>
+  apiClient.post('/bankability/v2/coop/storage', payload).then((r) => r.data)
+
+export const updateCoopGovernance = (id, payload) =>
+  apiClient.post(`/bankability/v2/coop/warehouses/${id}/governance`, payload).then((r) => r.data)

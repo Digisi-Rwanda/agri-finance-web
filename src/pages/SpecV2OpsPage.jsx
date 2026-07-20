@@ -36,6 +36,7 @@ function SpecV2OpsPage() {
     location: '',
     storageInsuranceRef: '',
     facilityNotes: '',
+    governanceChecklist: '',
   })
   const [inputForm, setInputForm] = useState({
     farmerId: '',
@@ -129,7 +130,13 @@ function SpecV2OpsPage() {
             try {
               await applyWarehouse({ ...whForm, approvalStatus: 'pending' })
               toast.success('Warehouse application submitted')
-              setWhForm({ cooperativeName: '', location: '', storageInsuranceRef: '', facilityNotes: '' })
+              setWhForm({
+                cooperativeName: '',
+                location: '',
+                storageInsuranceRef: '',
+                facilityNotes: '',
+                governanceChecklist: '',
+              })
               load()
             } catch {
               toast.error('Could not apply warehouse')
@@ -155,6 +162,13 @@ function SpecV2OpsPage() {
             placeholder="Storage insurance reference (required to approve)"
             value={whForm.storageInsuranceRef}
             onChange={(e) => setWhForm({ ...whForm, storageInsuranceRef: e.target.value })}
+          />
+          <textarea
+            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Governance checklist (board, bylaws, insurance, grading — required to approve)"
+            rows={3}
+            value={whForm.governanceChecklist}
+            onChange={(e) => setWhForm({ ...whForm, governanceChecklist: e.target.value })}
           />
           <textarea
             className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"

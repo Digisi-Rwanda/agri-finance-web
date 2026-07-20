@@ -147,6 +147,7 @@ export const hydrateSessionUser = async () => {
     localStorage.setItem(
       USER_KEY,
       JSON.stringify({
+        userId: profile?.userId,
         username: profile?.username,
         role: profile?.role,
         fullName: profile?.fullName,

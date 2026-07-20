@@ -25,6 +25,7 @@ import ContractsPage from '../pages/ContractsPage'
 import SpecV2OpsPage from '../pages/SpecV2OpsPage'
 import BuyerVerificationPage from '../pages/BuyerVerificationPage'
 import BankLoanPackagesPage from '../pages/BankLoanPackagesPage'
+import CooperativeDashboardPage from '../pages/CooperativeDashboardPage'
 import ProtectedRoute from './ProtectedRoute'
 import RoleHome from './RoleHome'
 
@@ -148,6 +149,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <SpecV2OpsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="cooperative"
+          element={
+            <ProtectedRoute allowedRoles={['COOPERATIVE', 'ADMIN']}>
+              <CooperativeDashboardPage />
             </ProtectedRoute>
           }
         />

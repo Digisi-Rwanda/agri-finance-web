@@ -28,7 +28,11 @@ function BuyerVerificationPage() {
       setForm(data)
       setVerifyLink(data.verificationLink || '')
       setDoneStatus(
-        data.status === 'verified' || data.status === 'disputed' ? data.status : '',
+        data.status === 'verified'
+          || data.status === 'disputed'
+          || data.status === 'field_inspection_pending'
+          ? data.status
+          : '',
       )
     } catch {
       toast.error('Contract not found')
@@ -132,9 +136,13 @@ function BuyerVerificationPage() {
         </div>
       ) : null}
 
-      {doneStatus === 'verified' || doneStatus === 'disputed' ? (
+      {doneStatus === 'verified'
+      || doneStatus === 'disputed'
+      || doneStatus === 'field_inspection_pending' ? (
         <p className="mt-6 rounded-xl bg-white p-4 text-center font-semibold text-[var(--brand,#00450d)]">
-          Verification complete: {doneStatus}
+          {doneStatus === 'field_inspection_pending'
+            ? 'Thank you — Digisi will schedule a field inspection before final verification.'
+            : `Verification complete: ${doneStatus}`}
         </p>
       ) : (
         <>

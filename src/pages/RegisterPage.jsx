@@ -142,6 +142,7 @@ function RegisterPage() {
           >
             <option value="BANK">{copy.roles.BANK}</option>
             <option value="INSURER">{copy.roles.INSURER}</option>
+            <option value="COOPERATIVE">{copy.roles.COOPERATIVE || 'Cooperative'}</option>
             <option value="FARMER">{copy.roles.FARMER}</option>
           </select>
         </label>
