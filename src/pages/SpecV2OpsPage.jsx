@@ -6,6 +6,7 @@ import DataTableShell from '../components/ui/DataTableShell'
 import {
   applyWarehouse,
   attachInputInsurance,
+  confirmInputLoanByCoop,
   createBank,
   decideGuaranteeRequest,
   decideWarehouse,
@@ -19,6 +20,7 @@ import {
   suggestLoanPackage,
   updateBank,
 } from '../services/bankabilityService'
+import { getCurrentUser } from '../services/auth'
 import { exportLoanPackagePdf } from '../utils/exportPdf'
 
 /**
@@ -228,6 +230,7 @@ function SpecV2OpsPage() {
           >
             <option value="fertilizer">Fertilizer</option>
             <option value="seed">Seed</option>
+            <option value="other">Other inputs</option>
           </select>
           <input
             className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
@@ -369,14 +372,36 @@ function SpecV2OpsPage() {
                         type="button"
                         className="btn-secondary"
                         onClick={async () => {
-                          const ref = window.prompt('Insurance reference')
+                          const ref = window.prompt('Insurance policy ID or reference')
                           if (!ref) return
-                          await attachInputInsurance(l.inputLoanId, ref)
-                          toast.success('Insurance attached')
-                          load()
+                          try {
+                            await attachInputInsurance(l.inputLoanId, ref)
+                            toast.success('Insurance attached → pending coop confirm')
+                            load()
+                          } catch (e) {
+                            toast.error(e?.response?.data?.error || 'Insurance attach failed')
+                          }
                         }}
                       >
                         Attach insurance
+                      </button>
+                    ) : null}
+                    {l.status === 'pending_coop' ? (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={async () => {
+                          try {
+                            const user = getCurrentUser()
+                            await confirmInputLoanByCoop(l.inputLoanId, user?.userId || null)
+                            toast.success('Cooperative confirmed')
+                            load()
+                          } catch (e) {
+                            toast.error(e?.response?.data?.error || 'Coop confirm failed')
+                          }
+                        }}
+                      >
+                        Coop confirm
                       </button>
                     ) : null}
                     {l.status === 'approved' ? (

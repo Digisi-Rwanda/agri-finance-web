@@ -14,9 +14,12 @@ export const getPolicies = async () => {
     farmerId: policy.farmerId,
     farmer: farmersById[policy.farmerId]?.fullName || `Farmer #${policy.farmerId}`,
     policyType: policy.policyType || 'General',
+    policyReference: policy.policyReference || '',
     premium: Number(policy.premium || 0),
     status: policy.status || 'ACTIVE',
     insurerId: policy.insurerId,
+    validFrom: policy.validFrom,
+    validTo: policy.validTo,
   }))
 }
 
@@ -31,5 +34,15 @@ export const updatePolicyStatus = async (policyId, status) => {
     null,
     { params: { status } },
   )
+  return response.data
+}
+
+export const createPolicy = async (payload) => {
+  const response = await apiClient.post('/insurance-policies', payload)
+  return response.data
+}
+
+export const getActiveInsurance = async (farmerId) => {
+  const response = await apiClient.get('/insurance-policies/active', { params: { farmerId } })
   return response.data
 }

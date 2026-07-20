@@ -5,20 +5,35 @@ import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getPolicies, updatePolicyStatus } from '../services/insuranceService'
+import { getPolicies, updatePolicyStatus, createPolicy, getInsurers } from '../services/insuranceService'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
 function InsuranceManagementPage() {
   const [policies, setPolicies] = useState([])
+  const [insurers, setInsurers] = useState([])
   const [loading, setLoading] = useState(true)
   const [busyPolicyId, setBusyPolicyId] = useState(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [form, setForm] = useState({
+    farmerId: '',
+    insurerId: '',
+    policyType: 'crop',
+    policyReference: '',
+    premium: '',
+    validFrom: '',
+    validTo: '',
+  })
 
   const loadPolicies = async () => {
     try {
       setLoading(true)
-      const data = await getPolicies()
+      const [data, insurerList] = await Promise.all([getPolicies(), getInsurers().catch(() => [])])
       setPolicies(data)
+      setInsurers(Array.isArray(insurerList) ? insurerList : [])
+      if (!form.insurerId && insurerList?.[0]) {
+        setForm((f) => ({ ...f, insurerId: String(insurerList[0].insurerId) }))
+      }
     } catch {
       toast.error('Failed to load insurance policies from backend.')
     } finally {
@@ -100,11 +115,99 @@ function InsuranceManagementPage() {
             <Download size={16} aria-hidden />
             Export PDF
           </button>
-          <button type="button" className="btn-primary">+ New Policy</button>
+          <button type="button" className="btn-primary" onClick={() => setShowCreate((v) => !v)}>
+            {showCreate ? 'Close form' : '+ New Policy'}
+          </button>
           </>
         }
       />
 
+      {showCreate ? (
+        <form
+          className="mb-6 grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 md:grid-cols-3"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            try {
+              await createPolicy({
+                farmerId: Number(form.farmerId),
+                insurerId: Number(form.insurerId),
+                policyType: form.policyType,
+                policyReference: form.policyReference || null,
+                premium: form.premium ? Number(form.premium) : null,
+                status: 'ACTIVE',
+                validFrom: form.validFrom || null,
+                validTo: form.validTo || null,
+              })
+              toast.success('Policy created')
+              setShowCreate(false)
+              setForm((f) => ({ ...f, farmerId: '', policyReference: '', premium: '', validFrom: '', validTo: '' }))
+              loadPolicies()
+            } catch (err) {
+              toast.error(err?.response?.data?.error || 'Could not create policy')
+            }
+          }}
+        >
+          <input
+            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Farmer ID"
+            value={form.farmerId}
+            onChange={(e) => setForm({ ...form, farmerId: e.target.value })}
+            required
+          />
+          <select
+            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+            value={form.insurerId}
+            onChange={(e) => setForm({ ...form, insurerId: e.target.value })}
+            required
+          >
+            <option value="">Insurer…</option>
+            {insurers.map((i) => (
+              <option key={i.insurerId} value={i.insurerId}>
+                {i.insurerName || i.name || `Insurer #${i.insurerId}`}
+              </option>
+            ))}
+          </select>
+          <input
+            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Policy reference"
+            value={form.policyReference}
+            onChange={(e) => setForm({ ...form, policyReference: e.target.value })}
+          />
+          <input
+            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Policy type"
+            value={form.policyType}
+            onChange={(e) => setForm({ ...form, policyType: e.target.value })}
+          />
+          <input
+            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Premium"
+            value={form.premium}
+            onChange={(e) => setForm({ ...form, premium: e.target.value })}
+          />
+          <label className="text-sm">
+            Valid from
+            <input
+              type="date"
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              value={form.validFrom}
+              onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
+            />
+          </label>
+          <label className="text-sm">
+            Valid to
+            <input
+              type="date"
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              value={form.validTo}
+              onChange={(e) => setForm({ ...form, validTo: e.target.value })}
+            />
+          </label>
+          <button type="submit" className="btn-primary md:col-span-3">
+            Save policy
+          </button>
+        </form>
+      ) : null}
       <div className="widgets four">
         <StatCard title="Total Premium Value" value={formatRwfCompact(totalPremiumValue)} meta="Calculated from DB premiums" />
         <StatCard title="Settlement Ratio" value={settlementRatio} meta="Claimed policies / total policies" />

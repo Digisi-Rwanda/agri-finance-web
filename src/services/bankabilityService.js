@@ -147,6 +147,20 @@ export const listGuaranteeRequests = (status) =>
 export const decideGuaranteeRequest = (id, payload) =>
   apiClient.post(`/bankability/v2/guarantee-requests/${id}/decide`, payload).then((r) => r.data)
 
+export const selectLoanPackageReceipts = (packageId, receiptIds) =>
+  apiClient.post(`/loan-packages/${packageId}/receipts`, { receiptIds }).then((r) => r.data)
+
+export const getOutstandingInputBalance = (farmerId) =>
+  apiClient.get('/bankability/v2/input-loans/outstanding', { params: { farmerId } }).then((r) => r.data)
+
+export const confirmInputLoanByCoop = (id, confirmedByUserId) =>
+  apiClient
+    .post(`/bankability/v2/input-loans/${id}/coop-confirm`, { confirmedByUserId })
+    .then((r) => r.data)
+
+export const remitSettlement = (id, remittanceRef) =>
+  apiClient.post(`/bankability/settlements/${id}/remit`, { remittanceRef }).then((r) => r.data)
+
 export const listCoopWarehouses = (operatorUserId) =>
   apiClient
     .get('/bankability/v2/coop/warehouses', { params: { operatorUserId } })

@@ -6,6 +6,7 @@ import DataTableShell from '../components/ui/DataTableShell'
 import {
   addCoopMember,
   claimCoopWarehouse,
+  confirmInputLoanByCoop,
   deliverInputLoan,
   getCoopDashboard,
   issueReceipt,
@@ -39,7 +40,10 @@ function CooperativeDashboardPage() {
     farmerId: '',
     commodity: '',
     quantity: '',
+    weightKg: '',
+    storageLocation: '',
     grade: '',
+    expiryDate: '',
   })
   const [governance, setGovernance] = useState('')
 
@@ -279,11 +283,24 @@ function CooperativeDashboardPage() {
                   farmerId: Number(receiptForm.farmerId),
                   commodity: receiptForm.commodity,
                   quantity: Number(receiptForm.quantity),
+                  weightKg: receiptForm.weightKg
+                    ? Number(receiptForm.weightKg)
+                    : Number(receiptForm.quantity),
+                  storageLocation: receiptForm.storageLocation || null,
                   grade: receiptForm.grade || null,
+                  expiryDate: receiptForm.expiryDate || null,
                   status: 'active',
                 })
                 toast.success('Receipt issued')
-                setReceiptForm({ farmerId: '', commodity: '', quantity: '', grade: '' })
+                setReceiptForm({
+                  farmerId: '',
+                  commodity: '',
+                  quantity: '',
+                  weightKg: '',
+                  storageLocation: '',
+                  grade: '',
+                  expiryDate: '',
+                })
                 loadDash(selectedId)
               } catch (err) {
                 toast.error(err?.response?.data?.error || 'Receipt failed')
@@ -314,9 +331,28 @@ function CooperativeDashboardPage() {
             />
             <input
               className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              placeholder="Weight (kg)"
+              value={receiptForm.weightKg}
+              onChange={(e) => setReceiptForm({ ...receiptForm, weightKg: e.target.value })}
+            />
+            <input
+              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              placeholder="Storage location / bin"
+              value={receiptForm.storageLocation}
+              onChange={(e) => setReceiptForm({ ...receiptForm, storageLocation: e.target.value })}
+            />
+            <input
+              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
               placeholder="Grade"
               value={receiptForm.grade}
               onChange={(e) => setReceiptForm({ ...receiptForm, grade: e.target.value })}
+            />
+            <input
+              type="date"
+              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              value={receiptForm.expiryDate}
+              onChange={(e) => setReceiptForm({ ...receiptForm, expiryDate: e.target.value })}
+              required
             />
             <button type="submit" className="btn-primary">
               Issue receipt
@@ -380,6 +416,51 @@ function CooperativeDashboardPage() {
                       <td>{s.farmerId ? `#${s.farmerId}` : '—'}</td>
                       <td>{s.binOrLot || '—'}</td>
                       <td>{s.status}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </DataTableShell>
+
+          <DataTableShell title="Pending cooperative confirmations">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Loan</th>
+                  <th>Farmer</th>
+                  <th>Type</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(dash.pendingCoopConfirmations || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>None pending.</td>
+                  </tr>
+                ) : (
+                  dash.pendingCoopConfirmations.map((loan) => (
+                    <tr key={loan.inputLoanId}>
+                      <td>#{loan.inputLoanId}</td>
+                      <td>#{loan.farmerId}</td>
+                      <td>{loan.inputType}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={async () => {
+                            try {
+                              await confirmInputLoanByCoop(loan.inputLoanId, operatorUserId)
+                              toast.success('Input loan confirmed')
+                              loadDash(selectedId)
+                            } catch (err) {
+                              toast.error(err?.response?.data?.error || 'Confirm failed')
+                            }
+                          }}
+                        >
+                          Confirm request
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

@@ -14,6 +14,7 @@ import {
   listPaymentWatches,
   listSettlements,
   openGuaranteeClaim,
+  remitSettlement,
   updateGuaranteeClaim,
 } from '../services/bankabilityService'
 
@@ -49,6 +50,8 @@ function BankabilityOpsPage() {
     farmerId: '',
     commodity: '',
     quantity: '',
+    weightKg: '',
+    storageLocation: '',
     grade: 'Grade 1',
     expiryDate: '',
   })
@@ -113,13 +116,14 @@ function BankabilityOpsPage() {
         cooperativeName: settleForm.cooperativeName,
         farmerId: Number(settleForm.farmerId),
         saleAmount: Number(settleForm.saleAmount),
-        inputLoanBalance: Number(settleForm.inputLoanBalance || 0),
+        // Leave 0 to auto-load outstanding input loans from backend.
+        inputLoanBalance: settleForm.inputLoanBalance ? Number(settleForm.inputLoanBalance) : 0,
       })
-      toast.success('Settlement recorded (deduction auto-calculated)')
+      toast.success('Settlement recorded — input loans deducted automatically')
       setSettleForm({ cooperativeName: '', farmerId: '', saleAmount: '', inputLoanBalance: '' })
       load()
     } catch (err) {
-      toast.error('Settlement failed')
+      toast.error(err?.response?.data?.error || 'Settlement failed')
     }
   }
 
@@ -131,6 +135,8 @@ function BankabilityOpsPage() {
         farmerId: Number(receiptForm.farmerId),
         commodity: receiptForm.commodity,
         quantity: Number(receiptForm.quantity),
+        weightKg: receiptForm.weightKg ? Number(receiptForm.weightKg) : Number(receiptForm.quantity),
+        storageLocation: receiptForm.storageLocation || null,
         grade: receiptForm.grade,
         expiryDate: receiptForm.expiryDate || null,
         status: 'active',
@@ -141,12 +147,14 @@ function BankabilityOpsPage() {
         farmerId: '',
         commodity: '',
         quantity: '',
+        weightKg: '',
+        storageLocation: '',
         grade: 'Grade 1',
         expiryDate: '',
       })
       load()
     } catch (err) {
-      toast.error('Could not issue receipt')
+      toast.error(err?.response?.data?.error || 'Could not issue receipt')
     }
   }
 
@@ -253,7 +261,7 @@ function BankabilityOpsPage() {
           />
           <input
             className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Open input-loan balance"
+            placeholder="Open input-loan balance (blank = auto from system)"
             value={settleForm.inputLoanBalance}
             onChange={(e) => setSettleForm({ ...settleForm, inputLoanBalance: e.target.value })}
           />
@@ -293,10 +301,23 @@ function BankabilityOpsPage() {
             required
           />
           <input
+            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Weight (kg)"
+            value={receiptForm.weightKg}
+            onChange={(e) => setReceiptForm({ ...receiptForm, weightKg: e.target.value })}
+          />
+          <input
+            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Storage location / bin"
+            value={receiptForm.storageLocation}
+            onChange={(e) => setReceiptForm({ ...receiptForm, storageLocation: e.target.value })}
+          />
+          <input
             type="date"
             className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
             value={receiptForm.expiryDate}
             onChange={(e) => setReceiptForm({ ...receiptForm, expiryDate: e.target.value })}
+            required
           />
           <button type="submit" className="btn-primary">
             Issue receipt
@@ -366,6 +387,8 @@ function BankabilityOpsPage() {
                 <th>Sale</th>
                 <th>Deducted</th>
                 <th>Net</th>
+                <th>Status</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -376,6 +399,28 @@ function BankabilityOpsPage() {
                   <td>{s.saleAmount}</td>
                   <td>{s.deductedAmount}</td>
                   <td>{s.netToFarmer}</td>
+                  <td>{s.status}</td>
+                  <td>
+                    {s.status === 'recorded' ? (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={async () => {
+                          try {
+                            await remitSettlement(s.settlementId, `MOMO-${s.settlementId}`)
+                            toast.success('Net remitted to farmer')
+                            load()
+                          } catch (e) {
+                            toast.error(e?.response?.data?.error || 'Remit failed')
+                          }
+                        }}
+                      >
+                        Remit net
+                      </button>
+                    ) : (
+                      s.remittanceRef || '—'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
