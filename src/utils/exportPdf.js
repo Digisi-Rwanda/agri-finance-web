@@ -256,7 +256,30 @@ export function exportLoanPackagePdf(pkg) {
     y,
   )
 
-  y = addSectionTitle(doc, '4. Collateral proof', y)
+  y = addSectionTitle(doc, '4. Repayment schedule', y)
+  const schedule = pkg.repaymentSchedule || {}
+  const installments = Array.isArray(schedule.installments) ? schedule.installments : []
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Monthly payment (RWF)', schedule.monthlyPayment],
+      ['Months', schedule.months || pkg.suggestedDurationMonths],
+      ['APR %', schedule.aprPercent],
+      ['Total payable (RWF)', schedule.totalPayable],
+      ['Plan summary', schedule.summary || pkg.suggestedRepaymentPlan],
+    ],
+    y,
+  )
+  if (installments.length) {
+    y = addDataTable(
+      doc,
+      ['#', 'Amount due (RWF)', 'Status'],
+      installments.map((row) => [row.period, row.amountDue, row.status || 'scheduled']),
+      y,
+    )
+  }
+
+  y = addSectionTitle(doc, '5. Collateral proof', y)
   const contracts = Array.isArray(pkg.contracts) ? pkg.contracts : []
   const receipts = Array.isArray(pkg.receipts) ? pkg.receipts : []
   y = addDataTable(
@@ -280,7 +303,7 @@ export function exportLoanPackagePdf(pkg) {
   )
 
   // Distinct guarantee line — must not be buried
-  y = addSectionTitle(doc, '5. CREDIT GUARANTEE (BDF/RDB)', y)
+  y = addSectionTitle(doc, '6. CREDIT GUARANTEE (BDF/RDB)', y)
   if (pkg.guarantee && (pkg.guarantee.guaranteeRequestId || pkg.guarantee.recommended)) {
     y = addKeyValueTable(
       doc,
@@ -297,7 +320,7 @@ export function exportLoanPackagePdf(pkg) {
     y = addKeyValueTable(doc, [['Guarantee', 'Not attached to this package']], y)
   }
 
-  y = addSectionTitle(doc, '6. Partner bank', y)
+  y = addSectionTitle(doc, '7. Partner bank', y)
   addKeyValueTable(
     doc,
     [

@@ -141,6 +141,12 @@ export const getLatestCreditScore = async (farmerId) => {
   return response.data
 }
 
+/** Spec v2 credit factor breakdown. */
+export const getCreditScoreFactors = async (farmerId) => {
+  const response = await apiClient.get(`/credit-scores/farmer/${farmerId}/factors`)
+  return response.data
+}
+
 export const getLoansByFarmerId = async (farmerId) => {
   const response = await apiClient.get('/loans', { params: { farmerId } })
   return response.data

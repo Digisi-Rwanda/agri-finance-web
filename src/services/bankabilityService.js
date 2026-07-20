@@ -66,8 +66,24 @@ export const createBank = (payload) => apiClient.post('/banks', payload).then((r
 
 export const updateBank = (id, payload) => apiClient.put(`/banks/${id}`, payload).then((r) => r.data)
 
-export const suggestLoanPackage = (farmerId) =>
-  apiClient.post('/loan-packages/suggest', { farmerId }).then((r) => r.data)
+export const suggestLoanPackage = (farmerId, collateralType) =>
+  apiClient
+    .post('/loan-packages/suggest', {
+      farmerId,
+      ...(collateralType ? { collateralType } : {}),
+    })
+    .then((r) => r.data)
+
+export const updateLoanPackageCollateral = (packageId, collateralType) =>
+  apiClient
+    .post(`/loan-packages/${packageId}/collateral`, { collateralType })
+    .then((r) => r.data)
+
+export const selectLoanPackageBank = (packageId, bankId) =>
+  apiClient.post(`/loan-packages/${packageId}/select-bank`, { bankId }).then((r) => r.data)
+
+export const submitLoanPackage = (packageId) =>
+  apiClient.post(`/loan-packages/${packageId}/submit`).then((r) => r.data)
 
 export const exportLoanPackage = (packageId) =>
   apiClient.get(`/loan-packages/${packageId}/export`).then((r) => r.data)
