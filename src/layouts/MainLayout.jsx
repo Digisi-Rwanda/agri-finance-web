@@ -69,6 +69,7 @@ const navItemsByRole = {
       isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
     },
     { to: '/admin', label: 'Users', icon: Users },
+    { to: '/admin/reports', label: 'Reports', icon: ScrollText },
     { to: '/audit', label: 'Audit Logs', icon: ScrollText },
   ],
   FARMER: [
@@ -78,6 +79,27 @@ const navItemsByRole = {
   ],
   COOPERATIVE: [
     { to: '/cooperative', label: 'Home', icon: Warehouse, end: true },
+    { to: '/payments', label: 'Payments', icon: CreditCard },
+    { to: '/profile', label: 'Profile', icon: User },
+    { to: '/settings', label: 'Settings', icon: Settings },
+  ],
+  INSPECTOR: [
+    { to: '/inspections', label: 'Inspections', icon: ClipboardCheck, end: true },
+    { to: '/profile', label: 'Profile', icon: User },
+    { to: '/settings', label: 'Settings', icon: Settings },
+  ],
+  GUARANTEE_OFFICER: [
+    { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck, end: true },
+    { to: '/bankability', label: 'Claims', icon: Warehouse },
+    { to: '/contracts', label: 'Receivables', icon: Briefcase },
+    { to: '/profile', label: 'Profile', icon: User },
+    { to: '/settings', label: 'Settings', icon: Settings },
+  ],
+  REGISTRATION_OFFICER: [
+    { to: '/admin/reports', label: 'Reports', icon: ScrollText, end: true },
+    { to: '/farmer', label: 'Farmers', icon: UserRound },
+    { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/profile', label: 'Profile', icon: User },
     { to: '/settings', label: 'Settings', icon: Settings },
@@ -93,6 +115,7 @@ const PAGE_TITLES = {
   '/insurer': 'Dashboard',
   '/insurance': 'Insurance',
   '/admin': 'Users',
+  '/admin/reports': 'Reports',
   '/audit': 'Audit Logs',
   '/consent': 'Settings',
   '/profile': 'My profile',
@@ -122,7 +145,7 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || (pathname === '/payments' && homePath === '/payments')) {
+  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || (pathname === '/payments' && homePath === '/payments')) {
     crumbs.push({ label: 'Dashboard' })
     return crumbs
   }

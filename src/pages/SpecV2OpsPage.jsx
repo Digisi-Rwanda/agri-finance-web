@@ -13,6 +13,7 @@ import {
   deliverInputLoan,
   exportLoanPackage,
   listBanks,
+  listGuaranteeFacilities,
   listGuaranteeRequests,
   listInputLoans,
   listWarehouses,
@@ -30,6 +31,7 @@ function SpecV2OpsPage() {
   const [warehouses, setWarehouses] = useState([])
   const [inputLoans, setInputLoans] = useState([])
   const [guarantees, setGuarantees] = useState([])
+  const [facilities, setFacilities] = useState([])
   const [banks, setBanks] = useState([])
   const [loading, setLoading] = useState(true)
   const [farmerIdForSuggest, setFarmerIdForSuggest] = useState('')
@@ -56,16 +58,18 @@ function SpecV2OpsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const [w, i, g, b] = await Promise.all([
+      const [w, i, g, b, f] = await Promise.all([
         listWarehouses(),
         listInputLoans(),
         listGuaranteeRequests(),
         listBanks(),
+        listGuaranteeFacilities(),
       ])
       setWarehouses(Array.isArray(w) ? w : [])
       setInputLoans(Array.isArray(i) ? i : [])
       setGuarantees(Array.isArray(g) ? g : [])
       setBanks(Array.isArray(b) ? b : [])
+      setFacilities(Array.isArray(f) ? f : [])
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Failed to load Spec v2 ops')
     } finally {
@@ -428,11 +432,39 @@ function SpecV2OpsPage() {
           </table>
         </DataTableShell>
 
+        <DataTableShell title="Guarantee facilities">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {facilities.length === 0 ? (
+                <tr>
+                  <td colSpan={3}>No facilities loaded</td>
+                </tr>
+              ) : (
+                facilities.map((f) => (
+                  <tr key={f.facilityId || f.code}>
+                    <td>{f.code}</td>
+                    <td>{f.name}</td>
+                    <td>{f.description || '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </DataTableShell>
+
         <DataTableShell title="Guarantee requests (origination)">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Package</th>
+                <th>Facility</th>
                 <th>Body</th>
                 <th>%</th>
                 <th>Status</th>
@@ -443,26 +475,43 @@ function SpecV2OpsPage() {
               {guarantees.map((g) => (
                 <tr key={g.guaranteeRequestId}>
                   <td>#{g.loanRequestPackageId}</td>
+                  <td>{g.facilityCode || 'BDF'}</td>
                   <td>{g.guaranteeBodyName}</td>
                   <td>{g.coveragePercentage}</td>
                   <td>{g.status}</td>
-                  <td>
+                  <td style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {g.status === 'pending' ? (
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        onClick={async () => {
-                          await decideGuaranteeRequest(g.guaranteeRequestId, {
-                            status: 'approved',
-                            referenceNumber: `BDF-${g.guaranteeRequestId}`,
-                            coveragePercentage: g.coveragePercentage || 50,
-                          })
-                          toast.success('Guarantee approved')
-                          load()
-                        }}
-                      >
-                        Approve
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={async () => {
+                            const code = g.facilityCode || 'BDF'
+                            await decideGuaranteeRequest(g.guaranteeRequestId, {
+                              status: 'approved',
+                              referenceNumber: `${code}-${g.guaranteeRequestId}`,
+                              coveragePercentage: g.coveragePercentage || 50,
+                            })
+                            toast.success('Guarantee approved')
+                            load()
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary danger"
+                          onClick={async () => {
+                            await decideGuaranteeRequest(g.guaranteeRequestId, {
+                              status: 'rejected',
+                            })
+                            toast.success('Guarantee rejected')
+                            load()
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </>
                     ) : null}
                   </td>
                 </tr>

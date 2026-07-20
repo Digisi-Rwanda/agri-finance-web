@@ -144,6 +144,9 @@ export const listGuaranteeRequests = (status) =>
     .get('/bankability/v2/guarantee-requests', { params: status ? { status } : {} })
     .then((r) => r.data)
 
+export const listGuaranteeFacilities = () =>
+  apiClient.get('/bankability/v2/guarantee-facilities').then((r) => r.data)
+
 export const decideGuaranteeRequest = (id, payload) =>
   apiClient.post(`/bankability/v2/guarantee-requests/${id}/decide`, payload).then((r) => r.data)
 

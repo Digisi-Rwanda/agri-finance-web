@@ -303,15 +303,15 @@ export function exportLoanPackagePdf(pkg) {
   )
 
   // Distinct guarantee line — must not be buried
-  y = addSectionTitle(doc, '6. CREDIT GUARANTEE (BDF/RDB)', y)
+  y = addSectionTitle(doc, '6. CREDIT GUARANTEE (BDF)', y)
   if (pkg.guarantee && (pkg.guarantee.guaranteeRequestId || pkg.guarantee.recommended)) {
     y = addKeyValueTable(
       doc,
       [
-        ['Guarantee body', pkg.guarantee.body || 'BDF/RDB'],
+        ['Guarantee body', pkg.guarantee.body || 'BDF'],
         ['Coverage %', pkg.guarantee.coveragePercent],
         ['Status', pkg.guarantee.status],
-        ['Reference number', pkg.guarantee.referenceNumber || 'Pending admin approval'],
+        ['Reference number', pkg.guarantee.referenceNumber || 'Pending approval'],
         ['Recommendation', pkg.guarantee.reason],
       ],
       y,

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import MainLayout from '../layouts/MainLayout'
 import AdminPanelPage from '../pages/AdminPanelPage'
+import AdminReportsPage from '../pages/AdminReportsPage'
 import AuditLogsPage from '../pages/AuditLogsPage'
 import ConsentPage from '../pages/ConsentPage'
 import FarmerAnalysisPage from '../pages/FarmerAnalysisPage'
@@ -50,7 +51,7 @@ function AppRoutes() {
         <Route
           path="loans"
           element={
-            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <LoanManagementPage />
             </ProtectedRoute>
           }
@@ -66,7 +67,7 @@ function AppRoutes() {
         <Route
           path="farmer"
           element={
-            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <FarmerAnalysisEntryPage />
             </ProtectedRoute>
           }
@@ -74,7 +75,7 @@ function AppRoutes() {
         <Route
           path="farmer/profile"
           element={
-            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <FarmerProfileRedirect />
             </ProtectedRoute>
           }
@@ -82,7 +83,7 @@ function AppRoutes() {
         <Route
           path="farmer/:farmerId"
           element={
-            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <FarmerAnalysisPage />
             </ProtectedRoute>
           }
@@ -98,7 +99,7 @@ function AppRoutes() {
         <Route
           path="insurance"
           element={
-            <ProtectedRoute allowedRoles={['INSURER', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['INSURER', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <InsuranceManagementPage />
             </ProtectedRoute>
           }
@@ -108,6 +109,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminPanelPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="admin/reports"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'REGISTRATION_OFFICER']}>
+              <AdminReportsPage />
             </ProtectedRoute>
           }
         />
@@ -123,7 +132,7 @@ function AppRoutes() {
         <Route
           path="contracts"
           element={
-            <ProtectedRoute allowedRoles={['BANK', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'GUARANTEE_OFFICER', 'REGISTRATION_OFFICER']}>
               <ContractsPage />
             </ProtectedRoute>
           }
@@ -131,7 +140,7 @@ function AppRoutes() {
         <Route
           path="inspections"
           element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'INSPECTOR']}>
               <InspectionQueuePage />
             </ProtectedRoute>
           }
@@ -139,7 +148,7 @@ function AppRoutes() {
         <Route
           path="bankability"
           element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'GUARANTEE_OFFICER']}>
               <BankabilityOpsPage />
             </ProtectedRoute>
           }
@@ -147,7 +156,7 @@ function AppRoutes() {
         <Route
           path="bankability/v2"
           element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
+            <ProtectedRoute allowedRoles={['ADMIN', 'GUARANTEE_OFFICER']}>
               <SpecV2OpsPage />
             </ProtectedRoute>
           }
@@ -174,7 +183,16 @@ function AppRoutes() {
         <Route
           path="payments"
           element={
-            <ProtectedRoute allowedRoles={['FARMER', 'BANK', 'INSURER', 'ADMIN']}>
+            <ProtectedRoute
+              allowedRoles={[
+                'FARMER',
+                'BANK',
+                'INSURER',
+                'ADMIN',
+                'COOPERATIVE',
+                'REGISTRATION_OFFICER',
+              ]}
+            >
               <MomoPaymentsPage />
             </ProtectedRoute>
           }

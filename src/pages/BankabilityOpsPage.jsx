@@ -165,7 +165,7 @@ function BankabilityOpsPage() {
         loanId: Number(claimForm.loanId),
         claimAmount: Number(claimForm.claimAmount),
         coveragePercent: Number(claimForm.coveragePercent),
-        guaranteeBody: 'BDF/RDB',
+        guaranteeBody: 'BDF',
         status: 'pending',
       })
       toast.success('Guarantee claim opened')
@@ -445,22 +445,35 @@ function BankabilityOpsPage() {
                   <td>{c.guaranteeBody}</td>
                   <td>{c.claimAmount}</td>
                   <td>{c.status}</td>
-                  <td>
+                  <td style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {c.status === 'pending' ? (
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        onClick={async () => {
-                          await updateGuaranteeClaim(c.claimId, {
-                            status: 'approved',
-                            referenceNumber: `BDF-${c.claimId}`,
-                          })
-                          toast.success('Claim approved')
-                          load()
-                        }}
-                      >
-                        Approve
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={async () => {
+                            await updateGuaranteeClaim(c.claimId, {
+                              status: 'approved',
+                              referenceNumber: `BDF-${c.claimId}`,
+                            })
+                            toast.success('Claim approved')
+                            load()
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary danger"
+                          onClick={async () => {
+                            await updateGuaranteeClaim(c.claimId, { status: 'rejected' })
+                            toast.success('Claim rejected')
+                            load()
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </>
                     ) : null}
                   </td>
                 </tr>

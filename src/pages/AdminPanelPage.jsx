@@ -1,4 +1,4 @@
-import { ArrowRight, Landmark, ScrollText, ShieldCheck, UserRound, Users } from 'lucide-react'
+import { ArrowRight, Landmark, ScrollText, ShieldCheck, UserRound, Users, BarChart3 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -13,7 +13,16 @@ import {
   updateAdminUserRole,
 } from '../services/auditService'
 
-const ROLES = ['ADMIN', 'BANK', 'INSURER', 'FARMER', 'COOPERATIVE']
+const ROLES = [
+  'ADMIN',
+  'BANK',
+  'INSURER',
+  'FARMER',
+  'COOPERATIVE',
+  'INSPECTOR',
+  'REGISTRATION_OFFICER',
+  'GUARANTEE_OFFICER',
+]
 
 function AdminPanelPage() {
   const [stats, setStats] = useState(null)
@@ -74,6 +83,9 @@ function AdminPanelPage() {
         subtitle="Manage portal accounts and assign roles."
         actions={
           <>
+            <Link to="/admin/reports" className="btn-secondary">
+              Reports
+            </Link>
             <Link to="/audit" className="btn-secondary">
               Audit logs
             </Link>
@@ -108,6 +120,12 @@ function AdminPanelPage() {
             title="Users"
             description="Roles & account access"
             icon={Users}
+          />
+          <QuickActionCard
+            to="/admin/reports"
+            title="Reports"
+            description="Loans, harvest, insurance"
+            icon={BarChart3}
           />
           <QuickActionCard
             to="/audit"

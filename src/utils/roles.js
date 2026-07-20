@@ -4,6 +4,9 @@ const HOME_BY_ROLE = {
   INSURER: '/insurer',
   FARMER: '/payments',
   COOPERATIVE: '/cooperative',
+  INSPECTOR: '/inspections',
+  GUARANTEE_OFFICER: '/bankability/v2',
+  REGISTRATION_OFFICER: '/admin/reports',
 }
 
 export const ROLE_LABELS = {
@@ -12,6 +15,9 @@ export const ROLE_LABELS = {
   INSURER: 'Insurance partner',
   FARMER: 'Farmer',
   COOPERATIVE: 'Cooperative',
+  INSPECTOR: 'Field inspector',
+  GUARANTEE_OFFICER: 'Guarantee officer',
+  REGISTRATION_OFFICER: 'Registration officer',
 }
 
 export const getHomePathForRole = (role) => HOME_BY_ROLE[role] || '/'
