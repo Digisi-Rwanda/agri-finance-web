@@ -97,6 +97,14 @@ export const listSettlements = () => apiClient.get('/bankability/settlements').t
 export const createSettlement = (payload) =>
   apiClient.post('/bankability/settlements', payload).then((r) => r.data)
 
+// Step: farmer/staff transparency timeline for one settlement
+export const fetchSettlementTimeline = (id) =>
+  apiClient.get(`/bankability/settlements/${id}/timeline`).then((r) => r.data)
+
+// Step: all settlement timelines for a farmer
+export const fetchSettlementTimelines = (farmerId) =>
+  apiClient.get('/bankability/settlements/timelines', { params: { farmerId } }).then((r) => r.data)
+
 export const listGuaranteeClaims = (status) =>
   apiClient.get('/bankability/guarantee-claims', { params: status ? { status } : {} }).then((r) => r.data)
 

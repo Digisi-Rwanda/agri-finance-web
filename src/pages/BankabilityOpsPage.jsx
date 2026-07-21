@@ -7,6 +7,7 @@ import DataTableShell from '../components/ui/DataTableShell'
 import {
   createBankProduct,
   createSettlement,
+  fetchSettlementTimeline,
   issueReceipt,
   listBankProducts,
   listBanks,
@@ -45,7 +46,10 @@ function BankabilityOpsPage() {
     farmerId: '',
     saleAmount: '',
     inputLoanBalance: '',
+    feeAmount: '',
+    feeLabel: 'Cooperative / processing fees',
   })
+  const [timeline, setTimeline] = useState(null)
   const [receiptForm, setReceiptForm] = useState({
     cooperativeName: '',
     farmerId: '',
@@ -119,9 +123,18 @@ function BankabilityOpsPage() {
         saleAmount: Number(settleForm.saleAmount),
         // Leave 0 to auto-load outstanding input loans from backend.
         inputLoanBalance: settleForm.inputLoanBalance ? Number(settleForm.inputLoanBalance) : 0,
+        feeAmount: settleForm.feeAmount ? Number(settleForm.feeAmount) : 0,
+        feeLabel: settleForm.feeLabel || 'Cooperative / processing fees',
       })
-      toast.success('Settlement recorded — input loans deducted automatically')
-      setSettleForm({ cooperativeName: '', farmerId: '', saleAmount: '', inputLoanBalance: '' })
+      toast.success('Settlement recorded — farmer timeline seeded')
+      setSettleForm({
+        cooperativeName: '',
+        farmerId: '',
+        saleAmount: '',
+        inputLoanBalance: '',
+        feeAmount: '',
+        feeLabel: 'Cooperative / processing fees',
+      })
       load()
     } catch (err) {
       toast.error(err?.response?.data?.error || 'Settlement failed')
@@ -271,6 +284,18 @@ function BankabilityOpsPage() {
             value={settleForm.inputLoanBalance}
             onChange={(e) => setSettleForm({ ...settleForm, inputLoanBalance: e.target.value })}
           />
+          <input
+            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Fee amount (optional)"
+            value={settleForm.feeAmount}
+            onChange={(e) => setSettleForm({ ...settleForm, feeAmount: e.target.value })}
+          />
+          <input
+            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+            placeholder="Fee label"
+            value={settleForm.feeLabel}
+            onChange={(e) => setSettleForm({ ...settleForm, feeLabel: e.target.value })}
+          />
           <button type="submit" className="btn-primary">
             Record settlement
           </button>
@@ -391,7 +416,8 @@ function BankabilityOpsPage() {
                 <th>Coop</th>
                 <th>Farmer</th>
                 <th>Sale</th>
-                <th>Deducted</th>
+                <th>Loans</th>
+                <th>Fees</th>
                 <th>Net</th>
                 <th>Status</th>
                 <th />
@@ -404,9 +430,24 @@ function BankabilityOpsPage() {
                   <td>#{s.farmerId}</td>
                   <td>{s.saleAmount}</td>
                   <td>{s.deductedAmount}</td>
+                  <td>{s.feeAmount ?? 0}</td>
                   <td>{s.netToFarmer}</td>
                   <td>{s.status}</td>
-                  <td>
+                  <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={async () => {
+                        try {
+                          const tl = await fetchSettlementTimeline(s.settlementId)
+                          setTimeline(tl)
+                        } catch {
+                          toast.error('Could not load timeline')
+                        }
+                      }}
+                    >
+                      Timeline
+                    </button>
                     {s.status === 'recorded' ? (
                       <button
                         type="button"
@@ -414,8 +455,10 @@ function BankabilityOpsPage() {
                         onClick={async () => {
                           try {
                             await remitSettlement(s.settlementId, `MOMO-${s.settlementId}`)
-                            toast.success('Net remitted to farmer')
+                            toast.success('Net remitted — farmer timeline complete')
                             load()
+                            const tl = await fetchSettlementTimeline(s.settlementId)
+                            setTimeline(tl)
                           } catch (e) {
                             toast.error(e?.response?.data?.error || 'Remit failed')
                           }
@@ -424,7 +467,7 @@ function BankabilityOpsPage() {
                         Remit net
                       </button>
                     ) : (
-                      s.remittanceRef || '—'
+                      <span>{s.remittanceRef || '—'}</span>
                     )}
                   </td>
                 </tr>
@@ -432,6 +475,37 @@ function BankabilityOpsPage() {
             </tbody>
           </table>
         </DataTableShell>
+
+        {timeline ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <h3 className="font-semibold">
+                Farmer timeline · #{timeline.settlementId} · {timeline.cooperativeName}
+              </h3>
+              <button type="button" className="btn-secondary" onClick={() => setTimeline(null)}>
+                Close
+              </button>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+              Current: {timeline.currentStep} · {timeline.stepsCompleted}/{timeline.stepsTotal} · net{' '}
+              {timeline.netToFarmer} RWF
+            </p>
+            <ol style={{ marginTop: 12, paddingLeft: 18 }}>
+              {(timeline.timeline || []).map((step) => (
+                <li key={step.eventId || step.stepKey} style={{ marginBottom: 10 }}>
+                  <strong>{step.title}</strong>
+                  {' · '}
+                  <span style={{ textTransform: 'capitalize' }}>{step.status}</span>
+                  {step.amount != null ? ` · ${step.amount} RWF` : ''}
+                  {step.occurredAt ? ` · ${String(step.occurredAt).slice(0, 19)}` : ''}
+                  {step.detail ? (
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{step.detail}</div>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
 
         <DataTableShell title="Guarantee claims">
           <table className="data-table">
