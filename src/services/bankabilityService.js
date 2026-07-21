@@ -40,6 +40,25 @@ export const uploadInspectionEvidence = (id, file) => {
 export const listContractConsents = (contractId) =>
   apiClient.get(`/contracts/${contractId}/consents`).then((r) => r.data)
 
+// --- OTP Consent Vault ---
+// Step: list verified/pending consents for bank underwriting reviews
+export const listConsentVault = (farmerId) =>
+  apiClient
+    .get('/bankability/consent-vault', { params: farmerId ? { farmerId } : {} })
+    .then((r) => r.data)
+
+export const getConsentVaultDetail = (id) =>
+  apiClient.get(`/bankability/consent-vault/${id}`).then((r) => r.data)
+
+export const listConsentOtpHistory = (contractId) =>
+  apiClient.get(`/bankability/consent-vault/by-contract/${contractId}/history`).then((r) => r.data)
+
+export const regenerateConsentCertificate = (id) =>
+  apiClient.post(`/bankability/consent-vault/${id}/regenerate`).then((r) => r.data)
+
+export const listConsentEvidence = (farmerId) =>
+  apiClient.get('/bankability/consent-vault/evidence', { params: { farmerId } }).then((r) => r.data)
+
 export const listBankProducts = (bankId) =>
   apiClient.get('/bankability/bank-products', { params: bankId ? { bankId } : {} }).then((r) => r.data)
 

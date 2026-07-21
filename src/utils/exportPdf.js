@@ -320,7 +320,27 @@ export function exportLoanPackagePdf(pkg) {
     y = addKeyValueTable(doc, [['Guarantee', 'Not attached to this package']], y)
   }
 
-  y = addSectionTitle(doc, '7. Partner bank', y)
+  // Step: OTP Consent Vault evidence for underwriting reviews
+  y = addSectionTitle(doc, '7. OTP consent evidence', y)
+  const consents = Array.isArray(pkg.consentEvidence) ? pkg.consentEvidence : []
+  if (consents.length === 0) {
+    y = addKeyValueTable(doc, [['Consent vault', 'No OTP-verified consents attached']], y)
+  } else {
+    y = addDataTable(
+      doc,
+      ['Certificate', 'Contract', 'Buyer', 'Verified', 'PDF'],
+      consents.map((c) => [
+        c.certificateRef || c.legalConsentId,
+        c.contractId,
+        c.partyName,
+        c.verifiedAt || (c.otpVerified ? 'verified' : 'pending'),
+        c.consentDocumentUrl || '—',
+      ]),
+      y,
+    )
+  }
+
+  y = addSectionTitle(doc, '8. Partner bank', y)
   addKeyValueTable(
     doc,
     [

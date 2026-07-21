@@ -23,6 +23,7 @@ import MomoPaymentsPage from '../pages/MomoPaymentsPage'
 import InspectionQueuePage from '../pages/InspectionQueuePage'
 import BankabilityOpsPage from '../pages/BankabilityOpsPage'
 import PaymentWatchPage from '../pages/PaymentWatchPage'
+import ConsentVaultPage from '../pages/ConsentVaultPage'
 import ContractsPage from '../pages/ContractsPage'
 import SpecV2OpsPage from '../pages/SpecV2OpsPage'
 import BuyerVerificationPage from '../pages/BuyerVerificationPage'
@@ -159,6 +160,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'GUARANTEE_OFFICER']}>
               <PaymentWatchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="consent-vault"
+          element={
+            <ProtectedRoute allowedRoles={['BANK', 'ADMIN', 'GUARANTEE_OFFICER', 'REGISTRATION_OFFICER']}>
+              <ConsentVaultPage />
             </ProtectedRoute>
           }
         />

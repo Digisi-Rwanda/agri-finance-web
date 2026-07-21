@@ -6,6 +6,7 @@ import {
   Contact,
   CreditCard,
   Eye,
+  FileKey,
   Home,
   Landmark,
   LogOut,
@@ -37,6 +38,7 @@ const navItemsByRole = {
     { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
+    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     {
       to: '/farmer/profile',
@@ -59,6 +61,7 @@ const navItemsByRole = {
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
+    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/bankability', label: 'Bankability', icon: Warehouse },
     { to: '/bankability/v2', label: 'Spec v2 ops', icon: ClipboardCheck },
     { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
@@ -95,6 +98,7 @@ const navItemsByRole = {
     { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck, end: true },
     { to: '/bankability', label: 'Claims', icon: Warehouse },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
+    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/profile', label: 'Profile', icon: User },
     { to: '/settings', label: 'Settings', icon: Settings },
@@ -103,6 +107,7 @@ const navItemsByRole = {
     { to: '/admin/reports', label: 'Reports', icon: ScrollText, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     { to: '/profile', label: 'Profile', icon: User },
@@ -130,6 +135,7 @@ const PAGE_TITLES = {
   '/inspections': 'Inspections',
   '/bankability': 'Bankability ops',
   '/payment-watch': 'Payment Watch',
+  '/consent-vault': 'OTP Consent Vault',
   '/bankability/v2': 'Spec v2 ops',
   '/cooperative': 'Cooperative',
 }
@@ -150,7 +156,7 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || (pathname === '/payments' && homePath === '/payments')) {
+  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || (pathname === '/payments' && homePath === '/payments')) {
     crumbs.push({ label: 'Dashboard' })
     return crumbs
   }
