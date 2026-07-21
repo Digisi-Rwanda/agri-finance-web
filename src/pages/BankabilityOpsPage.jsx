@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -183,9 +184,14 @@ function BankabilityOpsPage() {
         title="Bankability operations"
         subtitle="Bank products, coop settlements, warehouse receipts, payment watch, and guarantee claims."
         actions={
-          <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link to="/payment-watch" className="btn-secondary">
+              Payment Watch
+            </Link>
+            <button type="button" className="btn-primary" onClick={load} disabled={loading}>
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         }
       />
 

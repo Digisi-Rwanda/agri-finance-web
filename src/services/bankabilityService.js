@@ -49,6 +49,30 @@ export const createBankProduct = (payload) =>
 export const listPaymentWatches = (status = 'watching') =>
   apiClient.get('/bankability/payment-watches', { params: { status } }).then((r) => r.data)
 
+// Step: Payment Watch dashboard totals (expected / received / gap / status counts)
+export const fetchPaymentWatchSummary = (farmerId) =>
+  apiClient
+    .get('/bankability/payment-watches/summary', { params: farmerId ? { farmerId } : {} })
+    .then((r) => r.data)
+
+// Step: bank/admin overdue queue
+export const listOverduePaymentWatches = () =>
+  apiClient.get('/bankability/payment-watches/overdue').then((r) => r.data)
+
+// Step: overpayments / wrong amounts for review
+export const listUnmatchedPaymentWatches = () =>
+  apiClient.get('/bankability/payment-watches/unmatched').then((r) => r.data)
+
+// Step: recompute statuses + notify farmers (once per day per overdue watch)
+export const scanPaymentWatchOverdue = () =>
+  apiClient.post('/bankability/payment-watches/scan-overdue').then((r) => r.data)
+
+// Step: post receipt — replace=true sets absolute total, else accumulates partials
+export const recordPaymentWatchReceived = (watchId, amount, replace = false) =>
+  apiClient
+    .post(`/bankability/payment-watches/${watchId}/received`, { amount, replace })
+    .then((r) => r.data)
+
 export const listSettlements = () => apiClient.get('/bankability/settlements').then((r) => r.data)
 
 export const createSettlement = (payload) =>
