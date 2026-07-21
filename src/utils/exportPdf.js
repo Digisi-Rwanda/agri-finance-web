@@ -385,3 +385,82 @@ export function exportVerifiedFarmersPdf(payload) {
   )
   savePdf(doc, 'verified-farmers-export')
 }
+
+/**
+ * Guarantee Claim Package PDF (#7) for guarantee providers.
+ */
+export function exportGuaranteeClaimPackagePdf(pack) {
+  const doc = new jsPDF()
+  const claim = pack?.claim || {}
+  const loan = pack?.loan || {}
+  let y = addReportHeader(
+    doc,
+    'Guarantee Claim Package',
+    pack?.title || 'Digisi Agri Trust — guarantee recovery file',
+  )
+  y = addSectionTitle(doc, 'Claim', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Claim ID', claim.claimId],
+      ['Guarantee body', claim.guaranteeBody],
+      ['Claim amount', claim.claimAmount],
+      ['Coverage %', claim.coveragePercent],
+      ['Status', claim.status],
+      ['Reference', claim.referenceNumber],
+    ],
+    y,
+  )
+  y = addSectionTitle(doc, 'Loan details', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Loan ID', loan.loanId],
+      ['Farmer ID', loan.farmerId],
+      ['Bank ID', loan.bankId],
+      ['Amount', loan.amount],
+      ['Status', loan.status],
+      ['Purpose', loan.loanPurpose],
+      ['Disbursed', loan.disbursementDate],
+    ],
+    y,
+  )
+  const evidence = pack?.defaultEvidence || {}
+  y = addSectionTitle(doc, 'Default evidence', y)
+  y = addKeyValueTable(
+    doc,
+    [
+      ['Loan status', evidence.loanStatus],
+      ['Defaulted', evidence.isDefaulted ? 'Yes' : 'No'],
+      ['Prior paid loans', evidence.priorPaidLoans],
+      ['Prior defaulted', evidence.priorDefaultedLoans],
+      ['Overdue watches', Array.isArray(evidence.overduePaymentWatches) ? evidence.overduePaymentWatches.length : 0],
+    ],
+    y,
+  )
+  const recovery = Array.isArray(pack?.recoveryActions) ? pack.recoveryActions : []
+  y = addSectionTitle(doc, 'Recovery actions taken', y)
+  y = addDataTable(
+    doc,
+    ['When', 'Type', 'Detail', 'By'],
+    recovery.map((r) => [r.occurredAt, r.actionType, r.detail, r.performedBy]),
+    y,
+  )
+  const visits = Array.isArray(pack?.fieldVisitReports) ? pack.fieldVisitReports : []
+  y = addSectionTitle(doc, 'Field visit reports', y)
+  y = addDataTable(
+    doc,
+    ['Inspection', 'Contract', 'Outcome', 'Notes'],
+    visits.map((v) => [v.inspectionId, v.contractId, v.outcome, v.visitNotes]),
+    y,
+  )
+  const notes = Array.isArray(pack?.farmerNotifications) ? pack.farmerNotifications : []
+  y = addSectionTitle(doc, 'Farmer notification records', y)
+  y = addDataTable(
+    doc,
+    ['When', 'Type', 'Title'],
+    notes.map((n) => [n.createdAt, n.type, n.title]),
+    y,
+  )
+  savePdf(doc, slugifyFilename(`claim-package-${claim.claimId || 'export'}`))
+}

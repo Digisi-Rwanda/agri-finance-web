@@ -9,6 +9,7 @@ import {
   FileKey,
   Home,
   Landmark,
+  Layers,
   LogOut,
   Menu,
   MoreHorizontal,
@@ -39,6 +40,7 @@ const navItemsByRole = {
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
+    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/payments', label: 'Payments', icon: CreditCard },
     {
       to: '/farmer/profile',
@@ -62,6 +64,7 @@ const navItemsByRole = {
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
+    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/bankability', label: 'Bankability', icon: Warehouse },
     { to: '/bankability/v2', label: 'Spec v2 ops', icon: ClipboardCheck },
     { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
@@ -99,6 +102,7 @@ const navItemsByRole = {
     { to: '/bankability', label: 'Claims', icon: Warehouse },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
+    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/profile', label: 'Profile', icon: User },
     { to: '/settings', label: 'Settings', icon: Settings },
@@ -136,6 +140,7 @@ const PAGE_TITLES = {
   '/bankability': 'Bankability ops',
   '/payment-watch': 'Payment Watch',
   '/consent-vault': 'OTP Consent Vault',
+  '/trust-ladder': 'Trust Ladder',
   '/bankability/v2': 'Spec v2 ops',
   '/cooperative': 'Cooperative',
 }
@@ -156,7 +161,7 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || (pathname === '/payments' && homePath === '/payments')) {
+  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || pathname === '/trust-ladder' || (pathname === '/payments' && homePath === '/payments')) {
     crumbs.push({ label: 'Dashboard' })
     return crumbs
   }

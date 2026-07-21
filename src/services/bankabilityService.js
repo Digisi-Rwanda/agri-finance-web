@@ -114,6 +114,21 @@ export const openGuaranteeClaim = (payload) =>
 export const updateGuaranteeClaim = (id, payload) =>
   apiClient.put(`/bankability/guarantee-claims/${id}`, payload).then((r) => r.data)
 
+export const fetchGuaranteeClaimPackage = (id) =>
+  apiClient.get(`/bankability/guarantee-claims/${id}/package`).then((r) => r.data)
+
+export const generateGuaranteeClaimPackagePdf = (id) =>
+  apiClient.post(`/bankability/guarantee-claims/${id}/package/pdf`).then((r) => r.data)
+
+export const addClaimRecoveryAction = (id, payload) =>
+  apiClient.post(`/bankability/guarantee-claims/${id}/recovery-actions`, payload).then((r) => r.data)
+
+export const listClaimRecoveryActions = (id) =>
+  apiClient.get(`/bankability/guarantee-claims/${id}/recovery-actions`).then((r) => r.data)
+
+export const fetchTrustLadder = (params = {}) =>
+  apiClient.get('/bankability/trust-ladder', { params }).then((r) => r.data)
+
 export const listLoanMessages = (loanId) =>
   apiClient.get('/bankability/loan-messages', { params: { loanId } }).then((r) => r.data)
 

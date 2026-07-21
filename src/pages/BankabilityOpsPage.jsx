@@ -7,7 +7,10 @@ import DataTableShell from '../components/ui/DataTableShell'
 import {
   createBankProduct,
   createSettlement,
+  fetchGuaranteeClaimPackage,
   fetchSettlementTimeline,
+  generateGuaranteeClaimPackagePdf,
+  addClaimRecoveryAction,
   issueReceipt,
   listBankProducts,
   listBanks,
@@ -20,6 +23,7 @@ import {
   scanCollateralExpiry,
   updateGuaranteeClaim,
 } from '../services/bankabilityService'
+import { exportGuaranteeClaimPackagePdf } from '../utils/exportPdf'
 
 /**
  * Admin bankability ops: bank products, settlements, guarantees, collateral expiry.
@@ -62,6 +66,13 @@ function BankabilityOpsPage() {
     expiryDate: '',
   })
   const [claimForm, setClaimForm] = useState({ loanId: '', claimAmount: '', coveragePercent: '50' })
+  const [claimPackage, setClaimPackage] = useState(null)
+  const [recoveryForm, setRecoveryForm] = useState({
+    claimId: '',
+    actionType: 'PHONE_CALL',
+    detail: '',
+    performedBy: 'BANK',
+  })
 
   const load = async () => {
     setLoading(true)
@@ -191,6 +202,48 @@ function BankabilityOpsPage() {
     }
   }
 
+  const openClaimPackage = async (claimId) => {
+    try {
+      const pack = await fetchGuaranteeClaimPackage(claimId)
+      setClaimPackage(pack)
+      setRecoveryForm((f) => ({ ...f, claimId: String(claimId) }))
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Could not load claim package')
+    }
+  }
+
+  const downloadClaimPackage = async (claimId) => {
+    try {
+      const pack = await generateGuaranteeClaimPackagePdf(claimId)
+      exportGuaranteeClaimPackagePdf(pack)
+      toast.success('Claim package PDF downloaded')
+      setClaimPackage(pack)
+      load()
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'PDF export failed')
+    }
+  }
+
+  const onRecovery = async (e) => {
+    e.preventDefault()
+    if (!recoveryForm.claimId) {
+      toast.info('Open a claim package first (or enter claim ID)')
+      return
+    }
+    try {
+      await addClaimRecoveryAction(Number(recoveryForm.claimId), {
+        actionType: recoveryForm.actionType,
+        detail: recoveryForm.detail,
+        performedBy: recoveryForm.performedBy,
+      })
+      toast.success('Recovery action logged')
+      setRecoveryForm((f) => ({ ...f, detail: '' }))
+      openClaimPackage(Number(recoveryForm.claimId))
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Could not log recovery action')
+    }
+  }
+
   return (
     <section className="dashboard-page">
       <PageHeader
@@ -201,6 +254,9 @@ function BankabilityOpsPage() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link to="/payment-watch" className="btn-secondary">
               Payment Watch
+            </Link>
+            <Link to="/trust-ladder" className="btn-secondary">
+              Trust Ladder
             </Link>
             <button
               type="button"
@@ -542,6 +598,20 @@ function BankabilityOpsPage() {
                   <td>{c.claimAmount}</td>
                   <td>{c.status}</td>
                   <td style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => openClaimPackage(c.claimId)}
+                    >
+                      Package
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => downloadClaimPackage(c.claimId)}
+                    >
+                      PDF
+                    </button>
                     {c.status === 'pending' ? (
                       <>
                         <button
@@ -577,6 +647,71 @@ function BankabilityOpsPage() {
             </tbody>
           </table>
         </DataTableShell>
+
+        {claimPackage ? (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold">
+                Claim package #{claimPackage.claim?.claimId} · loan #{claimPackage.loan?.loanId}
+              </h3>
+              <button type="button" className="btn-secondary" onClick={() => setClaimPackage(null)}>
+                Close
+              </button>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              Status {claimPackage.loan?.status} · claim {claimPackage.claim?.claimAmount} RWF · prior
+              paid {claimPackage.defaultEvidence?.priorPaidLoans} · defaulted{' '}
+              {claimPackage.defaultEvidence?.priorDefaultedLoans}
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <strong>Recovery actions</strong>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {(claimPackage.recoveryActions || []).length === 0 ? (
+                    <li style={{ color: 'var(--text-muted)' }}>None yet</li>
+                  ) : (
+                    (claimPackage.recoveryActions || []).map((r) => (
+                      <li key={r.actionId}>
+                        {String(r.occurredAt || '').slice(0, 19)} · {r.actionType} — {r.detail}
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+              <div>
+                <strong>Field visits / notifications</strong>
+                <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {(claimPackage.fieldVisitReports || []).length} field visits ·{' '}
+                  {(claimPackage.farmerNotifications || []).length} farmer notices
+                </p>
+              </div>
+            </div>
+            <form onSubmit={onRecovery} className="flex flex-wrap gap-2 items-end">
+              <select
+                className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+                value={recoveryForm.actionType}
+                onChange={(e) => setRecoveryForm({ ...recoveryForm, actionType: e.target.value })}
+              >
+                <option value="PHONE_CALL">Phone call</option>
+                <option value="SMS_NOTICE">SMS notice</option>
+                <option value="FIELD_VISIT">Field visit</option>
+                <option value="DEMAND_LETTER">Demand letter</option>
+                <option value="RESTRUCTURE_OFFER">Restructure offer</option>
+                <option value="OTHER">Other</option>
+              </select>
+              <input
+                className="min-w-[220px] flex-1 rounded-lg border border-[var(--border)] bg-transparent p-2"
+                placeholder="Recovery action detail"
+                value={recoveryForm.detail}
+                onChange={(e) => setRecoveryForm({ ...recoveryForm, detail: e.target.value })}
+                required
+              />
+              <button type="submit" className="btn-primary">
+                Log recovery
+              </button>
+            </form>
+          </div>
+        ) : null}
 
         <DataTableShell title="Collateral expiring within 30 days">
           <table className="data-table">
