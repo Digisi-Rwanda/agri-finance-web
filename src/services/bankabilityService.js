@@ -120,11 +120,30 @@ export const listLoanMessages = (loanId) =>
 export const postLoanMessage = (payload) =>
   apiClient.post('/bankability/loan-messages', payload).then((r) => r.data)
 
+export const uploadLoanMessageAttachment = (messageId, file) => {
+  const form = new FormData()
+  form.append('file', file)
+  return apiClient
+    .post(`/bankability/loan-messages/${messageId}/attachment`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then((r) => r.data)
+}
+
 export const issueReceipt = (payload) =>
   apiClient.post('/bankability/receipts', payload).then((r) => r.data)
 
 export const listExpiringReceipts = (withinDays = 30) =>
   apiClient.get('/bankability/receipts/expiring', { params: { withinDays } }).then((r) => r.data)
+
+export const scanCollateralExpiry = () =>
+  apiClient.post('/bankability/collateral/scan-expiry').then((r) => r.data)
+
+export const createCollateralAsset = (payload) =>
+  apiClient.post('/bankability/collateral-assets', payload).then((r) => r.data)
+
+export const listCollateralAssets = (farmerId) =>
+  apiClient.get('/bankability/collateral-assets', { params: { farmerId } }).then((r) => r.data)
 
 export const listBanks = () => apiClient.get('/banks').then((r) => r.data)
 

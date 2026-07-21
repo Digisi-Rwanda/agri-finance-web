@@ -17,6 +17,7 @@ import {
   listSettlements,
   openGuaranteeClaim,
   remitSettlement,
+  scanCollateralExpiry,
   updateGuaranteeClaim,
 } from '../services/bankabilityService'
 
@@ -201,6 +202,21 @@ function BankabilityOpsPage() {
             <Link to="/payment-watch" className="btn-secondary">
               Payment Watch
             </Link>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                try {
+                  const r = await scanCollateralExpiry()
+                  toast.success(`Expiry scan: notified ${r.notified}, expired ${r.expiredMarked}`)
+                  load()
+                } catch {
+                  toast.error('Collateral scan failed')
+                }
+              }}
+            >
+              Scan collateral expiry
+            </button>
             <button type="button" className="btn-primary" onClick={load} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </button>
@@ -211,7 +227,7 @@ function BankabilityOpsPage() {
       <div className="widgets four">
         <StatCard title="Bank products" value={String(products.length)} />
         <StatCard title="Open payment watches" value={String(watches.length)} />
-        <StatCard title="Receipts expiring (30d)" value={String(expiring.length)} />
+        <StatCard title="Collateral expiring (30d)" value={String(expiring.length)} />
         <StatCard title="Guarantee claims" value={String(claims.length)} />
       </div>
 
@@ -566,24 +582,30 @@ function BankabilityOpsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Receipt</th>
+                <th>Type</th>
+                <th>Item</th>
                 <th>Farmer</th>
-                <th>Commodity</th>
+                <th>Title</th>
+                <th>Days left</th>
                 <th>Expiry</th>
+                <th>Urgency</th>
               </tr>
             </thead>
             <tbody>
               {expiring.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>No expiring receipts.</td>
+                  <td colSpan={7}>No expiring collateral (receipts, insurance, land, assets).</td>
                 </tr>
               ) : (
                 expiring.map((r) => (
-                  <tr key={r.receiptId}>
-                    <td>#{r.receiptId}</td>
+                  <tr key={`${r.itemType}-${r.itemId}`}>
+                    <td>{r.itemType}</td>
+                    <td>#{r.itemId}</td>
                     <td>#{r.farmerId}</td>
-                    <td>{r.commodity}</td>
+                    <td>{r.title || r.commodity || '—'}</td>
+                    <td>{r.daysRemaining ?? '—'}</td>
                     <td>{r.expiryDate}</td>
+                    <td>{r.urgency || '—'}</td>
                   </tr>
                 ))
               )}

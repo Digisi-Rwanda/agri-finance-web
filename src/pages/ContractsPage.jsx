@@ -4,7 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
-import { listContracts, listContractConsents, listLoanMessages, postLoanMessage, startBuyerConsent } from '../services/bankabilityService'
+import { listContracts, listContractConsents, listLoanMessages, postLoanMessage, startBuyerConsent, uploadLoanMessageAttachment } from '../services/bankabilityService'
 
 /**
  * Contracts / receivables overview for bank + admin.
@@ -16,6 +16,8 @@ function ContractsPage() {
   const [loanId, setLoanId] = useState('')
   const [messages, setMessages] = useState([])
   const [reply, setReply] = useState('')
+  const [messageType, setMessageType] = useState('CLARIFICATION')
+  const [attachFile, setAttachFile] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -82,14 +84,24 @@ function ContractsPage() {
   const sendReply = async () => {
     if (!loanId || !reply.trim()) return
     try {
-      await postLoanMessage({
+      const saved = await postLoanMessage({
         loanId: Number(loanId),
         senderRole: 'BANK',
+        messageType,
         body: reply.trim(),
+        requiresResponse: messageType === 'DOCUMENT_REQUEST' || messageType === 'CLARIFICATION',
       })
+      if (attachFile && saved?.messageId) {
+        await uploadLoanMessageAttachment(saved.messageId, attachFile)
+      }
       setReply('')
+      setAttachFile(null)
       loadMessages()
-      toast.success('Message sent')
+      toast.success(
+        messageType === 'DOCUMENT_REQUEST'
+          ? 'Document request sent to farmer'
+          : 'Clarification sent to farmer',
+      )
     } catch {
       toast.error('Send failed')
     }
@@ -169,6 +181,9 @@ function ContractsPage() {
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
           <h3 className="mb-3 font-semibold">Loan clarification thread</h3>
+          <p className="mb-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+            Request documents or clarifications. Farmer replies and uploads appear in history.
+          </p>
           <div className="mb-3 flex flex-wrap gap-2">
             <input
               className="rounded-lg border border-[var(--border)] bg-transparent p-2"
@@ -176,6 +191,15 @@ function ContractsPage() {
               value={loanId}
               onChange={(e) => setLoanId(e.target.value)}
             />
+            <select
+              className="rounded-lg border border-[var(--border)] bg-transparent p-2"
+              value={messageType}
+              onChange={(e) => setMessageType(e.target.value)}
+            >
+              <option value="CLARIFICATION">Ask clarification</option>
+              <option value="DOCUMENT_REQUEST">Request documents</option>
+              <option value="INFO">Info note</option>
+            </select>
             <button type="button" className="btn-secondary" onClick={loadMessages}>
               Load messages
             </button>
@@ -183,20 +207,42 @@ function ContractsPage() {
           <ul className="mb-3 max-h-48 space-y-2 overflow-auto text-sm">
             {messages.map((m) => (
               <li key={m.messageId} className="rounded-lg bg-[var(--surface-muted,#f3f4f6)] p-2">
-                <strong>{m.senderRole}:</strong> {m.body}
+                <strong>{m.senderRole}</strong>
+                {m.messageType ? ` · ${m.messageType}` : ''}
+                {m.requiresResponse && !m.respondedAt ? ' · awaiting farmer' : ''}
+                {m.respondedAt ? ' · answered' : ''}
+                : {m.body}
+                {m.attachmentUrl ? (
+                  <div>
+                    <a
+                      href={
+                        m.attachmentUrl.startsWith('http')
+                          ? m.attachmentUrl
+                          : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${m.attachmentUrl}`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Attachment
+                    </a>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <input
-              className="flex-1 rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Ask farmer for clarification…"
+              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
+              placeholder="Ask farmer for clarification or missing documents…"
               value={reply}
               onChange={(e) => setReply(e.target.value)}
             />
-            <button type="button" className="btn-primary" onClick={sendReply}>
-              Send
-            </button>
+            <div className="flex flex-wrap gap-2 items-center">
+              <input type="file" onChange={(e) => setAttachFile(e.target.files?.[0] || null)} />
+              <button type="button" className="btn-primary" onClick={sendReply}>
+                Send to farmer
+              </button>
+            </div>
           </div>
         </div>
       </div>
