@@ -1,14 +1,51 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
-import { listContracts, listContractConsents, listLoanMessages, postLoanMessage, startBuyerConsent, uploadLoanMessageAttachment } from '../services/bankabilityService'
+import {
+  listContracts,
+  listContractConsents,
+  listLoanMessages,
+  postLoanMessage,
+  startBuyerConsent,
+  uploadLoanMessageAttachment,
+} from '../services/bankabilityService'
+
+/** Stages where buyer OTP is still the next staff/farmer action. */
+function needsBuyerOtp(status) {
+  const s = String(status || '').toLowerCase()
+  return (
+    !s ||
+    s === 'draft' ||
+    s === 'submitted' ||
+    s === 'buyer_verification_pending' ||
+    (s.includes('buyer') && !s.includes('field'))
+  )
+}
+
+function stageHint(status) {
+  const s = String(status || '').toLowerCase()
+  if (s.includes('buyer') || s === 'draft' || s === 'submitted') {
+    return 'Next: send buyer OTP link'
+  }
+  if (s.includes('field_inspection')) {
+    return 'Next: inspector field visit'
+  }
+  if (s === 'verified') {
+    return 'Ready as loan collateral'
+  }
+  if (s.includes('disput')) {
+    return 'Buyer or inspector disputed'
+  }
+  return 'In progress'
+}
 
 /**
  * Contracts / receivables overview for bank + admin.
- * Comment: buyer mini-portal bridge (OTP start) + loan clarification from web.
+ * Stage-aware actions: OTP only while waiting for buyer; then inspections.
  */
 function ContractsPage() {
   const [contracts, setContracts] = useState([])
@@ -39,11 +76,21 @@ function ContractsPage() {
     try {
       const res = await startBuyerConsent(id)
       const link = res.verificationLink || `/buyer-verify?contractId=${id}`
-      toast.info(
+      const absolute = link.startsWith('http')
+        ? link
+        : `${window.location.origin}${link.startsWith('/') ? link : `/${link}`}`
+      try {
+        await navigator.clipboard.writeText(absolute)
+      } catch {
+        /* clipboard optional */
+      }
+      toast.success(
         res.otpCode
-          ? `OTP ${res.otpCode} · link ${link}`
-          : `Verification sent · ${link}`,
+          ? `Buyer link copied. OTP ${res.otpCode} (use if email/SMS not sent).`
+          : 'Buyer verification link copied — send it to the buyer.',
       )
+      toast.info(absolute, { autoClose: 12000 })
+      load()
     } catch (e) {
       toast.error(e?.response?.data?.error || 'OTP failed')
     }
@@ -54,21 +101,25 @@ function ContractsPage() {
       const list = await listContractConsents(id)
       const consent = Array.isArray(list) ? list[0] : null
       if (!consent) {
-        toast.info('No consent recorded yet')
+        toast.info('No consent recorded yet — start buyer OTP first')
         return
       }
       const doc = consent.consentDocumentUrl
       const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')
       if (doc) {
         window.open(doc.startsWith('http') ? doc : `${base}${doc}`, '_blank')
+      } else if (consent.otpVerified) {
+        toast.info('OTP verified — PDF may still be generating. Check Consent Vault.')
       } else {
-        toast.info(
-          `Consent ${consent.otpVerified ? 'verified' : 'pending'} · ${consent.verifiedAt || 'no timestamp'}`,
-        )
+        toast.info('Consent pending — buyer has not completed OTP yet')
       }
     } catch {
       toast.error('Could not load consent')
     }
+  }
+
+  const openBuyerPage = (id) => {
+    window.open(`/buyer-verify?contractId=${id}`, '_blank')
   }
 
   const loadMessages = async () => {
@@ -120,6 +171,30 @@ function ContractsPage() {
         }
       />
 
+      <div
+        className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm"
+        style={{ color: 'var(--text-secondary)' }}
+      >
+        <strong style={{ color: 'var(--text-primary)' }}>How this works (no confusion)</strong>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>
+            <strong>Buyer OTP</strong> — send the buyer a link. They confirm on the public page. Only
+            while status waits for buyer.
+          </li>
+          <li>
+            <strong>Field inspection</strong> — after OTP, inspector works on{' '}
+            <Link to="/inspections" className="underline">
+              Inspections
+            </Link>
+            . Do not restart OTP for that.
+          </li>
+          <li>
+            <strong>Consent PDF</strong> — proof for banks after OTP (Consent Vault). Not a second
+            approve button.
+          </li>
+        </ol>
+      </div>
+
       <div className="widgets four">
         <StatCard title="All contracts" value={String(contracts.length)} />
         <StatCard title="Verified" value={String(contracts.filter((c) => c.status === 'verified').length)} />
@@ -127,7 +202,10 @@ function ContractsPage() {
           title="Field inspection"
           value={String(contracts.filter((c) => c.status === 'field_inspection_pending').length)}
         />
-        <StatCard title="Pending buyer" value={String(contracts.filter((c) => c.status === 'buyer_verification_pending').length)} />
+        <StatCard
+          title="Pending buyer"
+          value={String(contracts.filter((c) => c.status === 'buyer_verification_pending').length)}
+        />
       </div>
 
       <div className="mt-6 space-y-6">
@@ -140,41 +218,89 @@ function ContractsPage() {
                 <th>Buyer</th>
                 <th>Value</th>
                 <th>Status</th>
+                <th>Next step</th>
                 <th>Document</th>
-                <th />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {contracts.map((c) => (
-                <tr key={c.contractId}>
-                  <td>#{c.contractId}</td>
-                  <td>#{c.farmerId}</td>
-                  <td>{c.buyerName}</td>
-                  <td>{c.contractValue}</td>
-                  <td>
-                    <StatusBadge status={c.status} />
-                  </td>
-                  <td>
-                    {c.documentUrl ? (
-                      <a href={c.documentUrl.startsWith('http') ? c.documentUrl : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${c.documentUrl}`} target="_blank" rel="noreferrer">
-                        View
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" className="btn-secondary" onClick={() => onStartOtp(c.contractId)}>
-                        Start buyer OTP
-                      </button>
-                      <button type="button" className="btn-secondary" onClick={() => onViewConsent(c.contractId)}>
-                        Consent doc
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {contracts.map((c) => {
+                const otpNeeded = needsBuyerOtp(c.status)
+                const inspection = String(c.status || '').toLowerCase().includes('field_inspection')
+                return (
+                  <tr key={c.contractId}>
+                    <td>#{c.contractId}</td>
+                    <td>#{c.farmerId}</td>
+                    <td>{c.buyerName}</td>
+                    <td>{c.contractValue}</td>
+                    <td>
+                      <StatusBadge status={c.status} />
+                    </td>
+                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{stageHint(c.status)}</td>
+                    <td>
+                      {c.documentUrl ? (
+                        <a
+                          href={
+                            c.documentUrl.startsWith('http')
+                              ? c.documentUrl
+                              : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${c.documentUrl}`
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex flex-wrap gap-2">
+                        {otpNeeded ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn-primary"
+                              onClick={() => onStartOtp(c.contractId)}
+                            >
+                              Send buyer OTP link
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => openBuyerPage(c.contractId)}
+                            >
+                              Open buyer page
+                            </button>
+                          </>
+                        ) : null}
+                        {inspection ? (
+                          <Link to="/inspections" className="btn-primary">
+                            Go to inspections
+                          </Link>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => onViewConsent(c.contractId)}
+                        >
+                          Consent PDF
+                        </button>
+                        {!otpNeeded ? (
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            onClick={() => onStartOtp(c.contractId)}
+                            title="Only if buyer never received the first link"
+                          >
+                            Resend OTP
+                          </button>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </DataTableShell>
@@ -182,7 +308,7 @@ function ContractsPage() {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
           <h3 className="mb-3 font-semibold">Loan clarification thread</h3>
           <p className="mb-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Request documents or clarifications. Farmer replies and uploads appear in history.
+            Separate from buyer OTP — bank asks the farmer for loan documents or clarifications.
           </p>
           <div className="mb-3 flex flex-wrap gap-2">
             <input
