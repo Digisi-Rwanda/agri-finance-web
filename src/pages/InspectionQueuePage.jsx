@@ -33,9 +33,31 @@ function InspectionQueuePage() {
   const [inspectorId, setInspectorId] = useState('')
   const [evidenceFile, setEvidenceFile] = useState(null)
 
+  const [dismissedIds, setDismissedIds] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('inspection-dismissed')
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
+
   const workPanelRef = useRef(null)
 
   const defaultSchedule = () => new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+
+  const rememberDismissed = (id) => {
+    setDismissedIds((prev) => {
+      const next = Array.from(new Set([...prev, Number(id)]))
+      try {
+        sessionStorage.setItem('inspection-dismissed', JSON.stringify(next))
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+    setQueue((prev) => prev.filter((row) => Number(row.inspectionId) !== Number(id)))
+  }
 
   const load = async () => {
     setLoading(true)
@@ -81,9 +103,21 @@ function InspectionQueuePage() {
     return map
   }, [contracts])
 
+  /** Active cases for contracts still awaiting inspection (hide leftovers after verify). */
+  const activeQueue = useMemo(() => {
+    const dismissed = new Set(dismissedIds.map(Number))
+    return queue.filter((row) => {
+      if (dismissed.has(Number(row.inspectionId))) return false
+      const contract = contractById.get(Number(row.contractId))
+      const status = String(contract?.status || '').toLowerCase()
+      if (status === 'verified' || status === 'disputed') return false
+      return true
+    })
+  }, [queue, contractById, dismissedIds])
+
   const openCaseIds = useMemo(
-    () => new Set(queue.map((row) => Number(row.contractId))),
-    [queue],
+    () => new Set(activeQueue.map((row) => Number(row.contractId))),
+    [activeQueue],
   )
 
   /** One primary case per contract; extras are accidental duplicates. */
@@ -97,7 +131,7 @@ function InspectionQueuePage() {
       if (row.assignedInspectorId) score += 1
       return score
     }
-    ;[...queue]
+    ;[...activeQueue]
       .sort((a, b) => Number(b.inspectionId || 0) - Number(a.inspectionId || 0))
       .forEach((row) => {
         const cid = Number(row.contractId)
@@ -117,7 +151,7 @@ function InspectionQueuePage() {
       primaryQueue: Array.from(byContract.values()),
       duplicateQueue: duplicates,
     }
-  }, [queue])
+  }, [activeQueue])
 
   const pendingContracts = useMemo(
     () =>
@@ -210,17 +244,17 @@ function InspectionQueuePage() {
       await cancelInspection(id)
       toast.success(`Removed duplicate case #${id}`)
       if (selectedId === id) closeWorkPanel()
-      // Drop locally even before reload so UI feels instant
-      setQueue((prev) => prev.filter((row) => row.inspectionId !== id))
+      rememberDismissed(id)
       await load()
     } catch (e) {
-      const msg =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        (e?.response?.status === 403
-          ? 'Only Admin or Inspector can remove cases'
-          : 'Could not remove duplicate')
-      toast.error(msg)
+      // Hide in this browser session even if API is still broken — contract may already be verified.
+      rememberDismissed(id)
+      if (selectedId === id) closeWorkPanel()
+      toast.info(
+        `Case #${id} hidden here. Server remove still failing: ${
+          e?.response?.data?.message || e?.response?.data?.error || '500'
+        }`,
+      )
     } finally {
       setBusyId(null)
     }
