@@ -40,15 +40,6 @@ function InspectionQueuePage() {
   const load = async () => {
     setLoading(true)
     try {
-      // Clean accidental duplicate pending cases (buyer OTP auto-opens + staff Open).
-      try {
-        const dedupe = await dedupeInspections()
-        if (dedupe?.cancelled > 0 || dedupe?.removed > 0) {
-          toast.info(`Removed ${dedupe.cancelled || dedupe.removed} duplicate inspection case(s)`)
-        }
-      } catch {
-        /* older API without /dedupe — ignore */
-      }
       const [pending, allContracts, staff] = await Promise.all([
         listInspections('pending'),
         listContracts(),
@@ -58,9 +49,25 @@ function InspectionQueuePage() {
       setContracts(Array.isArray(allContracts) ? allContracts : [])
       setInspectors(Array.isArray(staff) ? staff : [])
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Failed to load inspection queue')
+      toast.error(
+        e?.response?.data?.message || e?.response?.data?.error || 'Failed to load inspection queue',
+      )
     } finally {
       setLoading(false)
+    }
+  }
+
+  const runDedupe = async () => {
+    setBusyId('dedupe')
+    try {
+      const dedupe = await dedupeInspections()
+      const removed = dedupe?.cancelled || dedupe?.removed || 0
+      toast.success(removed > 0 ? `Removed ${removed} duplicate case(s)` : 'No duplicates found')
+      await load()
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.response?.data?.error || 'Dedupe failed')
+    } finally {
+      setBusyId(null)
     }
   }
 
@@ -208,8 +215,8 @@ function InspectionQueuePage() {
       await load()
     } catch (e) {
       const msg =
-        e?.response?.data?.error ||
         e?.response?.data?.message ||
+        e?.response?.data?.error ||
         (e?.response?.status === 403
           ? 'Only Admin or Inspector can remove cases'
           : 'Could not remove duplicate')
@@ -266,9 +273,21 @@ function InspectionQueuePage() {
         title="Field inspection queue"
         subtitle="Open a case, visit the farm, upload evidence, then approve or reject."
         actions={
-          <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {duplicateQueue.length > 0 ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={runDedupe}
+                disabled={busyId === 'dedupe' || loading}
+              >
+                {busyId === 'dedupe' ? 'Cleaning…' : `Remove ${duplicateQueue.length} duplicate(s)`}
+              </button>
+            ) : null}
+            <button type="button" className="btn-primary" onClick={load} disabled={loading}>
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         }
       />
 
