@@ -1,8 +1,9 @@
-function StatusBadge({ value }) {
-  const normalized = String(value || '').toLowerCase().trim()
+function StatusBadge({ value, status }) {
+  const raw = value ?? status
+  const normalized = String(raw || '').toLowerCase().trim()
 
   let toneClass = 'status-neutral'
-  let label = value
+  let label = raw
 
   if (
     normalized === 'low' ||
