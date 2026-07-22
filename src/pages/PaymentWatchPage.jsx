@@ -1,51 +1,57 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import DataTableShell from '../components/ui/DataTableShell'
+import StatusBadge from '../components/ui/StatusBadge'
 import { formatRwf } from '../utils/currency'
 import {
   fetchPaymentWatchSummary,
-  listOverduePaymentWatches,
-  listPaymentWatches,
-  listUnmatchedPaymentWatches,
   recordPaymentWatchReceived,
   scanPaymentWatchOverdue,
 } from '../services/bankabilityService'
 
+function daysRelativeToDue(dueDate) {
+  if (!dueDate) return null
+  const due = new Date(`${String(dueDate).slice(0, 10)}T12:00:00`)
+  if (Number.isNaN(due.getTime())) return null
+  const today = new Date()
+  today.setHours(12, 0, 0, 0)
+  return Math.round((due.getTime() - today.getTime()) / 86400000)
+}
+
+function dueLabel(dueDate, status) {
+  const days = daysRelativeToDue(dueDate)
+  if (days == null) return 'No due date'
+  if (String(status).toLowerCase() === 'overdue' || days < 0) {
+    return `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
+  }
+  if (days === 0) return 'Due today'
+  return `Due in ${days} day${days === 1 ? '' : 's'}`
+}
+
 /**
- * Payment Watch hub for BANK / ADMIN.
- * Step flow: load summary → show overdue/unmatched queues → post receipts → refresh alerts.
+ * Payment Watch — real buyer remittance tracking (expected vs received).
  */
 function PaymentWatchPage() {
-  // Step 1: page state — summary KPIs + queue tables + receipt form
   const [summary, setSummary] = useState(null)
-  const [overdue, setOverdue] = useState([])
-  const [unmatched, setUnmatched] = useState([])
-  const [watching, setWatching] = useState([])
-  const [partial, setPartial] = useState([])
+  const [watches, setWatches] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('overdue')
-  const [receiveForm, setReceiveForm] = useState({ watchId: '', amount: '', replace: false })
+  const [scanning, setScanning] = useState(false)
+  const [filter, setFilter] = useState('needs_attention')
+  const [selectedId, setSelectedId] = useState(null)
+  const [amount, setAmount] = useState('')
+  const [replace, setReplace] = useState(false)
+  const [posting, setPosting] = useState(false)
+  const receiptRef = useRef(null)
 
-  // Step 2: load dashboard from backend (status engine refreshes on each call)
   const load = async () => {
     setLoading(true)
     try {
-      const [sum, od, um, w, p] = await Promise.all([
-        fetchPaymentWatchSummary(),
-        listOverduePaymentWatches(),
-        listUnmatchedPaymentWatches(),
-        listPaymentWatches('watching'),
-        listPaymentWatches('partial'),
-      ])
+      const sum = await fetchPaymentWatchSummary()
       setSummary(sum || null)
-      setOverdue(Array.isArray(od) ? od : [])
-      setUnmatched(Array.isArray(um) ? um : [])
-      setWatching(Array.isArray(w) ? w : [])
-      setPartial(Array.isArray(p) ? p : [])
+      setWatches(Array.isArray(sum?.watches) ? sum.watches : [])
     } catch (err) {
-      toast.error(err?.response?.data?.error || 'Failed to load payment watches')
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load payment watches')
     } finally {
       setLoading(false)
     }
@@ -55,201 +61,281 @@ function PaymentWatchPage() {
     load()
   }, [])
 
-  // Step 3: pick which queue table to show
-  const tableRows = useMemo(() => {
-    if (filter === 'unmatched') return unmatched
-    if (filter === 'watching') return watching
-    if (filter === 'partial') return partial
-    if (filter === 'all') {
-      return [...overdue, ...unmatched, ...partial, ...watching]
-    }
-    return overdue
-  }, [filter, overdue, unmatched, watching, partial])
+  const counts = useMemo(() => {
+    const by = { watching: 0, partial: 0, overdue: 0, unmatched: 0, matched: 0 }
+    watches.forEach((w) => {
+      const s = String(w.status || 'watching').toLowerCase()
+      if (by[s] != null) by[s] += 1
+      else by.watching += 1
+    })
+    return by
+  }, [watches])
 
-  // Step 4: post a receipt (accumulate by default; replace sets absolute total)
-  const onRecordReceived = async (e) => {
+  const needsAttention = useMemo(
+    () =>
+      watches.filter((w) =>
+        ['overdue', 'unmatched', 'partial'].includes(String(w.status || '').toLowerCase()),
+      ),
+    [watches],
+  )
+
+  const visible = useMemo(() => {
+    if (filter === 'needs_attention') return needsAttention
+    if (filter === 'all') return watches
+    return watches.filter((w) => String(w.status || '').toLowerCase() === filter)
+  }, [filter, watches, needsAttention])
+
+  const selected = watches.find((w) => Number(w.watchId) === Number(selectedId)) || null
+
+  const openReceipt = (watch) => {
+    const gap = Number(watch.outstandingGap ?? Math.max(Number(watch.expectedAmount || 0) - Number(watch.receivedAmount || 0), 0))
+    setSelectedId(watch.watchId)
+    setAmount(gap > 0 ? String(gap) : '')
+    setReplace(false)
+    window.setTimeout(() => {
+      receiptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 40)
+  }
+
+  const closeReceipt = () => {
+    setSelectedId(null)
+    setAmount('')
+    setReplace(false)
+  }
+
+  const onPostReceipt = async (e) => {
     e.preventDefault()
+    if (!selectedId || !amount) return
+    setPosting(true)
     try {
-      await recordPaymentWatchReceived(Number(receiveForm.watchId), Number(receiveForm.amount), receiveForm.replace)
-      toast.success(receiveForm.replace ? 'Received amount set' : 'Receipt posted (accumulated)')
-      setReceiveForm({ watchId: '', amount: '', replace: false })
-      load()
+      await recordPaymentWatchReceived(Number(selectedId), Number(amount), replace)
+      toast.success(replace ? 'Received total updated' : 'Receipt posted')
+      closeReceipt()
+      await load()
     } catch (err) {
-      toast.error(err?.response?.data?.error || 'Could not record receipt')
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || 'Could not record receipt')
+    } finally {
+      setPosting(false)
     }
   }
 
-  // Step 5: staff button — recompute statuses + notify farmers (once/day per watch)
   const onScanAlerts = async () => {
+    setScanning(true)
     try {
       const result = await scanPaymentWatchOverdue()
       toast.success(
-        `Scan done: refreshed ${result.refreshed}, alerted ${result.alerted}, overdue ${result.overdue}`,
+        `Alerts refreshed · ${result.alerted ?? 0} notified · ${result.overdue ?? 0} overdue`,
       )
-      load()
+      await load()
     } catch (err) {
       toast.error(err?.response?.data?.error || 'Scan failed')
+    } finally {
+      setScanning(false)
     }
   }
 
-  const statusBadge = (status) => {
-    const s = String(status || 'watching').toLowerCase()
-    const colors = {
-      overdue: '#B45309',
-      unmatched: '#B91C1C',
-      matched: '#15803D',
-      partial: '#1D4ED8',
-      watching: '#64748B',
-    }
-    return (
-      <span style={{ color: colors[s] || '#64748B', fontWeight: 600, textTransform: 'capitalize' }}>
-        {s}
-      </span>
-    )
+  const progressOf = (w) => {
+    if (w.progressPercent != null) return Math.min(100, Math.max(0, Number(w.progressPercent)))
+    const expected = Number(w.expectedAmount || 0)
+    const received = Number(w.receivedAmount || 0)
+    if (expected <= 0) return 0
+    return Math.min(100, Math.round((received / expected) * 100))
+  }
+
+  const toneClass = (status) => {
+    const s = String(status || '').toLowerCase()
+    if (s === 'overdue' || s === 'unmatched') return 'pw-card--alert'
+    if (s === 'partial') return 'pw-card--warn'
+    if (s === 'matched') return 'pw-card--ok'
+    return ''
   }
 
   return (
-    <section className="page-stack">
-      {/* Step UI-1: header + alert refresh action */}
+    <section className="dashboard-page payment-watch-page">
       <PageHeader
+        breadcrumb="Bankability › Payments"
         title="Payment Watch"
-        subtitle="Expected buyer remittances vs money received — overdue, partial, and unmatched queues."
+        subtitle="Track buyer remittances into Digisi — expected vs received from live contracts."
         actions={
-          <button type="button" className="btn-secondary" onClick={onScanAlerts} disabled={loading}>
-            Refresh alerts
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-secondary" onClick={onScanAlerts} disabled={scanning || loading}>
+              {scanning ? 'Scanning…' : 'Refresh alerts'}
+            </button>
+            <button type="button" className="btn-primary" onClick={load} disabled={loading}>
+              {loading ? 'Loading…' : 'Refresh'}
+            </button>
+          </div>
         }
       />
 
-      {/* Step UI-2: KPI strip from /payment-watches/summary */}
-      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
-        <StatCard title="Expected" value={formatRwf(summary?.expectedTotal)} accent="green" />
+      <div className="widgets four">
+        <StatCard title="Expected" value={formatRwf(summary?.expectedTotal)} meta="All watches" />
         <StatCard title="Received" value={formatRwf(summary?.receivedTotal)} accent="green" />
-        <StatCard title="Outstanding gap" value={formatRwf(summary?.outstandingGap)} accent="amber" />
-        <StatCard title="Overdue" value={String(summary?.overdueCount ?? overdue.length)} accent="amber" />
-        <StatCard title="Unmatched" value={String(summary?.unmatchedCount ?? unmatched.length)} />
-        <StatCard title="Partial" value={String(summary?.partialCount ?? partial.length)} />
+        <StatCard title="Still owed" value={formatRwf(summary?.outstandingGap)} accent="amber" />
+        <StatCard
+          title="Needs attention"
+          value={String(needsAttention.length)}
+          meta={`${counts.overdue} overdue · ${counts.unmatched} unmatched`}
+        />
       </div>
 
-      {/* Step UI-3: record receipt form */}
-      <form
-        onSubmit={onRecordReceived}
-        className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 mt-6 space-y-3"
-        style={{ maxWidth: 520 }}
-      >
-        <h3 className="font-semibold">Record receipt</h3>
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 14 }}>
-          Leave “replace” unchecked to accumulate partial payments toward the expected amount.
-        </p>
-        <input
-          className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-          placeholder="Watch ID"
-          value={receiveForm.watchId}
-          onChange={(e) => setReceiveForm({ ...receiveForm, watchId: e.target.value })}
-          required
-        />
-        <input
-          className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-          placeholder="Amount received (RWF)"
-          value={receiveForm.amount}
-          onChange={(e) => setReceiveForm({ ...receiveForm, amount: e.target.value })}
-          required
-        />
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
-          <input
-            type="checkbox"
-            checked={receiveForm.replace}
-            onChange={(e) => setReceiveForm({ ...receiveForm, replace: e.target.checked })}
-          />
-          Replace total (do not accumulate)
-        </label>
-        <button type="submit" className="btn-primary">
-          Post receipt
-        </button>
-      </form>
-
-      {/* Step UI-4: queue filter tabs */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 24, marginBottom: 12 }}>
+      <div className="pw-filters">
         {[
-          { key: 'overdue', label: `Overdue (${overdue.length})` },
-          { key: 'unmatched', label: `Unmatched (${unmatched.length})` },
-          { key: 'partial', label: `Partial (${partial.length})` },
-          { key: 'watching', label: `Watching (${watching.length})` },
-          { key: 'all', label: 'All open' },
-        ].map((t) => (
+          { key: 'needs_attention', label: `Needs attention (${needsAttention.length})` },
+          { key: 'overdue', label: `Overdue (${counts.overdue})` },
+          { key: 'partial', label: `Partial (${counts.partial})` },
+          { key: 'watching', label: `Watching (${counts.watching})` },
+          { key: 'matched', label: `Matched (${counts.matched})` },
+          { key: 'unmatched', label: `Unmatched (${counts.unmatched})` },
+          { key: 'all', label: `All (${watches.length})` },
+        ].map((tab) => (
           <button
-            key={t.key}
+            key={tab.key}
             type="button"
-            className={filter === t.key ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setFilter(t.key)}
+            className={filter === tab.key ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setFilter(tab.key)}
           >
-            {t.label}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Step UI-5: queue table */}
-      <DataTableShell title={loading ? 'Loading…' : `Payment watches — ${filter}`}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Watch</th>
-              <th>Contract</th>
-              <th>Farmer</th>
-              <th>Expected</th>
-              <th>Received</th>
-              <th>Gap</th>
-              <th>Due</th>
-              <th>Account</th>
-              <th>Status</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {tableRows.length === 0 ? (
-              <tr>
-                <td colSpan={10}>No watches in this queue.</td>
-              </tr>
-            ) : (
-              tableRows.map((w) => {
-                const expected = Number(w.expectedAmount || 0)
-                const received = Number(w.receivedAmount || 0)
-                const gap = Math.max(expected - received, 0)
-                return (
-                  <tr key={w.watchId}>
-                    <td>#{w.watchId}</td>
-                    <td>#{w.contractId}</td>
-                    <td>#{w.farmerId}</td>
-                    <td>{formatRwf(expected)}</td>
-                    <td>{formatRwf(received)}</td>
-                    <td>{formatRwf(gap)}</td>
-                    <td>{w.dueDate ? String(w.dueDate).slice(0, 10) : '—'}</td>
-                    <td>{w.expectedAccount || '—'}</td>
-                    <td>{statusBadge(w.status)}</td>
-                    <td>
-                      {['watching', 'partial', 'overdue'].includes(String(w.status || '').toLowerCase()) ? (
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() =>
-                            setReceiveForm({
-                              watchId: String(w.watchId),
-                              amount: String(gap || expected),
-                              replace: false,
-                            })
-                          }
-                        >
-                          Fill receipt
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      </DataTableShell>
+      {selected ? (
+        <form className="pw-receipt" ref={receiptRef} onSubmit={onPostReceipt}>
+          <div className="pw-receipt__head">
+            <div>
+              <p className="pw-receipt__eyebrow">Record receipt</p>
+              <h2>
+                Watch #{selected.watchId}
+                <span> · Contract #{selected.contractId}</span>
+              </h2>
+              <p className="pw-receipt__meta">
+                Expected {formatRwf(selected.expectedAmount)} · Received {formatRwf(selected.receivedAmount)} · Gap{' '}
+                {formatRwf(selected.outstandingGap)}
+              </p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={closeReceipt}>
+              Close
+            </button>
+          </div>
+
+          <div className="pw-receipt__grid">
+            <label>
+              Amount received (Rwf)
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0"
+                required
+              />
+            </label>
+            <label className="pw-receipt__check">
+              <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+              Replace total instead of adding
+            </label>
+          </div>
+
+          <div className="pw-receipt__actions">
+            <button type="submit" className="btn-primary" disabled={posting}>
+              {posting ? 'Posting…' : 'Post receipt'}
+            </button>
+            {Number(selected.outstandingGap) > 0 ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setAmount(String(selected.outstandingGap))}
+              >
+                Fill remaining gap
+              </button>
+            ) : null}
+          </div>
+        </form>
+      ) : null}
+
+      <section className="pw-list">
+        {loading && watches.length === 0 ? (
+          <div className="pw-empty">Loading live payment watches…</div>
+        ) : null}
+        {!loading && visible.length === 0 ? (
+          <div className="pw-empty">
+            {filter === 'needs_attention'
+              ? 'Nothing needs attention — remittances look healthy.'
+              : 'No watches in this filter.'}
+          </div>
+        ) : null}
+
+        <div className="pw-card-list">
+          {visible.map((w) => {
+            const pct = progressOf(w)
+            const status = String(w.status || 'watching').toLowerCase()
+            const isSelected = Number(selectedId) === Number(w.watchId)
+            const canReceive = ['watching', 'partial', 'overdue', 'unmatched'].includes(status)
+
+            return (
+              <article
+                key={w.watchId}
+                className={`pw-card ${toneClass(status)}${isSelected ? ' is-selected' : ''}`}
+              >
+                <div className="pw-card__top">
+                  <div>
+                    <h3>
+                      Contract #{w.contractId}
+                      <span className="pw-card__sub"> · Watch #{w.watchId}</span>
+                    </h3>
+                    <p className="pw-card__meta">
+                      Farmer #{w.farmerId || '—'}
+                      {w.expectedAccount ? ` · ${w.expectedAccount}` : ''}
+                    </p>
+                  </div>
+                  <StatusBadge status={status} />
+                </div>
+
+                <div className="pw-card__amounts">
+                  <div>
+                    <span>Expected</span>
+                    <strong>{formatRwf(w.expectedAmount)}</strong>
+                  </div>
+                  <div>
+                    <span>Received</span>
+                    <strong>{formatRwf(w.receivedAmount)}</strong>
+                  </div>
+                  <div>
+                    <span>Gap</span>
+                    <strong>{formatRwf(w.outstandingGap)}</strong>
+                  </div>
+                </div>
+
+                <div className="pw-progress" aria-hidden="true">
+                  <div className="pw-progress__track">
+                    <div
+                      className={`pw-progress__fill pw-progress__fill--${status}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span>{pct}%</span>
+                </div>
+
+                <div className="pw-card__footer">
+                  <span className={`pw-due pw-due--${status}`}>
+                    {dueLabel(w.dueDate, status)}
+                    {w.dueDate ? ` · ${String(w.dueDate).slice(0, 10)}` : ''}
+                  </span>
+                  {canReceive ? (
+                    <button type="button" className="btn-primary" onClick={() => openReceipt(w)}>
+                      {isSelected ? 'Recording ↑' : 'Record receipt'}
+                    </button>
+                  ) : (
+                    <span className="pw-card__done">Fully matched</span>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>
     </section>
   )
 }

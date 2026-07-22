@@ -21,16 +21,24 @@ function StatusBadge({ value, status }) {
     normalized.includes('reject') ||
     normalized.includes('alert') ||
     normalized.includes('danger') ||
-    normalized.includes('overdue')
+    normalized.includes('overdue') ||
+    normalized.includes('unmatched')
   ) {
     toneClass = 'status-danger'
   } else if (
     normalized === 'medium' ||
     normalized.includes('pending') ||
     normalized.includes('moderate') ||
-    normalized.includes('warn')
+    normalized.includes('warn') ||
+    normalized.includes('partial') ||
+    normalized.includes('watching')
   ) {
     toneClass = 'status-warning'
+  } else if (
+    normalized.includes('matched') ||
+    normalized.includes('verified')
+  ) {
+    toneClass = 'status-success'
   }
 
   if (normalized === 'high' || normalized === 'medium' || normalized === 'low') {
