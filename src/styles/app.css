@@ -3830,3 +3830,319 @@ th {
     background-position: 0 0;
   }
 }
+
+/* —— Field inspection queue —— */
+.inspection-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inspection-guide {
+  border: 1px solid var(--border, #c0c9bb);
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+}
+
+.inspection-guide__title {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  color: var(--text, #191c1a);
+}
+
+.inspection-guide ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted, #5c6658);
+  font-size: 0.95rem;
+}
+
+.inspection-defaults {
+  border: 1px solid var(--border, #c0c9bb);
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+}
+
+.inspection-defaults__label {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted, #5c6658);
+}
+
+.inspection-defaults__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.inspection-defaults label,
+.inspection-work label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted, #5c6658);
+  min-width: 180px;
+  flex: 1;
+}
+
+.inspection-defaults input,
+.inspection-defaults select,
+.inspection-work input,
+.inspection-work select,
+.inspection-work textarea {
+  height: auto;
+  min-height: 40px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border, #c0c9bb);
+  background: #fff;
+  color: var(--text, #191c1a);
+  font: inherit;
+  font-weight: 500;
+}
+
+.inspection-work textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.inspection-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #8a5a00;
+}
+
+.inspection-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.inspection-section__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.inspection-section__head p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted, #5c6658);
+  font-size: 0.92rem;
+}
+
+.inspection-empty {
+  border: 1px dashed var(--border, #c0c9bb);
+  border-radius: 14px;
+  padding: 1.25rem;
+  color: var(--text-muted, #5c6658);
+  background: rgba(192, 201, 187, 0.12);
+}
+
+.inspection-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.inspection-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  border: 1px solid var(--border, #c0c9bb);
+  background: var(--surface, #fff);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+}
+
+.inspection-card.is-active {
+  border-color: var(--green, #0a5c18);
+  box-shadow: 0 0 0 2px rgba(10, 92, 24, 0.12);
+}
+
+.inspection-card__main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.inspection-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.inspection-card__title-row h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.inspection-card__sub {
+  font-weight: 500;
+  color: var(--text-muted, #5c6658);
+}
+
+.inspection-card__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.65rem 1rem;
+}
+
+.inspection-card__facts dt {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #5c6658);
+}
+
+.inspection-card__facts dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+  color: var(--text, #191c1a);
+  word-break: break-word;
+}
+
+.inspection-card__notes {
+  grid-column: 1 / -1;
+}
+
+.inspection-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+.inspection-card__actions .btn-primary,
+.inspection-card__actions .btn-secondary,
+.inspection-card__actions .btn-danger,
+.inspection-work__actions .btn-primary,
+.inspection-work__actions .btn-secondary,
+.inspection-work__actions .btn-danger {
+  white-space: nowrap;
+  min-height: 40px;
+  opacity: 1;
+  visibility: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.inspection-btn-approve {
+  background: #0a5c18 !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.inspection-btn-approve:hover {
+  background: #084814 !important;
+}
+
+.inspection-work {
+  border: 2px solid var(--green, #0a5c18);
+  background: var(--surface, #fff);
+  border-radius: 16px;
+  padding: 1.15rem 1.25rem 1.25rem;
+  scroll-margin-top: 1rem;
+}
+
+.inspection-work__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.inspection-work__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green, #0a5c18);
+}
+
+.inspection-work__head h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.2rem;
+}
+
+.inspection-work__meta {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted, #5c6658);
+  font-size: 0.92rem;
+}
+
+.inspection-work__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.9fr);
+  gap: 1rem;
+}
+
+.inspection-work__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.inspection-file-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text, #191c1a);
+  word-break: break-all;
+}
+
+.inspection-work__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #c0c9bb);
+}
+
+@media (max-width: 800px) {
+  .inspection-work__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inspection-card__actions {
+    width: 100%;
+  }
+
+  .inspection-card__actions .btn-primary,
+  .inspection-card__actions .btn-secondary,
+  .inspection-card__actions .btn-danger {
+    flex: 1 1 auto;
+  }
+}
+
+.portal-light .inspection-guide,
+.portal-light .inspection-defaults,
+.portal-light .inspection-card,
+.portal-light .inspection-work {
+  background: #fff;
+  border-color: #c0c9bb;
+}
+
+.portal-light .inspection-defaults input,
+.portal-light .inspection-defaults select,
+.portal-light .inspection-work input,
+.portal-light .inspection-work select,
+.portal-light .inspection-work textarea {
+  background: #fff;
+  color: #191c1a;
+}
