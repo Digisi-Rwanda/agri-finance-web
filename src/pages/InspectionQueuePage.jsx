@@ -43,8 +43,8 @@ function InspectionQueuePage() {
       // Clean accidental duplicate pending cases (buyer OTP auto-opens + staff Open).
       try {
         const dedupe = await dedupeInspections()
-        if (dedupe?.cancelled > 0) {
-          toast.info(`Removed ${dedupe.cancelled} duplicate inspection case(s)`)
+        if (dedupe?.cancelled > 0 || dedupe?.removed > 0) {
+          toast.info(`Removed ${dedupe.cancelled || dedupe.removed} duplicate inspection case(s)`)
         }
       } catch {
         /* older API without /dedupe — ignore */
@@ -203,9 +203,17 @@ function InspectionQueuePage() {
       await cancelInspection(id)
       toast.success(`Removed duplicate case #${id}`)
       if (selectedId === id) closeWorkPanel()
+      // Drop locally even before reload so UI feels instant
+      setQueue((prev) => prev.filter((row) => row.inspectionId !== id))
       await load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Could not remove duplicate')
+      const msg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        (e?.response?.status === 403
+          ? 'Only Admin or Inspector can remove cases'
+          : 'Could not remove duplicate')
+      toast.error(msg)
     } finally {
       setBusyId(null)
     }
