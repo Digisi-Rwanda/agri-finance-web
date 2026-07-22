@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
@@ -8,13 +8,10 @@ import DataTableShell from '../components/ui/DataTableShell'
 import {
   listContracts,
   listContractConsents,
-  listLoanMessages,
-  postLoanMessage,
   startBuyerConsent,
-  uploadLoanMessageAttachment,
 } from '../services/bankabilityService'
 
-/** Stages where buyer OTP is still the next staff/farmer action. */
+/** Stages where buyer OTP is still the next staff action. */
 function needsBuyerOtp(status) {
   const s = String(status || '').toLowerCase()
   return (
@@ -22,46 +19,41 @@ function needsBuyerOtp(status) {
     s === 'draft' ||
     s === 'submitted' ||
     s === 'buyer_verification_pending' ||
-    (s.includes('buyer') && !s.includes('field'))
+    (s.includes('buyer') && !s.includes('field') && !s.includes('disput'))
   )
 }
 
 function stageHint(status) {
   const s = String(status || '').toLowerCase()
-  if (s.includes('buyer') || s === 'draft' || s === 'submitted') {
-    return 'Next: send buyer OTP link'
-  }
-  if (s.includes('field_inspection')) {
-    return 'Next: inspector field visit'
-  }
-  if (s === 'verified') {
-    return 'Ready as loan collateral'
-  }
-  if (s.includes('disput')) {
-    return 'Buyer or inspector disputed'
-  }
+  if (s.includes('disput')) return 'Disputed — create a new contract if needed'
+  if (s.includes('buyer') || s === 'draft' || s === 'submitted') return 'Send buyer OTP link'
+  if (s.includes('field_inspection')) return 'Inspector field visit'
+  if (s === 'verified') return 'Ready as loan collateral'
   return 'In progress'
 }
 
+function formatValue(value) {
+  if (value == null || value === '') return '—'
+  const n = Number(value)
+  if (Number.isFinite(n)) return `${n.toLocaleString()} Rwf`
+  return String(value)
+}
+
 /**
- * Contracts / receivables overview for bank + admin.
- * Stage-aware actions: OTP only while waiting for buyer; then inspections.
+ * Receivables = purchase contracts used as collateral.
+ * Focus: status + one clear next action (OTP → inspections → verified).
  */
 function ContractsPage() {
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [loanId, setLoanId] = useState('')
-  const [messages, setMessages] = useState([])
-  const [reply, setReply] = useState('')
-  const [messageType, setMessageType] = useState('CLARIFICATION')
-  const [attachFile, setAttachFile] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   const load = async () => {
     setLoading(true)
     try {
       const data = await listContracts()
       setContracts(Array.isArray(data) ? data : [])
-    } catch (e) {
+    } catch {
       toast.error('Failed to load contracts')
     } finally {
       setLoading(false)
@@ -71,6 +63,33 @@ function ContractsPage() {
   useEffect(() => {
     load()
   }, [])
+
+  const counts = useMemo(() => {
+    const all = contracts.length
+    const verified = contracts.filter((c) => c.status === 'verified').length
+    const inspection = contracts.filter((c) =>
+      String(c.status || '').toLowerCase().includes('field_inspection'),
+    ).length
+    const pendingBuyer = contracts.filter((c) => needsBuyerOtp(c.status)).length
+    const disputed = contracts.filter((c) =>
+      String(c.status || '').toLowerCase().includes('disput'),
+    ).length
+    return { all, verified, inspection, pendingBuyer, disputed }
+  }, [contracts])
+
+  const visible = useMemo(() => {
+    if (filter === 'buyer') return contracts.filter((c) => needsBuyerOtp(c.status))
+    if (filter === 'inspection') {
+      return contracts.filter((c) =>
+        String(c.status || '').toLowerCase().includes('field_inspection'),
+      )
+    }
+    if (filter === 'verified') return contracts.filter((c) => c.status === 'verified')
+    if (filter === 'disputed') {
+      return contracts.filter((c) => String(c.status || '').toLowerCase().includes('disput'))
+    }
+    return contracts
+  }, [contracts, filter])
 
   const onStartOtp = async (id) => {
     try {
@@ -92,7 +111,7 @@ function ContractsPage() {
       toast.info(absolute, { autoClose: 12000 })
       load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'OTP failed')
+      toast.error(e?.response?.data?.error || e?.response?.data?.message || 'OTP failed')
     }
   }
 
@@ -101,7 +120,7 @@ function ContractsPage() {
       const list = await listContractConsents(id)
       const consent = Array.isArray(list) ? list[0] : null
       if (!consent) {
-        toast.info('No consent recorded yet — start buyer OTP first')
+        toast.info('No consent PDF yet — buyer must complete OTP first')
         return
       }
       const doc = consent.consentDocumentUrl
@@ -109,7 +128,7 @@ function ContractsPage() {
       if (doc) {
         window.open(doc.startsWith('http') ? doc : `${base}${doc}`, '_blank')
       } else if (consent.otpVerified) {
-        toast.info('OTP verified — PDF may still be generating. Check Consent Vault.')
+        toast.info('OTP verified — open Consent Vault if PDF is still generating')
       } else {
         toast.info('Consent pending — buyer has not completed OTP yet')
       }
@@ -118,52 +137,12 @@ function ContractsPage() {
     }
   }
 
-  const openBuyerPage = (id) => {
-    window.open(`/buyer-verify?contractId=${id}`, '_blank')
-  }
-
-  const loadMessages = async () => {
-    if (!loanId) return
-    try {
-      const data = await listLoanMessages(Number(loanId))
-      setMessages(Array.isArray(data) ? data : [])
-    } catch {
-      toast.error('Could not load messages')
-    }
-  }
-
-  const sendReply = async () => {
-    if (!loanId || !reply.trim()) return
-    try {
-      const saved = await postLoanMessage({
-        loanId: Number(loanId),
-        senderRole: 'BANK',
-        messageType,
-        body: reply.trim(),
-        requiresResponse: messageType === 'DOCUMENT_REQUEST' || messageType === 'CLARIFICATION',
-      })
-      if (attachFile && saved?.messageId) {
-        await uploadLoanMessageAttachment(saved.messageId, attachFile)
-      }
-      setReply('')
-      setAttachFile(null)
-      loadMessages()
-      toast.success(
-        messageType === 'DOCUMENT_REQUEST'
-          ? 'Document request sent to farmer'
-          : 'Clarification sent to farmer',
-      )
-    } catch {
-      toast.error('Send failed')
-    }
-  }
-
   return (
     <section className="dashboard-page">
       <PageHeader
         breadcrumb="Bankability › Receivables"
-        title="Purchase contracts"
-        subtitle="Farmer receivables used as collateral — track verification and request clarifications on loans."
+        title="Receivables"
+        subtitle="Purchase contracts used as loan collateral. Send buyer OTP, then field inspection, then verified."
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>
             {loading ? 'Refreshing…' : 'Refresh'}
@@ -171,130 +150,104 @@ function ContractsPage() {
         }
       />
 
-      <div
-        className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm"
-        style={{ color: 'var(--text-secondary)' }}
-      >
-        <strong style={{ color: 'var(--text-primary)' }}>How this works (no confusion)</strong>
-        <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>
-            <strong>Buyer OTP</strong> — send the buyer a link. They confirm on the public page. Only
-            while status waits for buyer.
-          </li>
-          <li>
-            <strong>Field inspection</strong> — after OTP, inspector works on{' '}
-            <Link to="/inspections" className="underline">
-              Inspections
-            </Link>
-            . Do not restart OTP for that.
-          </li>
-          <li>
-            <strong>Consent PDF</strong> — proof for banks after OTP (Consent Vault). Not a second
-            approve button.
-          </li>
-        </ol>
-      </div>
-
       <div className="widgets four">
-        <StatCard title="All contracts" value={String(contracts.length)} />
-        <StatCard title="Verified" value={String(contracts.filter((c) => c.status === 'verified').length)} />
-        <StatCard
-          title="Field inspection"
-          value={String(contracts.filter((c) => c.status === 'field_inspection_pending').length)}
-        />
-        <StatCard
-          title="Pending buyer"
-          value={String(contracts.filter((c) => c.status === 'buyer_verification_pending').length)}
-        />
+        <StatCard title="Pending buyer" value={String(counts.pendingBuyer)} meta="Need OTP link" />
+        <StatCard title="Field inspection" value={String(counts.inspection)} meta="Go to Inspections" />
+        <StatCard title="Verified" value={String(counts.verified)} meta="Loan-ready" />
+        <StatCard title="Disputed" value={String(counts.disputed)} />
       </div>
 
-      <div className="mt-6 space-y-6">
+      <div className="mt-4 flex flex-wrap gap-2">
+        {[
+          { key: 'all', label: `All (${counts.all})` },
+          { key: 'buyer', label: `Need OTP (${counts.pendingBuyer})` },
+          { key: 'inspection', label: `Inspection (${counts.inspection})` },
+          { key: 'verified', label: `Verified (${counts.verified})` },
+          { key: 'disputed', label: `Disputed (${counts.disputed})` },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={filter === tab.key ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setFilter(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6">
         <DataTableShell title="Contracts">
           <table className="data-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Farmer</th>
                 <th>Buyer</th>
                 <th>Value</th>
                 <th>Status</th>
                 <th>Next step</th>
-                <th>Document</th>
-                <th>Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {contracts.map((c) => {
+              {loading && visible.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>Loading…</td>
+                </tr>
+              ) : null}
+              {!loading && visible.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>No contracts in this filter.</td>
+                </tr>
+              ) : null}
+              {visible.map((c) => {
                 const otpNeeded = needsBuyerOtp(c.status)
-                const inspection = String(c.status || '').toLowerCase().includes('field_inspection')
+                const inspection = String(c.status || '')
+                  .toLowerCase()
+                  .includes('field_inspection')
+                const verified = String(c.status || '').toLowerCase() === 'verified'
+                const disputed = String(c.status || '').toLowerCase().includes('disput')
+
                 return (
                   <tr key={c.contractId}>
                     <td>#{c.contractId}</td>
-                    <td>#{c.farmerId}</td>
-                    <td>{c.buyerName}</td>
-                    <td>{c.contractValue}</td>
+                    <td>{c.buyerName || '—'}</td>
+                    <td>{formatValue(c.contractValue)}</td>
                     <td>
                       <StatusBadge status={c.status} />
                     </td>
-                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{stageHint(c.status)}</td>
-                    <td>
-                      {c.documentUrl ? (
-                        <a
-                          href={
-                            c.documentUrl.startsWith('http')
-                              ? c.documentUrl
-                              : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${c.documentUrl}`
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View
-                        </a>
-                      ) : (
-                        '—'
-                      )}
+                    <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                      {stageHint(c.status)}
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-2">
                         {otpNeeded ? (
-                          <>
-                            <button
-                              type="button"
-                              className="btn-primary"
-                              onClick={() => onStartOtp(c.contractId)}
-                            >
-                              Send buyer OTP link
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary"
-                              onClick={() => openBuyerPage(c.contractId)}
-                            >
-                              Open buyer page
-                            </button>
-                          </>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => onStartOtp(c.contractId)}
+                          >
+                            Send buyer OTP link
+                          </button>
                         ) : null}
                         {inspection ? (
                           <Link to="/inspections" className="btn-primary">
                             Go to inspections
                           </Link>
                         ) : null}
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => onViewConsent(c.contractId)}
-                        >
-                          Consent PDF
-                        </button>
-                        {!otpNeeded ? (
+                        {verified ? (
                           <button
                             type="button"
                             className="btn-secondary"
-                            onClick={() => onStartOtp(c.contractId)}
-                            title="Only if buyer never received the first link"
+                            onClick={() => onViewConsent(c.contractId)}
                           >
-                            Resend OTP
+                            Consent PDF
                           </button>
+                        ) : null}
+                        {disputed ? (
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                            Closed
+                          </span>
                         ) : null}
                       </div>
                     </td>
@@ -304,73 +257,6 @@ function ContractsPage() {
             </tbody>
           </table>
         </DataTableShell>
-
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h3 className="mb-3 font-semibold">Loan clarification thread</h3>
-          <p className="mb-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Separate from buyer OTP — bank asks the farmer for loan documents or clarifications.
-          </p>
-          <div className="mb-3 flex flex-wrap gap-2">
-            <input
-              className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Loan ID"
-              value={loanId}
-              onChange={(e) => setLoanId(e.target.value)}
-            />
-            <select
-              className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-              value={messageType}
-              onChange={(e) => setMessageType(e.target.value)}
-            >
-              <option value="CLARIFICATION">Ask clarification</option>
-              <option value="DOCUMENT_REQUEST">Request documents</option>
-              <option value="INFO">Info note</option>
-            </select>
-            <button type="button" className="btn-secondary" onClick={loadMessages}>
-              Load messages
-            </button>
-          </div>
-          <ul className="mb-3 max-h-48 space-y-2 overflow-auto text-sm">
-            {messages.map((m) => (
-              <li key={m.messageId} className="rounded-lg bg-[var(--surface-muted,#f3f4f6)] p-2">
-                <strong>{m.senderRole}</strong>
-                {m.messageType ? ` · ${m.messageType}` : ''}
-                {m.requiresResponse && !m.respondedAt ? ' · awaiting farmer' : ''}
-                {m.respondedAt ? ' · answered' : ''}
-                : {m.body}
-                {m.attachmentUrl ? (
-                  <div>
-                    <a
-                      href={
-                        m.attachmentUrl.startsWith('http')
-                          ? m.attachmentUrl
-                          : `${(import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '')}${m.attachmentUrl}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Attachment
-                    </a>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-2">
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Ask farmer for clarification or missing documents…"
-              value={reply}
-              onChange={(e) => setReply(e.target.value)}
-            />
-            <div className="flex flex-wrap gap-2 items-center">
-              <input type="file" onChange={(e) => setAttachFile(e.target.files?.[0] || null)} />
-              <button type="button" className="btn-primary" onClick={sendReply}>
-                Send to farmer
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )
