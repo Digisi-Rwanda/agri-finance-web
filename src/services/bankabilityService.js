@@ -25,6 +25,12 @@ export const updateInspection = (id, payload) =>
 export const decideInspection = (id, outcome, adminId) =>
   apiClient.post(`/inspections/${id}/decide`, { outcome, adminId }).then((r) => r.data)
 
+export const cancelInspection = (id) =>
+  apiClient.post(`/inspections/${id}/cancel`).then((r) => r.data)
+
+export const dedupeInspections = () =>
+  apiClient.post('/inspections/dedupe').then((r) => r.data)
+
 export const listInspectors = () => apiClient.get('/inspections/inspectors').then((r) => r.data)
 
 export const uploadInspectionEvidence = (id, file) => {

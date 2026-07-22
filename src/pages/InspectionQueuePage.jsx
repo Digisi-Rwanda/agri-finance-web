@@ -4,8 +4,10 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import {
+  cancelInspection,
   createInspection,
   decideInspection,
+  dedupeInspections,
   listContracts,
   listInspections,
   listInspectors,
@@ -38,6 +40,15 @@ function InspectionQueuePage() {
   const load = async () => {
     setLoading(true)
     try {
+      // Clean accidental duplicate pending cases (buyer OTP auto-opens + staff Open).
+      try {
+        const dedupe = await dedupeInspections()
+        if (dedupe?.cancelled > 0) {
+          toast.info(`Removed ${dedupe.cancelled} duplicate inspection case(s)`)
+        }
+      } catch {
+        /* older API without /dedupe — ignore */
+      }
       const [pending, allContracts, staff] = await Promise.all([
         listInspections('pending'),
         listContracts(),
@@ -68,6 +79,39 @@ function InspectionQueuePage() {
     [queue],
   )
 
+  /** One primary case per contract; extras are accidental duplicates. */
+  const { primaryQueue, duplicateQueue } = useMemo(() => {
+    const byContract = new Map()
+    const duplicates = []
+    const visitScore = (row) => {
+      let score = 0
+      if (row.visitNotes) score += 2
+      if (row.evidenceUrls) score += 2
+      if (row.assignedInspectorId) score += 1
+      return score
+    }
+    ;[...queue]
+      .sort((a, b) => Number(b.inspectionId || 0) - Number(a.inspectionId || 0))
+      .forEach((row) => {
+        const cid = Number(row.contractId)
+        const current = byContract.get(cid)
+        if (!current) {
+          byContract.set(cid, row)
+          return
+        }
+        if (visitScore(row) > visitScore(current)) {
+          duplicates.push(current)
+          byContract.set(cid, row)
+        } else {
+          duplicates.push(row)
+        }
+      })
+    return {
+      primaryQueue: Array.from(byContract.values()),
+      duplicateQueue: duplicates,
+    }
+  }, [queue])
+
   const pendingContracts = useMemo(
     () =>
       contracts.filter(
@@ -78,7 +122,12 @@ function InspectionQueuePage() {
     [contracts, openCaseIds],
   )
 
-  const selectedCase = queue.find((row) => row.inspectionId === selectedId) || null
+  const verifiedCount = contracts.filter((c) => c.status === 'verified').length
+
+  const selectedCase =
+    queue.find((row) => row.inspectionId === selectedId) ||
+    primaryQueue.find((row) => row.inspectionId === selectedId) ||
+    null
   const selectedContract = selectedCase
     ? contractById.get(Number(selectedCase.contractId))
     : null
@@ -114,6 +163,12 @@ function InspectionQueuePage() {
   }
 
   const openCase = async (contractId) => {
+    const existing = primaryQueue.find((row) => Number(row.contractId) === Number(contractId))
+    if (existing) {
+      toast.info(`Case #${existing.inspectionId} already open for this contract`)
+      openWorkPanel(existing)
+      return
+    }
     setBusyId(`open-${contractId}`)
     try {
       const created = await createInspection({
@@ -122,7 +177,11 @@ function InspectionQueuePage() {
         assignedInspectorId: inspectorId ? Number(inspectorId) : null,
         outcome: 'pending',
       })
-      toast.success(`Inspection case #${created.inspectionId || ''} opened`)
+      toast.success(
+        created?.inspectionId
+          ? `Using inspection case #${created.inspectionId}`
+          : 'Inspection case ready',
+      )
       await load()
       if (created?.inspectionId) {
         openWorkPanel({
@@ -133,6 +192,20 @@ function InspectionQueuePage() {
       }
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Could not open inspection case')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  const removeDuplicate = async (id) => {
+    setBusyId(`cancel-${id}`)
+    try {
+      await cancelInspection(id)
+      toast.success(`Removed duplicate case #${id}`)
+      if (selectedId === id) closeWorkPanel()
+      await load()
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Could not remove duplicate')
     } finally {
       setBusyId(null)
     }
@@ -192,30 +265,38 @@ function InspectionQueuePage() {
       />
 
       <div className="widgets four">
-        <StatCard title="Active cases" value={String(queue.length)} meta="Open visits" />
+        <StatCard title="Active cases" value={String(primaryQueue.length)} meta="One per contract" />
         <StatCard
           title="Need a case"
           value={String(pendingContracts.length)}
-          meta="Buyer done — waiting to open"
+          meta="Rare — usually auto-opened"
         />
         <StatCard title="Inspectors" value={String(inspectors.length)} />
-        <StatCard
-          title="Verified contracts"
-          value={String(contracts.filter((c) => c.status === 'verified').length)}
-        />
+        <StatCard title="Verified contracts" value={String(verifiedCount)} />
       </div>
+
+      {verifiedCount > 0 ? (
+        <div className="inspection-next">
+          <p className="inspection-next__title">What next after verified?</p>
+          <p>
+            The contract is ready as <strong>loan collateral</strong>. Farmer (mobile) or staff can build a{' '}
+            <strong>loan package</strong> → bank reviews on <strong>Packages</strong>. Payment Watch already
+            tracks whether the buyer remits to the Digisi account.
+          </p>
+        </div>
+      ) : null}
 
       <div className="inspection-guide">
         <p className="inspection-guide__title">How this page works</p>
         <ol>
           <li>
-            <strong>Step 1 — Open a case</strong> for each contract waiting after buyer OTP.
+            <strong>After buyer OTP</strong> Digisi already opens one inspection case automatically.
           </li>
           <li>
-            <strong>Step 2 — Work the visit</strong>: assign inspector, set date, add notes &amp; photo.
+            <strong>Work the visit</strong>: assign inspector, set date, add notes &amp; photo.
           </li>
           <li>
-            <strong>Step 3 — Decide</strong>: Approve (contract verified) or Reject (disputed).
+            <strong>Decide</strong>: Approve (contract verified) or Reject (disputed). Do not open a second case.
           </li>
         </ol>
       </div>
@@ -351,15 +432,18 @@ function InspectionQueuePage() {
 
       <section className="inspection-section">
         <div className="inspection-section__head">
-          <h2>Step 1 — Contracts waiting for a case</h2>
-          <p>Buyer OTP is done. Open an inspection case to schedule the field visit.</p>
+          <h2>Step 1 — Only if a case is missing</h2>
+          <p>
+            Buyer OTP usually auto-opens the case. Use this only when a contract is waiting and no case
+            appears in Step 2.
+          </p>
         </div>
 
         {pendingContracts.length === 0 ? (
           <div className="inspection-empty">
             {loading
               ? 'Loading…'
-              : 'No new contracts waiting. If a visit is already open, use Step 2 below.'}
+              : 'All waiting contracts already have a case — use Step 2.'}
           </div>
         ) : (
           <div className="inspection-card-list">
@@ -404,16 +488,16 @@ function InspectionQueuePage() {
       <section className="inspection-section">
         <div className="inspection-section__head">
           <h2>Step 2 — Active inspection cases</h2>
-          <p>Click Work on visit — the edit panel opens above with notes, evidence, Approve and Reject.</p>
+          <p>One case per contract. Click Work on visit to add notes and evidence, then approve or reject.</p>
         </div>
 
-        {queue.length === 0 ? (
+        {primaryQueue.length === 0 ? (
           <div className="inspection-empty">
-            {loading ? 'Loading…' : 'No active cases. Open one from Step 1 when a contract is waiting.'}
+            {loading ? 'Loading…' : 'No active cases. When a buyer confirms OTP, a case appears here.'}
           </div>
         ) : (
           <div className="inspection-card-list">
-            {queue.map((row) => {
+            {primaryQueue.map((row) => {
               const contract = contractById.get(Number(row.contractId))
               const isActive = selectedId === row.inspectionId
               return (
@@ -483,6 +567,42 @@ function InspectionQueuePage() {
           </div>
         )}
       </section>
+
+      {duplicateQueue.length > 0 ? (
+        <section className="inspection-section">
+          <div className="inspection-section__head">
+            <h2>Duplicate cases (safe to remove)</h2>
+            <p>
+              Extra cases for the same contract — usually from clicking Open after buyer OTP already
+              created one.
+            </p>
+          </div>
+          <div className="inspection-card-list">
+            {duplicateQueue.map((row) => (
+              <article key={row.inspectionId} className="inspection-card inspection-card--dup">
+                <div className="inspection-card__main">
+                  <div className="inspection-card__title-row">
+                    <h3>
+                      Duplicate case #{row.inspectionId}
+                      <span className="inspection-card__sub"> · Contract #{row.contractId}</span>
+                    </h3>
+                  </div>
+                </div>
+                <div className="inspection-card__actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={busyId === `cancel-${row.inspectionId}`}
+                    onClick={() => removeDuplicate(row.inspectionId)}
+                  >
+                    {busyId === `cancel-${row.inspectionId}` ? 'Removing…' : 'Remove duplicate'}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   )
 }

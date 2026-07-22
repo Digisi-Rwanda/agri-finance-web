@@ -3845,6 +3845,31 @@ th {
   padding: 1rem 1.15rem;
 }
 
+.inspection-next {
+  border: 1px solid #0a5c18;
+  background: rgba(10, 92, 24, 0.06);
+  border-radius: 14px;
+  padding: 1rem 1.15rem;
+}
+
+.inspection-next__title {
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  color: #0a5c18;
+}
+
+.inspection-next p {
+  margin: 0;
+  color: var(--text-muted, #5c6658);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.inspection-card--dup {
+  opacity: 0.92;
+  border-style: dashed;
+}
+
 .inspection-guide__title {
   margin: 0 0 0.5rem;
   font-weight: 700;
