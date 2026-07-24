@@ -2,9 +2,9 @@
   --green: #00450d;
   --blue: #2b5bb5;
   --red: #9f1239;
-  --bg: #f8faf5;
-  --text: #191c1a;
-  --border: #c0c9bb;
+  --bg: #f4f7f5;
+  --text: #121712;
+  --border: #d7e0d9;
 }
 
 * {
@@ -13,7 +13,7 @@
 
 body {
   margin: 0;
-  font-family: Inter, Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
 }
@@ -33,7 +33,7 @@ a {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 244px;
+  width: 260px;
   z-index: 50;
   background: var(--green);
   color: #e5f7ea;
@@ -268,7 +268,7 @@ a {
 .content-shell {
   display: flex;
   flex-direction: column;
-  margin-left: 244px;
+  margin-left: 260px;
   min-width: 0;
 }
 

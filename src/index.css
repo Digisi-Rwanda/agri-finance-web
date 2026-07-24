@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
-:root { 
-  --agri-font: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+:root {
+  --agri-font: "Plus Jakarta Sans", "Segoe UI", Roboto, Arial, sans-serif;
   --agri-brand: #00450d;
   --agri-brand-soft: #0a5c18;
   --agri-brand-deep: #002f09;
   --agri-brand-muted: #0a5c18;
-  --agri-link: #2b5bb5;
+  --agri-link: #0a5c18;
   --agri-accent-mint: #b8e6c4;
-  --agri-accent-soft: #f0f7f1;
+  --agri-accent-soft: #eef7f0;
   --agri-surface: #ffffff;
-  --agri-surface-muted: #ecefea;
-  --agri-surface-page: #f8faf5;
-  --agri-border: #c0c9bb;
-  --agri-border-hairline: #e1e3de;
-  --agri-text-primary: #191c1a;
-  --agri-text-secondary: #41493e;
-  --agri-text-muted: #717a6d;
+  --agri-surface-muted: #f3f6f4;
+  --agri-surface-page: #f4f7f5;
+  --agri-border: #d7e0d9;
+  --agri-border-hairline: #e8eee9;
+  --agri-text-primary: #121712;
+  --agri-text-secondary: #3d4740;
+  --agri-text-muted: #6b756e;
   --agri-text-on-brand: #ffffff;
   --agri-error: #ba1a1a;
-  --agri-radius-md: 12px;
-  --agri-radius-lg: 16px;
+  --agri-radius-md: 14px;
+  --agri-radius-lg: 18px;
+  --agri-shadow-sm: 0 1px 2px rgba(18, 23, 18, 0.04);
+  --agri-shadow-md: 0 8px 24px rgba(18, 23, 18, 0.06);
   font-family: var(--agri-font);
 }
 
@@ -39,4 +41,6 @@ body,
 body {
   background: var(--agri-surface-page);
   color: var(--agri-text-primary);
+  font-family: var(--agri-font);
+  -webkit-font-smoothing: antialiased;
 }

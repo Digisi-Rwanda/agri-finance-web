@@ -7,6 +7,7 @@ import AppRoutes from './routes/AppRoutes'
 import './styles/app.css'
 import './styles/neon-dashboard.css'
 import './styles/portal-light.css'
+import './styles/merchant-ui.css'
 import './styles/notifications.css'
 import './styles/account.css'
 
