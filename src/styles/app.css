@@ -1083,6 +1083,282 @@ button.secondary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.bank-dashboard-page .dash-farmers-card {
+  min-width: 0;
+}
+
+.bank-dash-queue-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bank-dash-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.bank-dash-queue-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e1e3de;
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.bank-dash-queue-item:hover {
+  border-color: #c0c9bb;
+  background: #f8faf5;
+}
+
+.bank-dash-queue-item--pending {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.bank-dash-queue-item--risk {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.bank-dash-queue-item__main strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.bank-dash-queue-item__main small,
+.bank-dash-queue-meta {
+  display: block;
+  margin-top: 0.15rem;
+  color: #717a6d;
+  font-size: 0.78rem;
+}
+
+.bank-dash-queue-item__mid {
+  min-width: 0;
+}
+
+.bank-dash-queue-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.bank-dash-queue-tag--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.bank-dash-queue-tag--risk {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.bank-dash-queue-detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #191c1a;
+}
+
+.bank-dash-queue-item__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #00450d;
+  white-space: nowrap;
+}
+
+.bank-dash-queue-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+.bank-dash-queue-empty .muted {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+}
+
+.bank-dash-insights {
+  margin-top: 0.85rem;
+  border: 1px solid #e1e3de;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.bank-dash-insights > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+  color: #191c1a;
+}
+
+.bank-dash-insights > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bank-dash-insights > summary small {
+  font-weight: 500;
+  color: #717a6d;
+  font-size: 0.8rem;
+}
+
+.bank-dash-insights[open] > summary {
+  border-bottom: 1px solid #e1e3de;
+}
+
+.bank-dash-insights .dashboard-grid {
+  padding: 0.85rem;
+  margin: 0;
+}
+
+.bank-dash-portfolio-wide {
+  grid-template-columns: 1fr;
+}
+
+.bank-dash-sub {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: #717a6d;
+  font-weight: 500;
+}
+
+.bank-dash-score {
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.bank-dash-score--good {
+  color: #166534;
+}
+
+.bank-dash-score--mid {
+  color: #92400e;
+}
+
+.bank-dash-score--low {
+  color: #991b1b;
+}
+
+.bank-dash-score--muted {
+  color: #717a6d;
+}
+
+.bank-dash-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.bank-dash-row-actions .btn-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.bank-dash-mobile {
+  display: none;
+}
+
+.bank-dash-mobile-card {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #e3eadf;
+}
+
+.bank-dash-mobile-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bank-dash-mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.bank-dash-mobile-card__head strong {
+  display: block;
+  color: #191c1a;
+}
+
+.bank-dash-mobile-card__head small {
+  display: block;
+  margin-top: 0.15rem;
+  color: #717a6d;
+  font-size: 0.78rem;
+}
+
+.bank-dash-mobile-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin: 0.55rem 0 0.7rem;
+  font-size: 0.82rem;
+  color: #5f6b5c;
+}
+
+.bank-dash-mobile-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+@media (max-width: 860px) {
+  .bank-dash-table-wrap {
+    display: none;
+  }
+
+  .bank-dash-mobile {
+    display: block;
+  }
+
+  .bank-dash-queue-item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .bank-dash-queue-item__go {
+    justify-self: start;
+  }
+
+  .bank-dash-queue-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .dash-name {
   font-weight: 600;
   color: #191c1a;
@@ -2981,6 +3257,36 @@ button.secondary {
   display: grid;
   gap: 0.65rem;
   margin-top: 0.75rem;
+}
+
+.momo-provider-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.momo-provider-btn {
+  border: 1px solid #dce5d8;
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  background: #f7faf6;
+  color: #41493e;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.momo-provider-btn.is-active.momo-provider-btn--mtn {
+  background: #ffcc00;
+  border-color: #e6b800;
+  color: #111111;
+}
+
+.momo-provider-btn.is-active.momo-provider-btn--airtel {
+  background: #e60000;
+  border-color: #c40000;
+  color: #ffffff;
 }
 
 .momo-form-message {

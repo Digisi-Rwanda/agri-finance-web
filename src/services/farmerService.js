@@ -45,20 +45,28 @@ export const enrichFarmersWithInsights = async (farmers = [], { includeLoans = t
     const status = String(loan.status || '').toUpperCase()
     if (!ACTIVE_LOAN_STATUSES.has(status)) return
     if (!activeLoanByFarmerId[loan.farmerId]) {
-      activeLoanByFarmerId[loan.farmerId] = status
+      activeLoanByFarmerId[loan.farmerId] = {
+        status,
+        loanId: loan.loanId ?? loan.id ?? null,
+        amount: loan.amount ?? null,
+        purpose: loan.loanPurpose || loan.purpose || null,
+      }
     }
   })
 
   return farmers.map((farmer) => {
     const latestScore = scoresByFarmerId[farmer.farmerId]
-    const activeLoan = activeLoanByFarmerId[farmer.farmerId] || null
+    const loanInfo = activeLoanByFarmerId[farmer.farmerId] || null
     return {
       ...farmer,
       latestCreditScore: latestScore?.score ?? null,
       creditScore: latestScore?.score ?? null,
       riskLevel: latestScore?.riskLevel || null,
-      activeLoan,
-      hasActiveLoan: Boolean(activeLoan),
+      activeLoan: loanInfo?.status || null,
+      activeLoanId: loanInfo?.loanId || null,
+      activeLoanAmount: loanInfo?.amount ?? null,
+      activeLoanPurpose: loanInfo?.purpose || null,
+      hasActiveLoan: Boolean(loanInfo),
     }
   })
 }
