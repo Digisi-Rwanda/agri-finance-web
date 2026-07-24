@@ -161,7 +161,12 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || pathname === '/trust-ladder' || (pathname === '/payments' && homePath === '/payments')) {
+  // Farmer landing is /payments — keep a single Home crumb (page H1 is "Payments").
+  if (pathname === homePath && homePath === '/payments') {
+    return crumbs
+  }
+
+  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || pathname === '/trust-ladder') {
     crumbs.push({ label: 'Dashboard' })
     return crumbs
   }

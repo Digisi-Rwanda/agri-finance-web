@@ -144,9 +144,8 @@ export default function MomoPaymentsPage() {
     return (
       <section className="dashboard-page momo-page dashboard-page--compact bank-payments-page">
         <PageHeader
-          breadcrumb="Home › Payments"
-          title="Farmer payments"
-          subtitle="View-only access to the same payment history, MoMo ledger, eKash, and repayment schedule the farmer sees in the app."
+          title="Payments"
+          subtitle="View payment history, MoMo ledger, eKash, and repayment schedule for consented farmers."
         />
 
         <article className="card bank-pay-picker">
@@ -184,7 +183,7 @@ export default function MomoPaymentsPage() {
             ) : null}
           </div>
           <p className="bank-pay-picker__hint">
-            Banks can only view consented farmers. No repay or disbursement is started from this screen.
+            View only — repay and disbursement stay on the farmer app.
           </p>
         </article>
 
@@ -199,20 +198,32 @@ export default function MomoPaymentsPage() {
     )
   }
 
+  const successfulCount = history.filter((row) => row.status === 'SUCCESSFUL').length
+
   return (
     <section className="dashboard-page momo-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Home › Payments"
-        subtitle="Track wallet balance, repay loans, and monitor MoMo transactions."
+        title="Payments"
+        subtitle="Track your wallet, repay loans with MoMo, and review recent transactions."
       />
 
-      <div className="widgets four">
-        <StatCard title="Wallet balance" value={wallet ? formatRwf(wallet.balance) : '—'} />
-        <StatCard title="Currency" value={wallet?.currency || 'RWF'} />
-        <StatCard title="Payments" value={String(history.length)} />
+      <div className="widgets three">
         <StatCard
-          title="Successful"
-          value={String(history.filter((row) => row.status === 'SUCCESSFUL').length)}
+          title="Wallet balance"
+          value={wallet ? formatRwf(wallet.balance) : '—'}
+          meta={wallet?.currency || 'RWF'}
+          accent="green"
+        />
+        <StatCard
+          title="Transactions"
+          value={String(history.length)}
+          meta={`${successfulCount} successful`}
+        />
+        <StatCard
+          title="Loan repay"
+          value={loanId ? 'Ready' : 'None'}
+          meta={loanId ? 'Active loan found' : 'No repayable loan'}
+          accent={loanId ? 'blue' : 'slate'}
         />
       </div>
 
@@ -229,11 +240,16 @@ export default function MomoPaymentsPage() {
         ) : null}
 
         <article className="card">
-          <h2>Transaction History</h2>
+          <div className="section-head">
+            <div>
+              <h2>Recent transactions</h2>
+              <p className="card-subtitle">Latest MoMo payment activity</p>
+            </div>
+          </div>
           {loading ? (
-            <p className="muted">Loading payment history...</p>
+            <p className="muted">Loading payment history…</p>
           ) : history.length === 0 ? (
-            <p className="muted">No transactions yet.</p>
+            <p className="muted">No transactions yet. Successful repayments will show here.</p>
           ) : (
             <div className="table-scroll">
               <table className="desktop-table">
@@ -248,7 +264,7 @@ export default function MomoPaymentsPage() {
                 <tbody>
                   {history.slice(0, 20).map((row) => (
                     <tr key={row.paymentId}>
-                      <td>{row.paymentType?.replaceAll('_', ' ')}</td>
+                      <td>{String(row.paymentType || '').replaceAll('_', ' ')}</td>
                       <td>{row.status}</td>
                       <td>
                         {formatRwf(row.amount)} {row.currency || 'RWF'}
