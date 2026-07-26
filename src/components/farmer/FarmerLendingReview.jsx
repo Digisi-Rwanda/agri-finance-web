@@ -96,15 +96,21 @@ function FarmerLendingReview({
   totalAcreage = 0,
   officerName,
   loading,
+  defaultOpen = false,
 }) {
   const farmerId = farmer?.farmerId
   const [notes, setNotes] = useState(() => (farmerId ? getDecisionNotes(farmerId) : []))
   const [noteDraft, setNoteDraft] = useState('')
+  const [open, setOpen] = useState(Boolean(defaultOpen))
 
   useEffect(() => {
     setNotes(farmerId ? getDecisionNotes(farmerId) : [])
     setNoteDraft('')
   }, [farmerId])
+
+  useEffect(() => {
+    setOpen(Boolean(defaultOpen))
+  }, [defaultOpen, farmerId])
 
   const hasPhoto = Boolean(
     farmer?.profilePhotoUrl ||
@@ -252,22 +258,63 @@ function FarmerLendingReview({
   }
 
   return (
-    <section className="lending-review" aria-labelledby="lending-review-title">
+    <section
+      className={`lending-review${open ? ' is-open' : ' is-collapsed'}`}
+      aria-labelledby="lending-review-title"
+    >
       <header className="lending-review__header">
         <div>
-          <p className="lending-review__eyebrow">Underwriting pack</p>
+          <p className="lending-review__eyebrow">Section 2 · Underwriting</p>
           <h2 id="lending-review-title" className="lending-review__title">
             Lending review
           </h2>
           <p className="lending-review__subtitle">
-            Identity, affordability, score drivers, fraud, repayments, farm risk, and officer notes
-            before approve/reject.
+            KYC checklist, affordability, score drivers, fraud flags, and officer notes.
           </p>
         </div>
-        {loading ? <span className="lending-review__loading">Refreshing…</span> : null}
+        <div className="lending-review__header-actions">
+          {loading ? <span className="lending-review__loading">Refreshing…</span> : null}
+          <button
+            type="button"
+            className="btn-secondary"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? 'Hide pack' : 'Open pack'}
+          </button>
+        </div>
       </header>
 
-      {requiredMissing.length > 0 ? (
+      {!open ? (
+        <div className="lending-review__summary-strip">
+          <span>
+            Score <strong>{creditScore ?? '—'}</strong>
+          </span>
+          <span>
+            Limit{' '}
+            <strong>
+              {affordability.availableLimit != null
+                ? formatRwf(affordability.availableLimit)
+                : '—'}
+            </strong>
+          </span>
+          <span>
+            KYC{' '}
+            <strong>
+              {requiredMissing.length === 0
+                ? 'Complete'
+                : `${requiredMissing.length} missing`}
+            </strong>
+          </span>
+          {flags.length > 0 ? (
+            <span>
+              Flags <strong>{flags.length}</strong>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {open && requiredMissing.length > 0 ? (
         <div className="lending-banner lending-banner--warn">
           <AlertTriangle size={16} aria-hidden />
           <span>
@@ -277,6 +324,7 @@ function FarmerLendingReview({
         </div>
       ) : null}
 
+      {open ? (
       <div className="lending-review__grid">
         {/* 1. Documents / KYC */}
         <article className="lending-panel">
@@ -760,6 +808,7 @@ function FarmerLendingReview({
           </p>
         </article>
       </div>
+      ) : null}
     </section>
   )
 }

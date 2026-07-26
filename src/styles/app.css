@@ -2261,6 +2261,71 @@ button.secondary {
   margin-bottom: 1rem;
 }
 
+.lending-review__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lending-review.is-collapsed {
+  padding-bottom: 0.95rem;
+}
+
+.lending-review.is-collapsed .lending-review__header {
+  margin-bottom: 0.75rem;
+}
+
+.lending-review__summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.15rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(0, 69, 13, 0.04);
+  border: 1px solid #dce5d8;
+  color: #5f6b5c;
+  font-size: 0.9rem;
+}
+
+.lending-review__summary-strip strong {
+  color: #191c1a;
+  font-weight: 700;
+}
+
+.fp-section-label {
+  margin: 0.2rem 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #717a6d;
+}
+
+.farmer-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.farmer-profile-page .farmer-id-card {
+  margin-bottom: 0;
+}
+
+.farmer-profile-page .widgets.four {
+  margin-top: 0;
+}
+
+.farmer-profile-page .detail-tabs {
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.farmer-profile-page .detail-tab {
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+}
+
 .lending-review__eyebrow {
   margin: 0 0 0.2rem;
   font-size: 0.72rem;

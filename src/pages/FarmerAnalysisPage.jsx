@@ -511,29 +511,35 @@ function FarmerAnalysisPage() {
 
   return (
     <section className="dashboard-page dashboard-page--compact farmer-profile-page">
-      <div className="farmer-profile-toolbar">
-        <nav className="farmer-profile-toolbar__crumb" aria-label="Breadcrumb">
-          <Link to="/farmer">Farmers</Link>
-          <span aria-hidden>/</span>
-          <span>Profile</span>
-        </nav>
-        <div className="farmer-profile-toolbar__actions">
-          <Link to="/farmer" className="btn-secondary">
-            <ArrowLeft size={16} />
-            Back
-          </Link>
-          <button type="button" className="btn-secondary" onClick={handleExportReport}>
-            <Download size={16} aria-hidden />
-            Export
-          </button>
-          <Link to={`/payments?farmerId=${farmer.farmerId}`} className="btn-secondary">
-            Payments
-          </Link>
-          <Link to="/loans" className="btn-primary">
-            Loans
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        breadcrumb={
+          <>
+            <Link to="/farmer">Farmers</Link>
+            <span aria-hidden> / </span>
+            <span>Profile</span>
+          </>
+        }
+        title={displayName || 'Farmer profile'}
+        subtitle={`ID ${farmer.farmerId}${farmer.location ? ` · ${farmer.location}` : ''} · farms, credit, loans, and activity`}
+        actions={
+          <div className="farmer-profile-toolbar__actions">
+            <Link to="/farmer" className="btn-secondary">
+              <ArrowLeft size={16} />
+              Back
+            </Link>
+            <button type="button" className="btn-secondary" onClick={handleExportReport}>
+              <Download size={16} aria-hidden />
+              Export PDF
+            </button>
+            <Link to={`/payments?farmerId=${farmer.farmerId}`} className="btn-secondary">
+              Payments
+            </Link>
+            <Link to="/loans" className="btn-primary">
+              Loans
+            </Link>
+          </div>
+        }
+      />
 
       {(risk === 'HIGH' || pendingLoan || normalizeRisk(fraudAssessment?.riskLevel) === 'HIGH') && (
         <div className="dash-alerts">
@@ -571,6 +577,8 @@ function FarmerAnalysisPage() {
           ) : null}
         </div>
       )}
+
+      <p className="fp-section-label">Section 1 · Identity & snapshot</p>
 
       <article className="farmer-id-card">
         <div className="farmer-id-card__photo">
@@ -682,9 +690,17 @@ function FarmerAnalysisPage() {
         totalAcreage={totalAcreage}
         officerName={officerName}
         loading={lendingReviewLoading}
+        defaultOpen={
+          risk === 'HIGH' ||
+          Boolean(pendingLoan) ||
+          normalizeRisk(fraudAssessment?.riskLevel) === 'HIGH'
+        }
       />
 
+      <p className="fp-section-label">Section 3 · Records</p>
+
       <DataTableShell
+        title="Farmer records"
         filters={
           <div className="detail-tabs" role="tablist" aria-label="Farmer record sections">
             {DETAIL_TABS.map((tab) => (
