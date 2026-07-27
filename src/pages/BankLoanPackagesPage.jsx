@@ -13,6 +13,10 @@ import {
   exportLoanPackage,
   exportVerifiedFarmers,
 } from '../services/bankabilityService'
+import {
+  ensureActiveInsuranceForFarmer,
+  isInsuranceRequiredError,
+} from '../services/insuranceService'
 import { exportLoanPackagePdf, exportVerifiedFarmersPdf } from '../utils/exportPdf'
 import { formatRwf } from '../utils/currency'
 
@@ -41,12 +45,34 @@ function BankLoanPackagesPage() {
   }, [])
 
   const onApprove = async (id) => {
+    const pkg = rows.find((row) => row.packageId === id)
     setBusyId(id)
     try {
       await approveLoanPackage(id, 'Approved by bank officer')
       toast.success('Package approved — loan created (pending disbursement)')
       load()
     } catch (e) {
+      if (isInsuranceRequiredError(e) && pkg?.farmerId) {
+        const ok = window.confirm(
+          `Farmer #${pkg.farmerId} has no active insurance.\n\nIssue a 1-year crop policy and approve this package?`,
+        )
+        if (ok) {
+          try {
+            await ensureActiveInsuranceForFarmer(pkg.farmerId)
+            await approveLoanPackage(id, 'Approved by bank officer')
+            toast.success('Package approved — loan created (pending disbursement)')
+            load()
+            return
+          } catch (retryError) {
+            toast.error(
+              retryError?.response?.data?.error ||
+                retryError?.message ||
+                'Approve failed after issuing insurance',
+            )
+            return
+          }
+        }
+      }
       toast.error(e?.response?.data?.error || 'Approve failed')
     } finally {
       setBusyId(null)

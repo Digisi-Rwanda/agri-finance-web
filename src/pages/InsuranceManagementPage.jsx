@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Download } from 'lucide-react'
 import { toast } from 'react-toastify'
+import { useSearchParams } from 'react-router-dom'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -10,6 +11,7 @@ import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
 function InsuranceManagementPage() {
+  const [searchParams] = useSearchParams()
   const [policies, setPolicies] = useState([])
   const [insurers, setInsurers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +46,13 @@ function InsuranceManagementPage() {
   useEffect(() => {
     loadPolicies()
   }, [])
+
+  useEffect(() => {
+    const farmerId = searchParams.get('farmerId')
+    if (!farmerId) return
+    setForm((f) => ({ ...f, farmerId: String(farmerId) }))
+    setShowCreate(true)
+  }, [searchParams])
 
   const claimRequests = useMemo(
     () =>
