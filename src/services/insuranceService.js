@@ -1,30 +1,48 @@
 import { apiClient } from '../api/client'
-import { getFarmers } from './farmerService'
+
+const mapPolicy = (policy, farmersById = {}) => ({
+  id: policy.policyId,
+  farmerId: policy.farmerId,
+  farmer: farmersById[policy.farmerId]?.fullName || `Farmer #${policy.farmerId}`,
+  policyType: policy.policyType || 'crop',
+  policyReference: policy.policyReference || '',
+  premium: Number(policy.premium || 0),
+  status: String(policy.status || 'ACTIVE').toUpperCase(),
+  insurerId: policy.insurerId,
+  validFrom: policy.validFrom || null,
+  validTo: policy.validTo || null,
+})
+
+const loadFarmerDirectory = async () => {
+  try {
+    // Insurers need the full farmer book — do not require bank consent.
+    const response = await apiClient.get('/farmers')
+    const farmers = Array.isArray(response.data) ? response.data : []
+    return Object.fromEntries(farmers.map((farmer) => [farmer.farmerId, farmer]))
+  } catch {
+    return {}
+  }
+}
+
+export const listFarmersForInsurance = async () => {
+  const response = await apiClient.get('/farmers')
+  return Array.isArray(response.data) ? response.data : []
+}
 
 export const getPolicies = async () => {
-  const [policyResponse, farmers] = await Promise.all([
-    apiClient.get('/insurance-policies'),
-    getFarmers(),
-  ])
-
-  const farmersById = Object.fromEntries(farmers.map((farmer) => [farmer.farmerId, farmer]))
-
-  return policyResponse.data.map((policy) => ({
-    id: policy.policyId,
-    farmerId: policy.farmerId,
-    farmer: farmersById[policy.farmerId]?.fullName || `Farmer #${policy.farmerId}`,
-    policyType: policy.policyType || 'General',
-    policyReference: policy.policyReference || '',
-    premium: Number(policy.premium || 0),
-    status: policy.status || 'ACTIVE',
-    insurerId: policy.insurerId,
-    validFrom: policy.validFrom,
-    validTo: policy.validTo,
-  }))
+  const policyResponse = await apiClient.get('/insurance-policies')
+  const farmersById = await loadFarmerDirectory()
+  const rows = Array.isArray(policyResponse.data) ? policyResponse.data : []
+  return rows.map((policy) => mapPolicy(policy, farmersById))
 }
 
 export const getInsurers = async () => {
   const response = await apiClient.get('/insurance-policies/insurers')
+  return Array.isArray(response.data) ? response.data : []
+}
+
+export const createInsurer = async (payload) => {
+  const response = await apiClient.post('/insurance-policies/insurers', payload)
   return response.data
 }
 

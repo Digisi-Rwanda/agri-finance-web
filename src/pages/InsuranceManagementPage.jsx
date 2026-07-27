@@ -1,86 +1,199 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
+import { AlertCircle, Download, Plus, Search, ShieldCheck, X } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { useSearchParams } from 'react-router-dom'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getPolicies, updatePolicyStatus, createPolicy, getInsurers } from '../services/insuranceService'
+import {
+  createInsurer,
+  createPolicy,
+  getInsurers,
+  getPolicies,
+  listFarmersForInsurance,
+  updatePolicyStatus,
+} from '../services/insuranceService'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
+
+const STATUS_FILTERS = [
+  { value: 'All', label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'CLAIMED', label: 'Claimed' },
+  { value: 'EXPIRED', label: 'Expired' },
+]
+
+const emptyForm = {
+  farmerId: '',
+  insurerId: '',
+  policyType: 'crop',
+  policyReference: '',
+  premium: '',
+  validFrom: '',
+  validTo: '',
+}
+
+function isCurrentlyActive(policy) {
+  if (String(policy.status || '').toUpperCase() !== 'ACTIVE') return false
+  const today = new Date().toISOString().slice(0, 10)
+  if (policy.validFrom && String(policy.validFrom) > today) return false
+  if (policy.validTo && String(policy.validTo) < today) return false
+  return true
+}
 
 function InsuranceManagementPage() {
   const [searchParams] = useSearchParams()
   const [policies, setPolicies] = useState([])
   const [insurers, setInsurers] = useState([])
+  const [farmers, setFarmers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [busyPolicyId, setBusyPolicyId] = useState(null)
+  const [saving, setSaving] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({
-    farmerId: '',
-    insurerId: '',
-    policyType: 'crop',
-    policyReference: '',
-    premium: '',
-    validFrom: '',
-    validTo: '',
-  })
+  const [showInsurerForm, setShowInsurerForm] = useState(false)
+  const [insurerName, setInsurerName] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [form, setForm] = useState(emptyForm)
 
-  const loadPolicies = async () => {
+  const load = async () => {
+    setLoading(true)
+    setLoadError('')
     try {
-      setLoading(true)
-      const [data, insurerList] = await Promise.all([getPolicies(), getInsurers().catch(() => [])])
-      setPolicies(data)
-      setInsurers(Array.isArray(insurerList) ? insurerList : [])
-      if (!form.insurerId && insurerList?.[0]) {
-        setForm((f) => ({ ...f, insurerId: String(insurerList[0].insurerId) }))
-      }
-    } catch {
-      toast.error('Failed to load insurance policies from backend.')
+      const [policyRows, insurerList, farmerList] = await Promise.all([
+        getPolicies(),
+        getInsurers().catch(() => []),
+        listFarmersForInsurance().catch(() => []),
+      ])
+      setPolicies(Array.isArray(policyRows) ? policyRows : [])
+      const nextInsurers = Array.isArray(insurerList) ? insurerList : []
+      setInsurers(nextInsurers)
+      setFarmers(Array.isArray(farmerList) ? farmerList : [])
+      setForm((prev) => ({
+        ...prev,
+        insurerId: prev.insurerId || (nextInsurers[0] ? String(nextInsurers[0].insurerId) : ''),
+      }))
+      if (nextInsurers.length === 0) setShowInsurerForm(true)
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || 'Could not load insurance policies.')
+      setPolicies([])
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadPolicies()
+    load()
   }, [])
 
   useEffect(() => {
     const farmerId = searchParams.get('farmerId')
     if (!farmerId) return
-    setForm((f) => ({ ...f, farmerId: String(farmerId) }))
+    setForm((prev) => ({ ...prev, farmerId: String(farmerId) }))
     setShowCreate(true)
   }, [searchParams])
 
-  const claimRequests = useMemo(
-    () =>
-      policies.filter((policy) => ['CLAIMED', 'EXPIRED'].includes((policy.status || '').toUpperCase())),
+  const activePolicies = useMemo(() => policies.filter((policy) => isCurrentlyActive(policy)), [policies])
+  const claimedPolicies = useMemo(
+    () => policies.filter((policy) => String(policy.status).toUpperCase() === 'CLAIMED'),
     [policies],
   )
-  const activePolicies = useMemo(
-    () => policies.filter((policy) => (policy.status || '').toUpperCase() === 'ACTIVE'),
+  const expiredPolicies = useMemo(
+    () => policies.filter((policy) => String(policy.status).toUpperCase() === 'EXPIRED'),
     [policies],
   )
   const totalPremiumValue = useMemo(
-    () => policies.reduce((sum, policy) => sum + Number(policy.premium || 0), 0),
-    [policies],
+    () => activePolicies.reduce((sum, policy) => sum + Number(policy.premium || 0), 0),
+    [activePolicies],
   )
-  const settlementRatio = useMemo(() => {
-    if (!policies.length) return '0.0%'
-    const claimedCount = policies.filter((policy) => (policy.status || '').toUpperCase() === 'CLAIMED').length
-    return `${((claimedCount / policies.length) * 100).toFixed(1)}%`
-  }, [policies])
 
-  const handleClaimAction = async (policyId, nextStatus) => {
+  const filteredPolicies = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return policies.filter((policy) => {
+      const statusOk = statusFilter === 'All' || String(policy.status).toUpperCase() === statusFilter
+      const searchOk =
+        !query ||
+        policy.farmer?.toLowerCase().includes(query) ||
+        String(policy.farmerId).includes(query) ||
+        String(policy.id).includes(query) ||
+        policy.policyType?.toLowerCase().includes(query) ||
+        policy.policyReference?.toLowerCase().includes(query)
+      return statusOk && searchOk
+    })
+  }, [policies, searchQuery, statusFilter])
+
+  const updateForm = (patch) => setForm((prev) => ({ ...prev, ...patch }))
+
+  const handleCreateInsurer = async (event) => {
+    event.preventDefault()
+    const name = insurerName.trim()
+    if (!name) {
+      toast.error('Enter an insurer name.')
+      return
+    }
+    setSaving(true)
+    try {
+      const created = await createInsurer({ insurerName: name })
+      toast.success(`Insurer “${created.insurerName || name}” created.`)
+      setInsurerName('')
+      setShowInsurerForm(false)
+      const next = await getInsurers()
+      setInsurers(next)
+      updateForm({ insurerId: String(created.insurerId || next[0]?.insurerId || '') })
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Could not create insurer.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCreatePolicy = async (event) => {
+    event.preventDefault()
+    if (!form.farmerId) {
+      toast.error('Select a farmer.')
+      return
+    }
+    if (!form.insurerId) {
+      toast.error('Select or create an insurer first.')
+      setShowInsurerForm(true)
+      return
+    }
+    setSaving(true)
+    try {
+      await createPolicy({
+        farmerId: Number(form.farmerId),
+        insurerId: Number(form.insurerId),
+        policyType: form.policyType || 'crop',
+        policyReference: form.policyReference || null,
+        premium: form.premium ? Number(form.premium) : null,
+        status: 'ACTIVE',
+        validFrom: form.validFrom || null,
+        validTo: form.validTo || null,
+      })
+      toast.success('Active policy issued — bank can approve loans for this farmer.')
+      setShowCreate(false)
+      setForm((prev) => ({
+        ...emptyForm,
+        insurerId: prev.insurerId,
+      }))
+      await load()
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Could not create policy.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleStatus = async (policyId, nextStatus) => {
     setBusyPolicyId(policyId)
     try {
       await updatePolicyStatus(policyId, nextStatus)
-      await loadPolicies()
-      toast.success(`Policy ${policyId} updated to ${nextStatus}.`)
-    } catch {
-      toast.error('Could not update policy status.')
+      toast.success(`Policy #${policyId} marked ${nextStatus}.`)
+      await load()
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Could not update policy status.')
     } finally {
       setBusyPolicyId(null)
     }
@@ -90,17 +203,25 @@ function InsuranceManagementPage() {
     const headers = [
       { key: 'id', label: 'Policy ID' },
       { key: 'farmer', label: 'Farmer' },
+      { key: 'farmerId', label: 'Farmer ID' },
       { key: 'policyType', label: 'Policy type' },
+      { key: 'policyReference', label: 'Reference' },
       { key: 'premium', label: 'Premium (Rwf)' },
       { key: 'status', label: 'Status' },
+      { key: 'validFrom', label: 'Valid from' },
+      { key: 'validTo', label: 'Valid to' },
       { key: 'insurerId', label: 'Insurer ID' },
     ]
-    const rows = policies.map((policy) => ({
+    const rows = filteredPolicies.map((policy) => ({
       id: policy.id,
       farmer: policy.farmer,
+      farmerId: policy.farmerId,
       policyType: policy.policyType,
+      policyReference: policy.policyReference || '—',
       premium: policy.premium,
       status: policy.status,
+      validFrom: policy.validFrom || '—',
+      validTo: policy.validTo || '—',
       insurerId: policy.insurerId ?? '',
     }))
     exportTableReport({
@@ -113,201 +234,426 @@ function InsuranceManagementPage() {
     toast.success(`Downloaded PDF with ${rows.length} polic${rows.length === 1 ? 'y' : 'ies'}.`)
   }
 
+  const renderActions = (policy) => {
+    const status = String(policy.status || '').toUpperCase()
+    const busy = busyPolicyId === policy.id
+    if (status === 'ACTIVE') {
+      return (
+        <>
+          <button
+            type="button"
+            className="btn-secondary danger"
+            disabled={busy}
+            onClick={() => handleStatus(policy.id, 'CLAIMED')}
+          >
+            {busy ? 'Saving…' : 'File claim'}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={busy}
+            onClick={() => handleStatus(policy.id, 'EXPIRED')}
+          >
+            Expire
+          </button>
+        </>
+      )
+    }
+    if (status === 'CLAIMED') {
+      return (
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={busy}
+          onClick={() => handleStatus(policy.id, 'EXPIRED')}
+        >
+          {busy ? 'Saving…' : 'Close claim'}
+        </button>
+      )
+    }
+    return (
+      <button
+        type="button"
+        className="btn-primary"
+        disabled={busy}
+        onClick={() => handleStatus(policy.id, 'ACTIVE')}
+      >
+        {busy ? 'Saving…' : 'Reactivate'}
+      </button>
+    )
+  }
+
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact insurance-page">
       <PageHeader
-        title="Insurance Portfolio"
-        subtitle="Institutional risk overview and claim management for regional clusters."
+        breadcrumb="Home › Insurance"
+        title="Insurance"
+        subtitle="Issue active crop policies, manage claims, and keep farmers bankable."
         actions={
           <>
-          <button type="button" className="btn-secondary" onClick={handleExportReport}>
-            <Download size={16} aria-hidden />
-            Export PDF
-          </button>
-          <button type="button" className="btn-primary" onClick={() => setShowCreate((v) => !v)}>
-            {showCreate ? 'Close form' : '+ New Policy'}
-          </button>
+            <button type="button" className="btn-secondary" onClick={handleExportReport}>
+              <Download size={16} aria-hidden />
+              Export PDF
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowInsurerForm((value) => !value)}
+            >
+              {showInsurerForm ? 'Close insurer' : 'Add insurer'}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setShowCreate((value) => !value)}
+            >
+              <Plus size={16} aria-hidden />
+              {showCreate ? 'Close form' : 'New policy'}
+            </button>
           </>
         }
       />
 
-      {showCreate ? (
-        <form
-          className="mb-6 grid gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 md:grid-cols-3"
-          onSubmit={async (e) => {
-            e.preventDefault()
-            try {
-              await createPolicy({
-                farmerId: Number(form.farmerId),
-                insurerId: Number(form.insurerId),
-                policyType: form.policyType,
-                policyReference: form.policyReference || null,
-                premium: form.premium ? Number(form.premium) : null,
-                status: 'ACTIVE',
-                validFrom: form.validFrom || null,
-                validTo: form.validTo || null,
-              })
-              toast.success('Policy created')
-              setShowCreate(false)
-              setForm((f) => ({ ...f, farmerId: '', policyReference: '', premium: '', validFrom: '', validTo: '' }))
-              loadPolicies()
-            } catch (err) {
-              toast.error(err?.response?.data?.error || 'Could not create policy')
-            }
-          }}
-        >
-          <input
-            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Farmer ID"
-            value={form.farmerId}
-            onChange={(e) => setForm({ ...form, farmerId: e.target.value })}
-            required
-          />
-          <select
-            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            value={form.insurerId}
-            onChange={(e) => setForm({ ...form, insurerId: e.target.value })}
-            required
+      {!loading && insurers.length === 0 ? (
+        <div className="dash-alerts">
+          <div className="dash-alert dash-alert--warn">
+            <AlertCircle size={18} />
+            <span>
+              <strong>No insurer on file.</strong> Create an insurer before issuing policies.
+            </span>
+            <button type="button" className="dash-alert__action" onClick={() => setShowInsurerForm(true)}>
+              Add insurer
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {!loading && claimedPolicies.length > 0 ? (
+        <div className="dash-alerts">
+          <button
+            type="button"
+            className="dash-alert dash-alert--risk"
+            onClick={() => setStatusFilter('CLAIMED')}
           >
-            <option value="">Insurer…</option>
-            {insurers.map((i) => (
-              <option key={i.insurerId} value={i.insurerId}>
-                {i.insurerName || i.name || `Insurer #${i.insurerId}`}
-              </option>
-            ))}
-          </select>
-          <input
-            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Policy reference"
-            value={form.policyReference}
-            onChange={(e) => setForm({ ...form, policyReference: e.target.value })}
-          />
-          <input
-            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Policy type"
-            value={form.policyType}
-            onChange={(e) => setForm({ ...form, policyType: e.target.value })}
-          />
-          <input
-            className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Premium"
-            value={form.premium}
-            onChange={(e) => setForm({ ...form, premium: e.target.value })}
-          />
-          <label className="text-sm">
-            Valid from
-            <input
-              type="date"
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              value={form.validFrom}
-              onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
-            />
-          </label>
-          <label className="text-sm">
-            Valid to
-            <input
-              type="date"
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              value={form.validTo}
-              onChange={(e) => setForm({ ...form, validTo: e.target.value })}
-            />
-          </label>
-          <button type="submit" className="btn-primary md:col-span-3">
-            Save policy
+            <ShieldCheck size={18} />
+            <span>
+              <strong>
+                {claimedPolicies.length} open claim{claimedPolicies.length === 1 ? '' : 's'}
+              </strong>{' '}
+              need review
+            </span>
+            <span className="dash-alert__action">Filter claimed</span>
           </button>
+        </div>
+      ) : null}
+
+      <div className="widgets four">
+        <StatCard title="Policies" value={loading ? '…' : String(policies.length)} meta="All statuses" />
+        <StatCard
+          title="Active"
+          value={loading ? '…' : String(activePolicies.length)}
+          meta="Valid cover"
+          accent="blue"
+        />
+        <StatCard
+          title="Open claims"
+          value={loading ? '…' : String(claimedPolicies.length)}
+          meta={`${expiredPolicies.length} expired`}
+          accent="amber"
+        />
+        <StatCard
+          title="Active premium"
+          value={loading ? '…' : formatRwfCompact(totalPremiumValue)}
+          meta="On active policies"
+          accent="slate"
+        />
+      </div>
+
+      {showInsurerForm ? (
+        <form className="insurance-panel" onSubmit={handleCreateInsurer}>
+          <div className="insurance-panel__head">
+            <div>
+              <h2>Add insurer</h2>
+              <p className="muted">Required before issuing policies to farmers.</p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={() => setShowInsurerForm(false)}>
+              <X size={14} />
+              Close
+            </button>
+          </div>
+          <div className="insurance-panel__grid">
+            <label>
+              Insurer name
+              <input
+                value={insurerName}
+                onChange={(event) => setInsurerName(event.target.value)}
+                placeholder="e.g. SONARWA Agri Cover"
+                required
+              />
+            </label>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Saving…' : 'Save insurer'}
+            </button>
+          </div>
         </form>
       ) : null}
-      <div className="widgets four">
-        <StatCard title="Total Premium Value" value={formatRwfCompact(totalPremiumValue)} meta="Calculated from DB premiums" />
-        <StatCard title="Settlement Ratio" value={settlementRatio} meta="Claimed policies / total policies" />
-        <StatCard title="Active Policies" value={String(activePolicies.length)} meta="Live backend count" />
-        <StatCard title="Risk Exposure" value={claimRequests.length > 0 ? 'Moderate' : 'Low'} meta="Based on policy status" />
-      </div>
 
-      <div className="dashboard-grid">
-        <DataTableShell title="Active Policy Overview">
-          <table className="desktop-table">
-            <thead>
+      {showCreate ? (
+        <form className="insurance-panel" onSubmit={handleCreatePolicy}>
+          <div className="insurance-panel__head">
+            <div>
+              <h2>Issue policy</h2>
+              <p className="muted">Creates an ACTIVE policy banks can rely on for loan approval.</p>
+            </div>
+            <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>
+              <X size={14} />
+              Close
+            </button>
+          </div>
+          <div className="insurance-panel__grid insurance-panel__grid--form">
+            <label>
+              Farmer
+              <select
+                value={form.farmerId}
+                onChange={(event) => updateForm({ farmerId: event.target.value })}
+                required
+              >
+                <option value="">Select farmer…</option>
+                {farmers.map((farmer) => (
+                  <option key={farmer.farmerId} value={farmer.farmerId}>
+                    {farmer.fullName || `Farmer #${farmer.farmerId}`} (#{farmer.farmerId})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Insurer
+              <select
+                value={form.insurerId}
+                onChange={(event) => updateForm({ insurerId: event.target.value })}
+                required
+              >
+                <option value="">Select insurer…</option>
+                {insurers.map((insurer) => (
+                  <option key={insurer.insurerId} value={insurer.insurerId}>
+                    {insurer.insurerName || insurer.name || `Insurer #${insurer.insurerId}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Policy type
+              <select
+                value={form.policyType}
+                onChange={(event) => updateForm({ policyType: event.target.value })}
+              >
+                <option value="crop">Crop</option>
+                <option value="livestock">Livestock</option>
+                <option value="equipment">Equipment</option>
+                <option value="multi-peril">Multi-peril</option>
+              </select>
+            </label>
+            <label>
+              Reference
+              <input
+                value={form.policyReference}
+                onChange={(event) => updateForm({ policyReference: event.target.value })}
+                placeholder="Optional policy ref"
+              />
+            </label>
+            <label>
+              Premium (Rwf)
+              <input
+                type="number"
+                min="0"
+                value={form.premium}
+                onChange={(event) => updateForm({ premium: event.target.value })}
+                placeholder="0"
+              />
+            </label>
+            <label>
+              Valid from
+              <input
+                type="date"
+                value={form.validFrom}
+                onChange={(event) => updateForm({ validFrom: event.target.value })}
+              />
+            </label>
+            <label>
+              Valid to
+              <input
+                type="date"
+                value={form.validTo}
+                onChange={(event) => updateForm({ validTo: event.target.value })}
+              />
+            </label>
+            <div className="insurance-panel__hint muted">
+              Leave dates empty to default to today → one year.
+            </div>
+            <button type="submit" className="btn-primary insurance-panel__submit" disabled={saving}>
+              {saving ? 'Issuing…' : 'Issue active policy'}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {loadError ? (
+        <article className="card farmer-directory-alert">
+          <p>{loadError}</p>
+          <button type="button" className="btn-secondary" onClick={load}>
+            Retry
+          </button>
+        </article>
+      ) : null}
+
+      <DataTableShell
+        title="Policies"
+        filters={
+          <div className="loan-filters">
+            <label className="filter-search loan-filters__search">
+              <span>Search</span>
+              <div className="filter-search__field">
+                <Search size={14} aria-hidden />
+                <input
+                  type="search"
+                  placeholder="Farmer, policy ID, type, or reference"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                />
+              </div>
+            </label>
+            <div className="loan-filters__chips" role="group" aria-label="Status filter">
+              {STATUS_FILTERS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`filter-chip${statusFilter === option.value ? ' filter-chip--active' : ''}`}
+                  onClick={() => setStatusFilter(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {(searchQuery || statusFilter !== 'All') && (
+              <button
+                type="button"
+                className="btn-secondary loan-filters__clear"
+                onClick={() => {
+                  setSearchQuery('')
+                  setStatusFilter('All')
+                }}
+              >
+                <X size={14} />
+                Clear filters
+              </button>
+            )}
+          </div>
+        }
+        footer={
+          <span>
+            Showing {filteredPolicies.length} of {policies.length} polic
+            {policies.length === 1 ? 'y' : 'ies'}
+          </span>
+        }
+      >
+        <table className="desktop-table dashboard-table">
+          <thead>
+            <tr>
+              <th>Farmer</th>
+              <th>Type</th>
+              <th>Premium</th>
+              <th>Validity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              [...Array(4)].map((_, index) => (
+                <tr key={`sk-${index}`}>
+                  <td colSpan={6}>
+                    <div className="skeleton-row" />
+                  </td>
+                </tr>
+              ))
+            ) : filteredPolicies.length === 0 ? (
               <tr>
-                <th>Farmer / Entity</th>
-                <th>Policy Type</th>
-                <th>Premium (Rwf)</th>
-                <th>Insurer ID</th>
-                <th>Status</th>
+                <td colSpan={6} className="empty-cell">
+                  {policies.length === 0
+                    ? 'No policies yet. Issue the first active policy above.'
+                    : 'No policies match your filters.'}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="5" className="empty-cell">Loading policies...</td>
-                </tr>
-              ) : policies.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="empty-cell">No insurance policies found in database.</td>
-                </tr>
-              ) : policies.map((policy) => (
+            ) : (
+              filteredPolicies.map((policy) => (
                 <tr key={policy.id}>
-                  <td>{policy.farmer}</td>
+                  <td>
+                    <div className="farmer-cell">
+                      <strong className="dash-name">{policy.farmer}</strong>
+                      <small>
+                        Policy #{policy.id}
+                        {policy.policyReference ? ` · ${policy.policyReference}` : ''}
+                      </small>
+                    </div>
+                  </td>
                   <td>{policy.policyType}</td>
                   <td>{formatRwf(policy.premium)}</td>
-                  <td>{policy.insurerId ?? 'N/A'}</td>
-                  <td><StatusBadge value={policy.status} /></td>
+                  <td>
+                    <small>
+                      {policy.validFrom || '—'} → {policy.validTo || '—'}
+                    </small>
+                  </td>
+                  <td>
+                    <StatusBadge value={policy.status} />
+                  </td>
+                  <td className="action-cell">
+                    <div className="insurance-actions">{renderActions(policy)}</div>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </DataTableShell>
+              ))
+            )}
+          </tbody>
+        </table>
 
-        <div className="right-stack">
-          <article className="card">
-            <div className="section-head">
-              <h2>Urgent Claims</h2>
-              <span className="badge-alert">{claimRequests.length} Requires Review</span>
-            </div>
-            {claimRequests.map((claim) => (
-              <div className="claim-item" key={claim.id}>
-                <strong>{claim.policyType}</strong>
-                <p>{claim.farmer}</p>
-                <small>Premium: {formatRwf(claim.premium)}</small>
-                {(claim.status || '').toUpperCase() === 'CLAIMED' ? (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={busyPolicyId === claim.id}
-                    onClick={() => handleClaimAction(claim.id, 'EXPIRED')}
-                  >
-                    Mark Claim Resolved
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={busyPolicyId === claim.id}
-                    onClick={() => handleClaimAction(claim.id, 'ACTIVE')}
-                  >
-                    Reopen Policy
-                  </button>
-                )}
-              </div>
-            ))}
-          </article>
-
-          <article className="card">
-            <h2>Regional Risk Gauge</h2>
-            <p className="muted">Moderate risk · 62%</p>
-            <div className="risk-meter">
-              <div />
-            </div>
-            <p className="muted">Frost Index: Safe · Precipitation Gap: Warning</p>
-          </article>
+        <div className="mobile-loan-list" aria-label="Insurance policies">
+          {loading ? (
+            <div className="skeleton-row" />
+          ) : filteredPolicies.length === 0 ? (
+            <p className="empty-cell">
+              {policies.length === 0
+                ? 'No policies yet. Issue the first active policy above.'
+                : 'No policies match your filters.'}
+            </p>
+          ) : (
+            filteredPolicies.map((policy) => (
+              <article key={`mobile-${policy.id}`} className="loan-mobile-card">
+                <div className="loan-mobile-card__head">
+                  <div>
+                    <strong>{policy.farmer}</strong>
+                    <small>Policy #{policy.id}</small>
+                  </div>
+                  <StatusBadge value={policy.status} />
+                </div>
+                <div className="loan-mobile-card__meta">
+                  <div>
+                    <span>Type</span>
+                    {policy.policyType}
+                  </div>
+                  <div>
+                    <span>Premium</span>
+                    {formatRwf(policy.premium)}
+                  </div>
+                  <div>
+                    <span>Valid</span>
+                    {policy.validFrom || '—'} → {policy.validTo || '—'}
+                  </div>
+                </div>
+                <div className="loan-mobile-card__actions insurance-actions">{renderActions(policy)}</div>
+              </article>
+            ))
+          )}
         </div>
-      </div>
-
-      <article className="card neutral-strip">
-        <h2>Regional Risk Hotspots</h2>
-        <p>Interactive geographical view of policy distribution and active claim clusters.</p>
-        <button type="button" className="btn-secondary">Launch Satellite View</button>
-      </article>
+      </DataTableShell>
     </section>
   )
 }
