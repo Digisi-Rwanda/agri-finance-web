@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import MomoPaymentForm from '../components/MomoPaymentForm'
 import BankFarmerPaymentsView from '../components/payments/BankFarmerPaymentsView'
+import InsurerPaymentsView from '../components/payments/InsurerPaymentsView'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import { getCurrentUser, resolvePrimaryFarmerId } from '../services/auth'
@@ -23,6 +24,7 @@ export default function MomoPaymentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const role = getCurrentUser()?.role || 'BANK'
   const isBankViewer = role === 'BANK' || role === 'ADMIN'
+  const isInsurerViewer = role === 'INSURER'
 
   const [farmers, setFarmers] = useState([])
   const [farmerQuery, setFarmerQuery] = useState('')
@@ -75,10 +77,7 @@ export default function MomoPaymentsPage() {
         setFarmers(list || [])
 
         const fromQuery = Number(searchParams.get('farmerId'))
-        const initialId =
-          fromQuery ||
-          Number(list?.[0]?.farmerId) ||
-          null
+        const initialId = fromQuery || Number(list?.[0]?.farmerId) || null
 
         if (initialId) {
           await selectFarmer(initialId)
@@ -135,10 +134,14 @@ export default function MomoPaymentsPage() {
   }
 
   useEffect(() => {
-    if (isBankViewer) return undefined
+    if (isBankViewer || isInsurerViewer) return undefined
     loadFarmerSelf().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBankViewer])
+  }, [isBankViewer, isInsurerViewer])
+
+  if (isInsurerViewer) {
+    return <InsurerPaymentsView />
+  }
 
   if (isBankViewer) {
     return (

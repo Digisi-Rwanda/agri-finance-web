@@ -1902,6 +1902,14 @@ button.secondary {
   justify-self: start;
 }
 
+.insurance-pay-grid {
+  align-items: start;
+}
+
+.insurance-pay-providers {
+  grid-column: 1 / -1;
+}
+
 .insurance-actions {
   display: flex;
   flex-wrap: wrap;

@@ -21,7 +21,9 @@ export const requestLoanDisbursement = async (payload) => {
 }
 
 export const fetchPaymentHistory = async (farmerId) => {
-  const response = await apiClient.get('/payments/history', { params: { farmerId } })
+  const response = await apiClient.get('/payments/history', {
+    params: farmerId != null ? { farmerId } : {},
+  })
   return response.data
 }
 

@@ -131,8 +131,8 @@ function InsurerDashboardPage() {
           />
           <QuickActionCard
             to="/payments"
-            title="Payments"
-            description="Premium & claim payments"
+            title="Premiums"
+            description="Collect MoMo premiums for issued policies"
             icon={CreditCard}
           />
           <QuickActionCard
