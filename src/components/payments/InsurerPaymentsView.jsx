@@ -41,7 +41,8 @@ function isSuccessful(row) {
 
 function isCurrentlyActive(policy) {
   if (String(policy.status || '').toUpperCase() !== 'ACTIVE') return false
-  const today = new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   if (policy.validFrom && String(policy.validFrom) > today) return false
   if (policy.validTo && String(policy.validTo) < today) return false
   return true

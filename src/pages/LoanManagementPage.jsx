@@ -562,7 +562,9 @@ function LoanManagementPage() {
                     <td>
                       <div className="farmer-cell">
                         <strong className="dash-name">{loan.farmer}</strong>
-                        <small>Loan {loan.id}</small>
+                        <small>
+                          Loan {loan.id} · Farmer #{loan.farmerId || '—'}
+                        </small>
                       </div>
                     </td>
                     <td className="loan-amount-cell">{formatRwf(loan.amount)}</td>
@@ -603,7 +605,9 @@ function LoanManagementPage() {
                   <div className="loan-mobile-card__head">
                     <div>
                       <strong>{loan.farmer}</strong>
-                      <small>Loan {loan.id}</small>
+                      <small>
+                        Loan {loan.id} · Farmer #{loan.farmerId || '—'}
+                      </small>
                     </div>
                     <StatusBadge value={loan.status} />
                   </div>

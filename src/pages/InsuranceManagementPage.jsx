@@ -34,12 +34,39 @@ const emptyForm = {
   validTo: '',
 }
 
+function localToday() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function plusYears(isoDate, years) {
+  const [y, m, d] = String(isoDate).split('-').map(Number)
+  return `${y + years}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
 function isCurrentlyActive(policy) {
   if (String(policy.status || '').toUpperCase() !== 'ACTIVE') return false
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localToday()
   if (policy.validFrom && String(policy.validFrom) > today) return false
   if (policy.validTo && String(policy.validTo) < today) return false
   return true
+}
+
+function displayCoverageStatus(policy) {
+  const status = String(policy.status || '').toUpperCase()
+  if (status !== 'ACTIVE') return status || '—'
+  const today = localToday()
+  if (policy.validFrom && String(policy.validFrom) > today) return 'NOT YET VALID'
+  if (policy.validTo && String(policy.validTo) < today) return 'EXPIRED'
+  return 'ACTIVE'
+}
+
+function defaultPolicyDates() {
+  const from = localToday()
+  return { validFrom: from, validTo: plusYears(from, 1) }
 }
 
 function InsuranceManagementPage() {
@@ -91,7 +118,7 @@ function InsuranceManagementPage() {
   useEffect(() => {
     const farmerId = searchParams.get('farmerId')
     if (!farmerId) return
-    setForm((prev) => ({ ...prev, farmerId: String(farmerId) }))
+    setForm((prev) => ({ ...prev, farmerId: String(farmerId), ...defaultPolicyDates() }))
     setShowCreate(true)
   }, [searchParams])
 
@@ -176,6 +203,7 @@ function InsuranceManagementPage() {
       setShowCreate(false)
       setForm((prev) => ({
         ...emptyForm,
+        ...defaultPolicyDates(),
         insurerId: prev.insurerId,
       }))
       await load()
@@ -305,7 +333,15 @@ function InsuranceManagementPage() {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => setShowCreate((value) => !value)}
+              onClick={() => {
+                setForm((prev) => ({
+                  ...prev,
+                  ...defaultPolicyDates(),
+                  farmerId: prev.farmerId,
+                  insurerId: prev.insurerId,
+                }))
+                setShowCreate((value) => !value)
+              }}
             >
               <Plus size={16} aria-hidden />
               {showCreate ? 'Close form' : 'New policy'}
@@ -591,7 +627,7 @@ function InsuranceManagementPage() {
                     <div className="farmer-cell">
                       <strong className="dash-name">{policy.farmer}</strong>
                       <small>
-                        Policy #{policy.id}
+                        Farmer #{policy.farmerId} · Policy #{policy.id}
                         {policy.policyReference ? ` · ${policy.policyReference}` : ''}
                       </small>
                     </div>
@@ -604,7 +640,7 @@ function InsuranceManagementPage() {
                     </small>
                   </td>
                   <td>
-                    <StatusBadge value={policy.status} />
+                    <StatusBadge value={displayCoverageStatus(policy)} />
                   </td>
                   <td className="action-cell">
                     <div className="insurance-actions">{renderActions(policy)}</div>
@@ -628,11 +664,13 @@ function InsuranceManagementPage() {
             filteredPolicies.map((policy) => (
               <article key={`mobile-${policy.id}`} className="loan-mobile-card">
                 <div className="loan-mobile-card__head">
-                  <div>
-                    <strong>{policy.farmer}</strong>
-                    <small>Policy #{policy.id}</small>
-                  </div>
-                  <StatusBadge value={policy.status} />
+                    <div>
+                      <strong>{policy.farmer}</strong>
+                      <small>
+                        Farmer #{policy.farmerId} · Policy #{policy.id}
+                      </small>
+                    </div>
+                    <StatusBadge value={displayCoverageStatus(policy)} />
                 </div>
                 <div className="loan-mobile-card__meta">
                   <div>
