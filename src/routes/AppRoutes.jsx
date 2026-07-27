@@ -102,7 +102,7 @@ function AppRoutes() {
         <Route
           path="insurance"
           element={
-            <ProtectedRoute allowedRoles={['INSURER', 'ADMIN', 'BANK', 'REGISTRATION_OFFICER']}>
+            <ProtectedRoute allowedRoles={['INSURER', 'ADMIN', 'REGISTRATION_OFFICER']}>
               <InsuranceManagementPage />
             </ProtectedRoute>
           }

@@ -16,10 +16,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getLoans, updateLoanStatus } from '../services/bankService'
-import {
-  ensureActiveInsuranceForFarmer,
-  isInsuranceRequiredError,
-} from '../services/insuranceService'
+import { isInsuranceRequiredError } from '../services/insuranceService'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
@@ -136,17 +133,7 @@ function LoanManagementPage() {
     } catch {
       // Status change already succeeded — keep local row updated if refresh fails.
       setLoans((prev) =>
-        prev.map((loan) =>
-          loan.id === loanId
-            ? {
-                ...loan,
-                ...updated,
-                status,
-                hasActiveInsurance:
-                  status === 'Approved' ? true : loan.hasActiveInsurance,
-              }
-            : loan,
-        ),
+        prev.map((loan) => (loan.id === loanId ? { ...loan, ...updated, status } : loan)),
       )
     }
     if (statusFilter !== 'All' && statusFilter !== status) {
@@ -155,63 +142,26 @@ function LoanManagementPage() {
     }
   }
 
-  const handleStatus = async (loanId, status, options = {}) => {
+  const handleStatus = async (loanId, status) => {
     const loan = loans.find((row) => row.id === loanId)
-    const farmerId = options.farmerId ?? loan?.farmerId
     setBusyId(loanId)
     try {
-      if (status === 'Approved' && farmerId) {
-        const needsInsurance = options.ensureInsurance ?? !loan?.hasActiveInsurance
-        if (needsInsurance) {
-          await ensureActiveInsuranceForFarmer(farmerId)
-        }
-      }
-
       const updated = await updateLoanStatus(loanId, status)
       await refreshLoans(loanId, status, updated)
       toast.success(`${updated?.farmer || loan?.farmer || 'Loan'} ${status.toLowerCase()}.`)
     } catch (e) {
-      // If approve failed for insurance after a race, issue policy once and retry.
-      if (
-        status === 'Approved' &&
-        farmerId &&
-        isInsuranceRequiredError(e) &&
-        !options.retriedInsurance
-      ) {
-        try {
-          await ensureActiveInsuranceForFarmer(farmerId)
-          const updated = await updateLoanStatus(loanId, status)
-          await refreshLoans(loanId, status, updated)
-          toast.success(`${updated?.farmer || loan?.farmer || 'Loan'} approved.`)
-          return
-        } catch (retryError) {
-          const apiError =
-            retryError?.response?.data?.error ||
-            retryError?.response?.data?.message ||
-            retryError?.message
-          toast.error(apiError || 'Failed to approve loan. Please retry.')
-          return
-        }
+      if (status === 'Approved' && isInsuranceRequiredError(e)) {
+        toast.error(
+          e?.response?.data?.error ||
+            'Active insurance is required. An insurer must issue a policy before the bank can approve.',
+        )
+        return
       }
-
       const apiError = e?.response?.data?.error || e?.response?.data?.message || e?.message
       toast.error(apiError || `Failed to ${status.toLowerCase()} loan. Please retry.`)
     } finally {
       setBusyId(null)
     }
-  }
-
-  const requestApprove = (loan) => {
-    if (!loan.hasActiveInsurance) {
-      const ok = window.confirm(
-        `${loan.farmer} has no active insurance policy.\n\nIssue a 1-year crop policy and approve this loan?`,
-      )
-      if (!ok) return
-    }
-    handleStatus(loan.id, 'Approved', {
-      farmerId: loan.farmerId,
-      ensureInsurance: !loan.hasActiveInsurance,
-    })
   }
 
   const filteredLoans = useMemo(() => {
@@ -321,14 +271,9 @@ function LoanManagementPage() {
           type="button"
           className="btn-primary"
           disabled={busy}
-          onClick={() => requestApprove(loan)}
-          title={
-            loan.hasActiveInsurance
-              ? 'Approve loan'
-              : 'Requires active insurance — will offer to issue a policy'
-          }
+          onClick={() => handleStatus(loan.id, 'Approved')}
         >
-          {busy ? 'Saving…' : loan.hasActiveInsurance ? 'Approve' : 'Approve (+ insurance)'}
+          {busy ? 'Saving…' : 'Approve'}
         </button>
         <button
           type="button"
@@ -339,15 +284,8 @@ function LoanManagementPage() {
           Reject
         </button>
         {loan.farmerId ? (
-          <Link
-            to={
-              loan.hasActiveInsurance
-                ? `/farmer/${loan.farmerId}`
-                : `/insurance?farmerId=${loan.farmerId}`
-            }
-            className="btn-view"
-          >
-            {loan.hasActiveInsurance ? 'Profile' : 'Insurance'}
+          <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
+            Profile
           </Link>
         ) : null}
       </>
@@ -624,14 +562,7 @@ function LoanManagementPage() {
                     <td>
                       <div className="farmer-cell">
                         <strong className="dash-name">{loan.farmer}</strong>
-                        <small>
-                          Loan {loan.id}
-                          {String(loan.status).toLowerCase() === 'pending'
-                            ? loan.hasActiveInsurance
-                              ? ' · Insured'
-                              : ' · No insurance'
-                            : ''}
-                        </small>
+                        <small>Loan {loan.id}</small>
                       </div>
                     </td>
                     <td className="loan-amount-cell">{formatRwf(loan.amount)}</td>
@@ -672,14 +603,7 @@ function LoanManagementPage() {
                   <div className="loan-mobile-card__head">
                     <div>
                       <strong>{loan.farmer}</strong>
-                      <small>
-                        Loan {loan.id}
-                        {String(loan.status).toLowerCase() === 'pending'
-                          ? loan.hasActiveInsurance
-                            ? ' · Insured'
-                            : ' · No insurance'
-                          : ''}
-                      </small>
+                      <small>Loan {loan.id}</small>
                     </div>
                     <StatusBadge value={loan.status} />
                   </div>

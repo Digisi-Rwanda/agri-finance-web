@@ -42,7 +42,6 @@ const navItemsByRole = {
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     {
       to: '/farmer/profile',
       label: 'Farmer Profile',

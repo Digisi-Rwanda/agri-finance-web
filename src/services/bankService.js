@@ -18,29 +18,14 @@ const toDisplayStatus = (status) => {
   return status
 }
 
-const isPolicyCurrentlyActive = (policy, today) => {
-  if (String(policy?.status || '').toUpperCase() !== 'ACTIVE') return false
-  if (policy.validFrom && String(policy.validFrom) > today) return false
-  if (policy.validTo && String(policy.validTo) < today) return false
-  return true
-}
-
 export const getLoans = async () => {
-  const [loanResponse, farmersResponse, policiesResponse] = await Promise.all([
+  const [loanResponse, farmersResponse] = await Promise.all([
     apiClient.get('/loans'),
     apiClient.get('/farmers'),
-    apiClient.get('/insurance-policies').catch(() => ({ data: [] })),
   ])
 
   const farmersById = Object.fromEntries(
     farmersResponse.data.map((farmer) => [farmer.farmerId, farmer]),
-  )
-
-  const today = new Date().toISOString().slice(0, 10)
-  const insuredFarmerIds = new Set(
-    (Array.isArray(policiesResponse.data) ? policiesResponse.data : [])
-      .filter((policy) => isPolicyCurrentlyActive(policy, today))
-      .map((policy) => policy.farmerId),
   )
 
   const farmerIds = [...new Set(loanResponse.data.map((loan) => loan.farmerId).filter(Boolean))]
@@ -75,7 +60,6 @@ export const getLoans = async () => {
       status: toDisplayStatus(loan.status),
       purpose: loan.loanPurpose || 'General',
       createdAt: loan.createdAt || loan.applicationDate || null,
-      hasActiveInsurance: insuredFarmerIds.has(loan.farmerId),
     }
   })
 }

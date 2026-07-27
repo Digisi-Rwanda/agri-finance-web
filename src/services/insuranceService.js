@@ -28,11 +28,6 @@ export const getInsurers = async () => {
   return response.data
 }
 
-export const createInsurer = async (payload) => {
-  const response = await apiClient.post('/insurance-policies/insurers', payload)
-  return response.data
-}
-
 export const updatePolicyStatus = async (policyId, status) => {
   const response = await apiClient.patch(
     `/insurance-policies/${policyId}/status`,
@@ -50,44 +45,6 @@ export const createPolicy = async (payload) => {
 export const getActiveInsurance = async (farmerId) => {
   const response = await apiClient.get('/insurance-policies/active', { params: { farmerId } })
   return response.data
-}
-
-/** True when /active returns a real policy (policyId) or explicit active flag. */
-export const isActiveInsurancePayload = (data) =>
-  Boolean(data?.policyId) || data?.active === true
-
-async function resolveInsurerId() {
-  const insurers = await getInsurers()
-  if (Array.isArray(insurers) && insurers[0]?.insurerId) {
-    return Number(insurers[0].insurerId)
-  }
-  const created = await createInsurer({ insurerName: 'Default Agri Insurer' })
-  return Number(created.insurerId)
-}
-
-/**
- * Spec §10: loan approval needs an ACTIVE policy in its validity window.
- * Creates a 1-year crop policy (and a default insurer if needed) when none exists.
- */
-export const ensureActiveInsuranceForFarmer = async (farmerId) => {
-  if (!farmerId) {
-    throw new Error('Farmer id is required for insurance')
-  }
-
-  try {
-    const existing = await getActiveInsurance(farmerId)
-    if (isActiveInsurancePayload(existing)) return existing
-  } catch {
-    // No active policy — create one below.
-  }
-
-  const insurerId = await resolveInsurerId()
-  return createPolicy({
-    farmerId: Number(farmerId),
-    insurerId,
-    policyType: 'crop',
-    status: 'ACTIVE',
-  })
 }
 
 export const isInsuranceRequiredError = (error) => {
