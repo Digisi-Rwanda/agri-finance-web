@@ -3,7 +3,7 @@ const HOME_BY_ROLE = {
   BANK: '/',
   INSURER: '/insurer',
   FARMER: '/payments',
-  COOPERATIVE: '/cooperative',
+  COOPERATIVE: '/',
   INSPECTOR: '/inspections',
   GUARANTEE_OFFICER: '/bankability/v2',
   REGISTRATION_OFFICER: '/admin/reports',

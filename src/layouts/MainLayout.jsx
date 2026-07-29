@@ -87,10 +87,7 @@ const navItemsByRole = {
     { to: '/settings', label: 'Settings', icon: Settings },
   ],
   COOPERATIVE: [
-    { to: '/cooperative', label: 'Home', icon: Warehouse, end: true },
-    { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/', label: 'Home', icon: Home, end: true },
   ],
   INSPECTOR: [
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck, end: true },
@@ -142,7 +139,7 @@ const PAGE_TITLES = {
   '/consent-vault': 'OTP Consent Vault',
   '/trust-ladder': 'Trust Ladder',
   '/bankability/v2': 'Spec v2 ops',
-  '/cooperative': 'Cooperative',
+  '/cooperative': 'Cooperative ops',
 }
 
 const SEARCH_CONFIG = {
@@ -161,13 +158,23 @@ function getPageTitle(pathname) {
 function getBreadcrumbs(pathname, homePath) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
-  // Farmer landing is /payments — keep a single Home crumb (page H1 is "Payments").
-  if (pathname === homePath && homePath === '/payments') {
+  // Role home pages should not show Home › Dashboard.
+  if (pathname === homePath) {
     return crumbs
   }
 
-  if (pathname === '/' || pathname === '/insurer' || pathname === '/cooperative' || pathname === '/inspections' || pathname === '/admin/reports' || pathname === '/bankability/v2' || pathname === '/payment-watch' || pathname === '/consent-vault' || pathname === '/trust-ladder') {
-    crumbs.push({ label: 'Dashboard' })
+  if (
+    pathname === '/' ||
+    pathname === '/insurer' ||
+    pathname === '/cooperative' ||
+    pathname === '/inspections' ||
+    pathname === '/admin/reports' ||
+    pathname === '/bankability/v2' ||
+    pathname === '/payment-watch' ||
+    pathname === '/consent-vault' ||
+    pathname === '/trust-ladder'
+  ) {
+    crumbs.push({ label: PAGE_TITLES[pathname] || 'Dashboard' })
     return crumbs
   }
 

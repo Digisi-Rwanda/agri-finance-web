@@ -3,6 +3,7 @@ import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import DataTableShell from '../components/ui/DataTableShell'
+import StatusBadge from '../components/ui/StatusBadge'
 import {
   addCoopMember,
   claimCoopWarehouse,
@@ -17,8 +18,11 @@ import {
 } from '../services/bankabilityService'
 import { getCurrentUser } from '../services/auth'
 
+/* Cooperative dashboard fetches on mount/selection — same pattern as other role homes. */
+/* eslint-disable react-hooks/set-state-in-effect */
+
 /**
- * Cooperative operator dashboard — Spec §7.
+ * Cooperative operator dashboard — membership, storage, receipts, input loans.
  */
 function CooperativeDashboardPage() {
   const user = getCurrentUser()
@@ -46,6 +50,7 @@ function CooperativeDashboardPage() {
     expiryDate: '',
   })
   const [governance, setGovernance] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const loadWarehouses = async () => {
     setLoading(true)
@@ -54,10 +59,14 @@ function CooperativeDashboardPage() {
         operatorUserId ? listCoopWarehouses(operatorUserId) : Promise.resolve([]),
         listWarehouses('approved').catch(() => listWarehouses()),
       ])
-      setWarehouses(Array.isArray(mine) ? mine : [])
+      const mineList = Array.isArray(mine) ? mine : []
+      setWarehouses(mineList)
       setAllWarehouses(Array.isArray(all) ? all : [])
-      if (!selectedId && mine?.length) {
-        setSelectedId(mine[0].warehouseId)
+      if (!selectedId && mineList.length) {
+        setSelectedId(mineList[0].warehouseId)
+      }
+      if (selectedId && !mineList.some((w) => w.warehouseId === selectedId)) {
+        setSelectedId(mineList[0]?.warehouseId || null)
       }
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Failed to load warehouses')
@@ -76,443 +85,587 @@ function CooperativeDashboardPage() {
       setDash(data)
       setGovernance(data?.warehouse?.governanceChecklist || '')
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Dashboard failed')
+      toast.error(e?.response?.data?.error || 'Could not load warehouse dashboard')
     }
   }
 
   useEffect(() => {
-    loadWarehouses()
+    void loadWarehouses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when operator changes
   }, [operatorUserId])
 
   useEffect(() => {
-    if (selectedId) loadDash(selectedId)
+    if (selectedId) void loadDash(selectedId)
   }, [selectedId])
 
+  const claimable = (allWarehouses || []).filter(
+    (w) => w.approvalStatus === 'approved' && !w.operatorUserId,
+  )
+  const needsWarehouseSetup = !loading && warehouses.length === 0
+
   const claim = async (warehouseId) => {
+    setBusy(true)
     try {
       await claimCoopWarehouse(warehouseId, operatorUserId)
-      toast.success('Warehouse claimed for your cooperative account')
+      toast.success('Warehouse linked to your cooperative account')
       await loadWarehouses()
       setSelectedId(warehouseId)
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Claim failed')
+      toast.error(e?.response?.data?.error || 'Could not link warehouse')
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact coop-page">
       <PageHeader
-        breadcrumb="Cooperative › Operations"
-        title="Cooperative dashboard"
-        subtitle="Manage farmer membership, storage lots, warehouse receipts, and input deliveries."
+        title="Cooperative operations"
+        subtitle="Members, storage lots, warehouse receipts, and input deliveries."
         actions={
-          <button type="button" className="btn-primary" onClick={loadWarehouses} disabled={loading}>
+          <button type="button" className="btn-secondary" onClick={loadWarehouses} disabled={loading}>
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="My warehouses" value={String(warehouses.length)} />
-        <StatCard title="Members" value={String(dash?.memberCount ?? 0)} />
-        <StatCard title="Storage lots" value={String(dash?.storage?.length ?? 0)} />
-        <StatCard title="Receipts" value={String(dash?.receipts?.length ?? 0)} />
+        <StatCard title="Warehouses" value={String(warehouses.length)} meta="Linked to you" />
+        <StatCard title="Members" value={String(dash?.memberCount ?? 0)} meta="Active farmers" />
+        <StatCard title="Storage lots" value={String(dash?.storage?.length ?? 0)} meta="On hand" />
+        <StatCard title="Receipts" value={String(dash?.receipts?.length ?? 0)} meta="Issued" />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h3 className="mb-2 font-semibold">Select warehouse</h3>
-          <select
-            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-            value={selectedId || ''}
-            onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">Choose…</option>
-            {warehouses.map((w) => (
-              <option key={w.warehouseId} value={w.warehouseId}>
-                {w.cooperativeName} (#{w.warehouseId})
-              </option>
-            ))}
-          </select>
-          <p className="mt-3 text-sm text-[var(--text-muted)]">Claim an approved warehouse:</p>
-          <ul className="mt-2 max-h-40 space-y-2 overflow-auto text-sm">
-            {(allWarehouses || [])
-              .filter((w) => w.approvalStatus === 'approved' && !w.operatorUserId)
-              .map((w) => (
-                <li key={w.warehouseId} className="flex items-center justify-between gap-2">
-                  <span>
-                    {w.cooperativeName} — {w.location || '—'}
-                  </span>
-                  <button type="button" className="btn-secondary" onClick={() => claim(w.warehouseId)}>
-                    Claim
-                  </button>
-                </li>
+      {needsWarehouseSetup ? (
+        <div className="dash-section">
+          <div className="dash-section__head">
+            <h2>Link your warehouse</h2>
+            <p>Choose an approved warehouse to begin cooperative operations.</p>
+          </div>
+          {claimable.length === 0 ? (
+            <p className="coop-empty-note">
+              No approved warehouses are available to link yet. Ask an administrator to approve a
+              warehouse first.
+            </p>
+          ) : (
+            <div className="table-scroll">
+              <table className="desktop-table dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Cooperative</th>
+                    <th>Location</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {claimable.map((w) => (
+                    <tr key={w.warehouseId}>
+                      <td>
+                        <strong className="dash-name">{w.cooperativeName}</strong>
+                      </td>
+                      <td>{w.location || '—'}</td>
+                      <td className="action-cell">
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          disabled={busy}
+                          onClick={() => claim(w.warehouseId)}
+                        >
+                          Link warehouse
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="dash-section">
+          <div className="dash-section__head">
+            <h2>Working warehouse</h2>
+            <p>All actions below apply to the selected warehouse.</p>
+          </div>
+          <label className="coop-select-field">
+            <span>Warehouse</span>
+            <select
+              value={selectedId || ''}
+              onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">Choose warehouse…</option>
+              {warehouses.map((w) => (
+                <option key={w.warehouseId} value={w.warehouseId}>
+                  {w.cooperativeName} (#{w.warehouseId})
+                </option>
               ))}
-          </ul>
+            </select>
+          </label>
         </div>
-
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h3 className="mb-2 font-semibold">Governance checklist</h3>
-          <textarea
-            className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-            rows={4}
-            value={governance}
-            onChange={(e) => setGovernance(e.target.value)}
-            placeholder="Board, bylaws, insurance, grading standard…"
-            disabled={!selectedId}
-          />
-          <button
-            type="button"
-            className="btn-primary mt-2"
-            disabled={!selectedId}
-            onClick={async () => {
-              try {
-                await updateCoopGovernance(selectedId, {
-                  governanceChecklist: governance,
-                  governanceVerified: true,
-                })
-                toast.success('Governance saved')
-                loadDash(selectedId)
-              } catch (e) {
-                toast.error(e?.response?.data?.error || 'Save failed')
-              }
-            }}
-          >
-            Save governance
-          </button>
-        </div>
-      </div>
+      )}
 
       {selectedId ? (
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <form
-            className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
-            onSubmit={async (e) => {
-              e.preventDefault()
-              try {
-                await addCoopMember(selectedId, Number(memberFarmerId))
-                toast.success('Member added')
-                setMemberFarmerId('')
-                loadDash(selectedId)
-              } catch (err) {
-                toast.error(err?.response?.data?.error || 'Add member failed')
-              }
-            }}
-          >
-            <h3 className="font-semibold">Add farmer member</h3>
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Farmer ID"
-              value={memberFarmerId}
-              onChange={(e) => setMemberFarmerId(e.target.value)}
-              required
-            />
-            <button type="submit" className="btn-primary">
-              Add member
-            </button>
-          </form>
+        <>
+          <div className="coop-forms-grid">
+            <form
+              className="insurance-panel"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setBusy(true)
+                try {
+                  await addCoopMember(selectedId, Number(memberFarmerId))
+                  toast.success('Member added')
+                  setMemberFarmerId('')
+                  loadDash(selectedId)
+                } catch (err) {
+                  toast.error(err?.response?.data?.error || 'Could not add member')
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              <div className="insurance-panel__head">
+                <h2>Add farmer member</h2>
+                <p className="muted">Register a farmer under this cooperative.</p>
+              </div>
+              <div className="insurance-panel__grid insurance-panel__grid--form">
+                <label>
+                  Farmer ID
+                  <input
+                    required
+                    inputMode="numeric"
+                    placeholder="e.g. 12"
+                    value={memberFarmerId}
+                    onChange={(e) => setMemberFarmerId(e.target.value)}
+                  />
+                </label>
+              </div>
+              <button type="submit" className="btn-primary insurance-panel__submit" disabled={busy}>
+                Add member
+              </button>
+            </form>
 
-          <form
-            className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
-            onSubmit={async (e) => {
-              e.preventDefault()
-              try {
-                await recordCoopStorage({
-                  warehouseId: selectedId,
-                  farmerId: storageForm.farmerId ? Number(storageForm.farmerId) : null,
-                  commodity: storageForm.commodity,
-                  quantity: Number(storageForm.quantity),
-                  grade: storageForm.grade || null,
-                  binOrLot: storageForm.binOrLot || null,
-                })
-                toast.success('Storage recorded')
-                setStorageForm({ farmerId: '', commodity: '', quantity: '', grade: '', binOrLot: '' })
-                loadDash(selectedId)
-              } catch (err) {
-                toast.error(err?.response?.data?.error || 'Storage failed')
-              }
-            }}
-          >
-            <h3 className="font-semibold">Record storage lot</h3>
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Farmer ID"
-              value={storageForm.farmerId}
-              onChange={(e) => setStorageForm({ ...storageForm, farmerId: e.target.value })}
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Commodity"
-              value={storageForm.commodity}
-              onChange={(e) => setStorageForm({ ...storageForm, commodity: e.target.value })}
-              required
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Quantity (kg)"
-              value={storageForm.quantity}
-              onChange={(e) => setStorageForm({ ...storageForm, quantity: e.target.value })}
-              required
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Grade"
-              value={storageForm.grade}
-              onChange={(e) => setStorageForm({ ...storageForm, grade: e.target.value })}
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Bin / lot"
-              value={storageForm.binOrLot}
-              onChange={(e) => setStorageForm({ ...storageForm, binOrLot: e.target.value })}
-            />
-            <button type="submit" className="btn-primary">
-              Save storage
-            </button>
-          </form>
+            <form
+              className="insurance-panel"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setBusy(true)
+                try {
+                  await recordCoopStorage({
+                    warehouseId: selectedId,
+                    farmerId: storageForm.farmerId ? Number(storageForm.farmerId) : null,
+                    commodity: storageForm.commodity,
+                    quantity: Number(storageForm.quantity),
+                    grade: storageForm.grade || null,
+                    binOrLot: storageForm.binOrLot || null,
+                  })
+                  toast.success('Storage recorded')
+                  setStorageForm({
+                    farmerId: '',
+                    commodity: '',
+                    quantity: '',
+                    grade: '',
+                    binOrLot: '',
+                  })
+                  loadDash(selectedId)
+                } catch (err) {
+                  toast.error(err?.response?.data?.error || 'Could not save storage')
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              <div className="insurance-panel__head">
+                <h2>Record storage lot</h2>
+                <p className="muted">Track commodity held in the warehouse.</p>
+              </div>
+              <div className="insurance-panel__grid insurance-panel__grid--form">
+                <label>
+                  Farmer ID
+                  <input
+                    placeholder="Optional"
+                    value={storageForm.farmerId}
+                    onChange={(e) => setStorageForm({ ...storageForm, farmerId: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Commodity
+                  <input
+                    required
+                    placeholder="e.g. Maize"
+                    value={storageForm.commodity}
+                    onChange={(e) => setStorageForm({ ...storageForm, commodity: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Quantity (kg)
+                  <input
+                    required
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={storageForm.quantity}
+                    onChange={(e) => setStorageForm({ ...storageForm, quantity: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Grade
+                  <input
+                    placeholder="Optional"
+                    value={storageForm.grade}
+                    onChange={(e) => setStorageForm({ ...storageForm, grade: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Bin / lot
+                  <input
+                    placeholder="Optional"
+                    value={storageForm.binOrLot}
+                    onChange={(e) => setStorageForm({ ...storageForm, binOrLot: e.target.value })}
+                  />
+                </label>
+              </div>
+              <button type="submit" className="btn-primary insurance-panel__submit" disabled={busy}>
+                Save storage
+              </button>
+            </form>
 
-          <form
-            className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4"
-            onSubmit={async (e) => {
-              e.preventDefault()
-              try {
-                const wh = dash?.warehouse
-                await issueReceipt({
-                  cooperativeName: wh?.cooperativeName || 'Cooperative',
-                  cooperativeWarehouseId: selectedId,
-                  farmerId: Number(receiptForm.farmerId),
-                  commodity: receiptForm.commodity,
-                  quantity: Number(receiptForm.quantity),
-                  weightKg: receiptForm.weightKg
-                    ? Number(receiptForm.weightKg)
-                    : Number(receiptForm.quantity),
-                  storageLocation: receiptForm.storageLocation || null,
-                  grade: receiptForm.grade || null,
-                  expiryDate: receiptForm.expiryDate || null,
-                  status: 'active',
-                })
-                toast.success('Receipt issued')
-                setReceiptForm({
-                  farmerId: '',
-                  commodity: '',
-                  quantity: '',
-                  weightKg: '',
-                  storageLocation: '',
-                  grade: '',
-                  expiryDate: '',
-                })
-                loadDash(selectedId)
-              } catch (err) {
-                toast.error(err?.response?.data?.error || 'Receipt failed')
-              }
-            }}
-          >
-            <h3 className="font-semibold">Issue warehouse receipt</h3>
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Farmer ID"
-              value={receiptForm.farmerId}
-              onChange={(e) => setReceiptForm({ ...receiptForm, farmerId: e.target.value })}
-              required
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Commodity"
-              value={receiptForm.commodity}
-              onChange={(e) => setReceiptForm({ ...receiptForm, commodity: e.target.value })}
-              required
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Quantity"
-              value={receiptForm.quantity}
-              onChange={(e) => setReceiptForm({ ...receiptForm, quantity: e.target.value })}
-              required
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Weight (kg)"
-              value={receiptForm.weightKg}
-              onChange={(e) => setReceiptForm({ ...receiptForm, weightKg: e.target.value })}
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Storage location / bin"
-              value={receiptForm.storageLocation}
-              onChange={(e) => setReceiptForm({ ...receiptForm, storageLocation: e.target.value })}
-            />
-            <input
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              placeholder="Grade"
-              value={receiptForm.grade}
-              onChange={(e) => setReceiptForm({ ...receiptForm, grade: e.target.value })}
-            />
-            <input
-              type="date"
-              className="w-full rounded-lg border border-[var(--border)] bg-transparent p-2"
-              value={receiptForm.expiryDate}
-              onChange={(e) => setReceiptForm({ ...receiptForm, expiryDate: e.target.value })}
-              required
-            />
-            <button type="submit" className="btn-primary">
-              Issue receipt
-            </button>
-          </form>
-        </div>
-      ) : null}
+            <form
+              className="insurance-panel"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setBusy(true)
+                try {
+                  const wh = dash?.warehouse
+                  await issueReceipt({
+                    cooperativeName: wh?.cooperativeName || 'Cooperative',
+                    cooperativeWarehouseId: selectedId,
+                    farmerId: Number(receiptForm.farmerId),
+                    commodity: receiptForm.commodity,
+                    quantity: Number(receiptForm.quantity),
+                    weightKg: receiptForm.weightKg
+                      ? Number(receiptForm.weightKg)
+                      : Number(receiptForm.quantity),
+                    storageLocation: receiptForm.storageLocation || null,
+                    grade: receiptForm.grade || null,
+                    expiryDate: receiptForm.expiryDate || null,
+                    status: 'active',
+                  })
+                  toast.success('Receipt issued')
+                  setReceiptForm({
+                    farmerId: '',
+                    commodity: '',
+                    quantity: '',
+                    weightKg: '',
+                    storageLocation: '',
+                    grade: '',
+                    expiryDate: '',
+                  })
+                  loadDash(selectedId)
+                } catch (err) {
+                  toast.error(err?.response?.data?.error || 'Could not issue receipt')
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              <div className="insurance-panel__head">
+                <h2>Issue warehouse receipt</h2>
+                <p className="muted">Create a receipt for stored produce.</p>
+              </div>
+              <div className="insurance-panel__grid insurance-panel__grid--form">
+                <label>
+                  Farmer ID
+                  <input
+                    required
+                    inputMode="numeric"
+                    value={receiptForm.farmerId}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, farmerId: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Commodity
+                  <input
+                    required
+                    value={receiptForm.commodity}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, commodity: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Quantity
+                  <input
+                    required
+                    inputMode="decimal"
+                    value={receiptForm.quantity}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, quantity: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Weight (kg)
+                  <input
+                    inputMode="decimal"
+                    placeholder="Defaults to quantity"
+                    value={receiptForm.weightKg}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, weightKg: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Storage location
+                  <input
+                    placeholder="Bin / bay"
+                    value={receiptForm.storageLocation}
+                    onChange={(e) =>
+                      setReceiptForm({ ...receiptForm, storageLocation: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Grade
+                  <input
+                    value={receiptForm.grade}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, grade: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Expiry date
+                  <input
+                    type="date"
+                    required
+                    value={receiptForm.expiryDate}
+                    onChange={(e) => setReceiptForm({ ...receiptForm, expiryDate: e.target.value })}
+                  />
+                </label>
+              </div>
+              <button type="submit" className="btn-primary insurance-panel__submit" disabled={busy}>
+                Issue receipt
+              </button>
+            </form>
 
-      {dash ? (
-        <div className="mt-6 space-y-6">
-          <DataTableShell title="Members">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Farmer</th>
-                  <th>Status</th>
-                  <th>Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(dash.members || []).length === 0 ? (
-                  <tr>
-                    <td colSpan={3}>No members yet.</td>
-                  </tr>
-                ) : (
-                  dash.members.map((m) => (
-                    <tr key={m.membershipId}>
-                      <td>#{m.farmerId}</td>
-                      <td>{m.status}</td>
-                      <td>{m.joinedAt ? String(m.joinedAt).slice(0, 10) : '—'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableShell>
+            <form
+              className="insurance-panel"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setBusy(true)
+                try {
+                  await updateCoopGovernance(selectedId, {
+                    governanceChecklist: governance,
+                    governanceVerified: true,
+                  })
+                  toast.success('Governance notes saved')
+                  loadDash(selectedId)
+                } catch (err) {
+                  toast.error(err?.response?.data?.error || 'Could not save governance')
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              <div className="insurance-panel__head">
+                <h2>Governance notes</h2>
+                <p className="muted">Board, bylaws, insurance, and grading standards.</p>
+              </div>
+              <label className="coop-textarea-field">
+                Checklist
+                <textarea
+                  rows={5}
+                  value={governance}
+                  onChange={(e) => setGovernance(e.target.value)}
+                  placeholder="Board minutes, bylaws, insurance cover, grading standard…"
+                />
+              </label>
+              <button type="submit" className="btn-primary insurance-panel__submit" disabled={busy}>
+                Save notes
+              </button>
+            </form>
+          </div>
 
-          <DataTableShell title="Storage">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Commodity</th>
-                  <th>Qty</th>
-                  <th>Farmer</th>
-                  <th>Bin</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(dash.storage || []).length === 0 ? (
-                  <tr>
-                    <td colSpan={5}>No storage lots.</td>
-                  </tr>
-                ) : (
-                  dash.storage.map((s) => (
-                    <tr key={s.storageRecordId}>
-                      <td>{s.commodity}</td>
-                      <td>
-                        {s.quantity} {s.unit}
-                      </td>
-                      <td>{s.farmerId ? `#${s.farmerId}` : '—'}</td>
-                      <td>{s.binOrLot || '—'}</td>
-                      <td>{s.status}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableShell>
+          {dash ? (
+            <div className="coop-tables">
+              <DataTableShell title="Members" footer={<span>{(dash.members || []).length} member(s)</span>}>
+                <div className="table-scroll">
+                  <table className="desktop-table dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Farmer</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dash.members || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="empty-cell">
+                            No members yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        dash.members.map((m) => (
+                          <tr key={m.membershipId}>
+                            <td>#{m.farmerId}</td>
+                            <td>
+                              <StatusBadge value={m.status} />
+                            </td>
+                            <td>{m.joinedAt ? String(m.joinedAt).slice(0, 10) : '—'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </DataTableShell>
 
-          <DataTableShell title="Pending cooperative confirmations">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Loan</th>
-                  <th>Farmer</th>
-                  <th>Type</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {(dash.pendingCoopConfirmations || []).length === 0 ? (
-                  <tr>
-                    <td colSpan={4}>None pending.</td>
-                  </tr>
-                ) : (
-                  dash.pendingCoopConfirmations.map((loan) => (
-                    <tr key={loan.inputLoanId}>
-                      <td>#{loan.inputLoanId}</td>
-                      <td>#{loan.farmerId}</td>
-                      <td>{loan.inputType}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-primary"
-                          onClick={async () => {
-                            try {
-                              await confirmInputLoanByCoop(loan.inputLoanId, operatorUserId)
-                              toast.success('Input loan confirmed')
-                              loadDash(selectedId)
-                            } catch (err) {
-                              toast.error(err?.response?.data?.error || 'Confirm failed')
-                            }
-                          }}
-                        >
-                          Confirm request
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableShell>
+              <DataTableShell title="Storage" footer={<span>{(dash.storage || []).length} lot(s)</span>}>
+                <div className="table-scroll">
+                  <table className="desktop-table dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Commodity</th>
+                        <th>Qty</th>
+                        <th>Farmer</th>
+                        <th>Bin</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dash.storage || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="empty-cell">
+                            No storage lots.
+                          </td>
+                        </tr>
+                      ) : (
+                        dash.storage.map((s) => (
+                          <tr key={s.storageRecordId}>
+                            <td>{s.commodity}</td>
+                            <td>
+                              {s.quantity} {s.unit}
+                            </td>
+                            <td>{s.farmerId ? `#${s.farmerId}` : '—'}</td>
+                            <td>{s.binOrLot || '—'}</td>
+                            <td>
+                              <StatusBadge value={s.status} />
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </DataTableShell>
 
-          <DataTableShell title="Pending input deliveries">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Loan</th>
-                  <th>Farmer</th>
-                  <th>Type</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {(dash.pendingInputDeliveries || []).length === 0 ? (
-                  <tr>
-                    <td colSpan={4}>None pending.</td>
-                  </tr>
-                ) : (
-                  dash.pendingInputDeliveries.map((loan) => (
-                    <tr key={loan.inputLoanId}>
-                      <td>#{loan.inputLoanId}</td>
-                      <td>#{loan.farmerId}</td>
-                      <td>{loan.inputType}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-primary"
-                          onClick={async () => {
-                            try {
-                              await deliverInputLoan(loan.inputLoanId)
-                              toast.success('Delivery confirmed')
-                              loadDash(selectedId)
-                            } catch (err) {
-                              toast.error(err?.response?.data?.error || 'Deliver failed')
-                            }
-                          }}
-                        >
-                          Confirm delivery
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableShell>
-        </div>
+              <DataTableShell
+                title="Pending confirmations"
+                footer={<span>{(dash.pendingCoopConfirmations || []).length} pending</span>}
+              >
+                <div className="table-scroll">
+                  <table className="desktop-table dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Loan</th>
+                        <th>Farmer</th>
+                        <th>Type</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dash.pendingCoopConfirmations || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="empty-cell">
+                            None pending.
+                          </td>
+                        </tr>
+                      ) : (
+                        dash.pendingCoopConfirmations.map((loan) => (
+                          <tr key={loan.inputLoanId}>
+                            <td>#{loan.inputLoanId}</td>
+                            <td>#{loan.farmerId}</td>
+                            <td>{loan.inputType}</td>
+                            <td className="action-cell">
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                disabled={busy}
+                                onClick={async () => {
+                                  setBusy(true)
+                                  try {
+                                    await confirmInputLoanByCoop(loan.inputLoanId, operatorUserId)
+                                    toast.success('Input loan confirmed')
+                                    loadDash(selectedId)
+                                  } catch (err) {
+                                    toast.error(err?.response?.data?.error || 'Confirm failed')
+                                  } finally {
+                                    setBusy(false)
+                                  }
+                                }}
+                              >
+                                Confirm
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </DataTableShell>
+
+              <DataTableShell
+                title="Pending deliveries"
+                footer={<span>{(dash.pendingInputDeliveries || []).length} pending</span>}
+              >
+                <div className="table-scroll">
+                  <table className="desktop-table dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Loan</th>
+                        <th>Farmer</th>
+                        <th>Type</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dash.pendingInputDeliveries || []).length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="empty-cell">
+                            None pending.
+                          </td>
+                        </tr>
+                      ) : (
+                        dash.pendingInputDeliveries.map((loan) => (
+                          <tr key={loan.inputLoanId}>
+                            <td>#{loan.inputLoanId}</td>
+                            <td>#{loan.farmerId}</td>
+                            <td>{loan.inputType}</td>
+                            <td className="action-cell">
+                              <button
+                                type="button"
+                                className="btn-primary"
+                                disabled={busy}
+                                onClick={async () => {
+                                  setBusy(true)
+                                  try {
+                                    await deliverInputLoan(loan.inputLoanId)
+                                    toast.success('Delivery confirmed')
+                                    loadDash(selectedId)
+                                  } catch (err) {
+                                    toast.error(err?.response?.data?.error || 'Deliver failed')
+                                  } finally {
+                                    setBusy(false)
+                                  }
+                                }}
+                              >
+                                Confirm delivery
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </DataTableShell>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   )

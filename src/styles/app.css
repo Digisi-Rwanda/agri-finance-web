@@ -5018,3 +5018,89 @@ th {
 .portal-light .pw-card {
   background: #fff;
 }
+
+/* —— Cooperative operations —— */
+
+.coop-forms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.coop-tables {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.coop-select-field,
+.coop-textarea-field {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2c342a;
+}
+
+.coop-select-field select,
+.coop-textarea-field textarea {
+  width: 100%;
+  border: 1px solid #c0c9bb;
+  border-radius: 10px;
+  background: #fff;
+  color: #191c1a;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-weight: 500;
+}
+
+.coop-textarea-field {
+  max-width: none;
+  margin-bottom: 0.75rem;
+}
+
+.coop-textarea-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.coop-empty-note {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px dashed #c0c9bb;
+  border-radius: 12px;
+  background: #f7faf8;
+  color: #657061;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.coop-page .insurance-panel {
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .coop-forms-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.neon-dashboard .coop-select-field,
+.neon-dashboard .coop-textarea-field {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .coop-select-field select,
+.neon-dashboard .coop-textarea-field textarea {
+  border-color: var(--neon-border);
+  background: #252b26;
+  color: var(--neon-text);
+}
+
+.neon-dashboard .coop-empty-note {
+  border-color: var(--neon-border);
+  background: var(--neon-card);
+  color: var(--neon-muted);
+}
+
