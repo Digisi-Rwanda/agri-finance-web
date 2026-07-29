@@ -91,9 +91,8 @@ function ConsentVaultPage() {
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bankability › Consent"
         title="OTP Consent Vault"
         subtitle="Buyer OTP consents with audit history and PDF certificates for underwriting."
         actions={

@@ -1,8 +1,7 @@
-function PageHeader({ title, subtitle, breadcrumb, actions = null }) {
+function PageHeader({ title, subtitle, actions = null }) {
   return (
     <div className="page-header">
       <div>
-        {breadcrumb ? <p className="breadcrumb">{breadcrumb}</p> : null}
         {title ? <h1>{title}</h1> : null}
         {subtitle ? <p>{subtitle}</p> : null}
       </div>

@@ -142,10 +142,6 @@
   max-width: 52rem;
 }
 
-.portal-light .breadcrumb {
-  display: none; /* topbar already shows crumbs */
-}
-
 /* —— Cards / widgets —— */
 .portal-light .card,
 .portal-light .widget,

@@ -138,9 +138,8 @@ function ContractsPage() {
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bankability › Receivables"
         title="Receivables"
         subtitle="Purchase contracts used as loan collateral. Send buyer OTP, then field inspection, then verified."
         actions={

@@ -94,10 +94,9 @@ function SpecV2OpsPage() {
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bankability › Spec v2"
-        title="Spec v2 operations"
+        title="Guarantee operations"
         subtitle="Warehouse onboarding, input loans, guarantee requests, bank registry, and PDF loan packages."
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>

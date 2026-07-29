@@ -75,9 +75,8 @@ function AdminReportsPage() {
             : ['policyId', 'farmerId', 'policyType', 'status', 'validTo', 'complianceStatus']
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Administration › Reports"
         title="Admin reports"
         subtitle="Loans issued, repayments, harvest verification, warehouse receipts, and insurance compliance."
         actions={

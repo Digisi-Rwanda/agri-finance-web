@@ -314,7 +314,6 @@ function InsuranceManagementPage() {
   return (
     <section className="dashboard-page dashboard-page--compact insurance-page">
       <PageHeader
-        breadcrumb="Home › Insurance"
         title="Insurance"
         subtitle="Issue active crop policies, manage claims, and keep farmers bankable."
         actions={

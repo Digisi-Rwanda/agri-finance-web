@@ -62,9 +62,8 @@ function AuditLogsPage() {
   ).length
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Administration › Audit Logs"
         title="System audit trail"
         subtitle="Immutable record of sign-ins, approvals, and administrative actions."
         actions={

@@ -3,7 +3,6 @@ import {
   Bell,
   Briefcase,
   ClipboardCheck,
-  Contact,
   CreditCard,
   Eye,
   FileKey,
@@ -29,7 +28,6 @@ import { clearSession, getCurrentUser, hydrateSessionUser } from '../services/au
 import ThemeSwitch from '../components/layout/ThemeSwitch'
 import { PortalThemeContext } from '../context/PortalThemeContext'
 import { getHomePathForRole } from '../utils/roles'
-import { getLastFarmerMeta } from '../pages/FarmerProfileRedirect'
 
 const navItemsByRole = {
   BANK: [
@@ -42,13 +40,6 @@ const navItemsByRole = {
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    {
-      to: '/farmer/profile',
-      label: 'Farmer Profile',
-      icon: Contact,
-      profile: true,
-      isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
-    },
   ],
   INSURER: [
     { to: '/insurer', label: 'Home', icon: Home, end: true },
@@ -63,28 +54,12 @@ const navItemsByRole = {
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
     { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
-    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
-    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
-    { to: '/bankability', label: 'Bankability', icon: Warehouse },
-    { to: '/bankability/v2', label: 'Spec v2 ops', icon: ClipboardCheck },
-    { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-    {
-      to: '/farmer/profile',
-      label: 'Farmer Profile',
-      icon: Contact,
-      profile: true,
-      isActivePath: (pathname) => /^\/farmer\/(\d+|profile)/.test(pathname),
-    },
     { to: '/admin', label: 'Users', icon: Users },
     { to: '/admin/reports', label: 'Reports', icon: ScrollText },
-    { to: '/audit', label: 'Audit Logs', icon: ScrollText },
   ],
   FARMER: [
     { to: '/payments', label: 'Home', icon: Home, end: true },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
   ],
   COOPERATIVE: [
     { to: '/', label: 'Home', icon: Home, end: true },
@@ -99,8 +74,6 @@ const navItemsByRole = {
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
   ],
   REGISTRATION_OFFICER: [
     { to: '/admin/reports', label: 'Reports', icon: ScrollText, end: true },
@@ -109,8 +82,18 @@ const navItemsByRole = {
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
+  ],
+}
+
+const moreItemsByRole = {
+  ADMIN: [
+    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
+    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
+    { to: '/bankability', label: 'Warehouse claims', icon: Warehouse },
+    { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck },
+    { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
+    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
+    { to: '/audit', label: 'Audit Logs', icon: FileKey },
   ],
 }
 
@@ -132,11 +115,11 @@ const PAGE_TITLES = {
   // New bankability pages
   '/contracts': 'Receivables',
   '/inspections': 'Field inspections',
-  '/bankability': 'Bankability ops',
+  '/bankability': 'Warehouse claims',
   '/payment-watch': 'Payment Watch',
   '/consent-vault': 'OTP Consent Vault',
   '/trust-ladder': 'Trust Ladder',
-  '/bankability/v2': 'Spec v2 ops',
+  '/bankability/v2': 'Guarantee operations',
   '/cooperative': 'Cooperative ops',
 }
 
@@ -204,11 +187,6 @@ function getSearchConfig(pathname) {
   return SEARCH_CONFIG.default
 }
 
-function isNavItemActive(item, pathname, isActive) {
-  if (typeof item.isActivePath === 'function') return item.isActivePath(pathname)
-  return isActive
-}
-
 function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -220,17 +198,20 @@ function MainLayout() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [routePath, setRoutePath] = useState(location.pathname)
-  const [lastFarmer, setLastFarmer] = useState(() => getLastFarmerMeta())
 
   if (location.pathname !== routePath) {
     setRoutePath(location.pathname)
     setMenuOpen(false)
     setMoreOpen(false)
-    setLastFarmer(getLastFarmerMeta())
   }
 
   const currentRole = getCurrentUser()?.role || 'BANK'
   const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
+  const moreItems = moreItemsByRole[currentRole] || []
+  const moreActive = moreItems.some(
+    (item) =>
+      location.pathname === item.to || location.pathname.startsWith(`${item.to}/`),
+  )
   const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
   const homePath = getHomePathForRole(currentRole)
   const pageTitle = useMemo(() => getPageTitle(location.pathname), [location.pathname])
@@ -277,13 +258,6 @@ function MainLayout() {
   }, [])
 
   const shellThemeClass = darkMode ? 'neon-dashboard' : 'portal-light'
-  const farmerInitials = (lastFarmer?.name || 'F')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join('')
-
   return (
     <PortalThemeContext.Provider value={{ isDark: darkMode, setIsDark: setDarkMode }}>
       <div className={`app-shell ${shellThemeClass}`}>
@@ -294,7 +268,6 @@ function MainLayout() {
 
           <nav className="sidebar-nav" aria-label="Main">
             {navItems.map((item) => {
-              const active = isNavItemActive(item, location.pathname, false)
               return (
                 <NavLink
                   key={`${item.label}-${item.to}`}
@@ -302,22 +275,10 @@ function MainLayout() {
                   end={item.end}
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
-                    `nav-link nav-link--flat${
-                      isNavItemActive(item, location.pathname, isActive) ? ' active' : ''
-                    }${item.profile ? ' nav-link--profile' : ''}`
+                    `nav-link nav-link--flat${isActive ? ' active' : ''}`
                   }
                 >
-                  {item.profile ? (
-                    <span className={`nav-avatar${active || location.pathname.startsWith('/farmer/') ? ' nav-avatar--active' : ''}`}>
-                      {lastFarmer?.photo ? (
-                        <img src={lastFarmer.photo} alt="" />
-                      ) : (
-                        <span>{farmerInitials}</span>
-                      )}
-                    </span>
-                  ) : (
-                    <item.icon size={24} strokeWidth={1.75} />
-                  )}
+                  <item.icon size={24} strokeWidth={1.75} />
                   <span className="nav-link__label">{item.label}</span>
                 </NavLink>
               )
@@ -327,7 +288,7 @@ function MainLayout() {
           <div className="sidebar-more" ref={moreRef}>
             <button
               type="button"
-              className={`nav-link nav-link--flat nav-link--button${moreOpen ? ' active' : ''}`}
+              className={`nav-link nav-link--flat nav-link--button${moreOpen || moreActive ? ' active' : ''}`}
               onClick={() => setMoreOpen((prev) => !prev)}
               aria-expanded={moreOpen}
             >
@@ -336,6 +297,33 @@ function MainLayout() {
             </button>
             {moreOpen ? (
               <div className="sidebar-more__menu" role="menu">
+                {moreItems.length > 0 ? (
+                  <>
+                    <span className="sidebar-more__heading">More tools</span>
+                    {moreItems.map((item) => (
+                      <button
+                        key={item.to}
+                        type="button"
+                        className={`sidebar-more__item${
+                          location.pathname === item.to ||
+                          location.pathname.startsWith(`${item.to}/`)
+                            ? ' sidebar-more__item--active'
+                            : ''
+                        }`}
+                        role="menuitem"
+                        onClick={() => {
+                          setMoreOpen(false)
+                          setMenuOpen(false)
+                          navigate(item.to)
+                        }}
+                      >
+                        <item.icon size={16} />
+                        {item.label}
+                      </button>
+                    ))}
+                    <span className="sidebar-more__divider" aria-hidden />
+                  </>
+                ) : null}
                 <button
                   type="button"
                   className="sidebar-more__item"

@@ -51,9 +51,8 @@ function TrustLadderPage() {
   ].filter(Boolean)
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bankability › Trust"
         title="Trust Ladder"
         subtitle="Reward strong repayment, savings, contract fulfillment, and mobile money behavior."
       />

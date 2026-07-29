@@ -245,9 +245,8 @@ function BankabilityOpsPage() {
   }
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bankability › Operations"
         title="Bankability operations"
         subtitle="Bank products, coop settlements, warehouse receipts, payment watch, and guarantee claims."
         actions={

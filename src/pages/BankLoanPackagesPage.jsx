@@ -112,9 +112,8 @@ function BankLoanPackagesPage() {
   const disbursed = rows.filter((r) => r.status === 'disbursed').length
 
   return (
-    <section className="dashboard-page">
+    <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        breadcrumb="Bank › Loan packages"
         title="Loan application inbox"
         subtitle="Review Spec v2 packages, approve or reject, disburse funds, and download bank PDFs."
         actions={

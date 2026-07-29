@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, CreditCard, ShieldCheck, Users } from 'lucide-react'
+import { AlertCircle, ArrowRight, CreditCard, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import NeonSegmentChart from '../components/dashboard/NeonSegmentChart'
@@ -122,7 +122,7 @@ function InsurerDashboardPage() {
           <h2>Quick actions</h2>
           <p>Insurance workflows</p>
         </div>
-        <div className="dash-quick-grid dash-quick-grid--three">
+        <div className="dash-quick-grid">
           <QuickActionCard
             to="/insurance"
             title="Policies"
@@ -134,12 +134,6 @@ function InsurerDashboardPage() {
             title="Premiums"
             description="Collect MoMo premiums for issued policies"
             icon={CreditCard}
-          />
-          <QuickActionCard
-            to="/insurance"
-            title="Risk review"
-            description="Match cover to risk tiers"
-            icon={Users}
           />
         </div>
       </div>

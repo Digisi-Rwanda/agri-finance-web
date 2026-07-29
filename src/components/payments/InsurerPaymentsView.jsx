@@ -223,7 +223,6 @@ export default function InsurerPaymentsView() {
   return (
     <section className="dashboard-page dashboard-page--compact insurance-payments-page">
       <PageHeader
-        breadcrumb="Home › Payments"
         title="Payments"
         subtitle="Collect insurance premiums by MoMo and track policy payment activity."
         actions={

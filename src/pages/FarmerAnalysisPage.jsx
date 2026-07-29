@@ -468,7 +468,6 @@ function FarmerAnalysisPage() {
     return (
       <section className="dashboard-page farmer-profile-page">
         <PageHeader
-          breadcrumb={<Link to="/farmer">Farmers</Link>}
           title="Loading profile…"
           subtitle="Fetching farms, credit, loans, and activity."
         />
@@ -485,7 +484,6 @@ function FarmerAnalysisPage() {
     return (
       <section className="dashboard-page farmer-profile-page">
         <PageHeader
-          breadcrumb={<Link to="/farmer">Farmers</Link>}
           title="Profile unavailable"
           actions={
             <Link to="/farmer" className="btn-primary">
@@ -512,13 +510,6 @@ function FarmerAnalysisPage() {
   return (
     <section className="dashboard-page dashboard-page--compact farmer-profile-page">
       <PageHeader
-        breadcrumb={
-          <>
-            <Link to="/farmer">Farmers</Link>
-            <span aria-hidden> / </span>
-            <span>Profile</span>
-          </>
-        }
         title={displayName || 'Farmer profile'}
         subtitle={`ID ${farmer.farmerId}${farmer.location ? ` · ${farmer.location}` : ''} · farms, credit, loans, and activity`}
         actions={

@@ -75,14 +75,6 @@
   color: var(--neon-text);
 }
 
-.neon-dashboard .nav-avatar {
-  background: #252b26;
-}
-
-.neon-dashboard .nav-avatar--active {
-  border-color: #ffffff;
-}
-
 .neon-dashboard .content-shell {
   background: transparent;
 }

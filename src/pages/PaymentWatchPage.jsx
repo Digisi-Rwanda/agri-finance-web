@@ -126,10 +126,10 @@ function PaymentWatchPage() {
       toast.success(
         `Alerts refreshed · ${result.alerted ?? 0} notified · ${result.overdue ?? 0} overdue`,
       )
-      await load()
     } catch (err) {
       toast.error(err?.response?.data?.error || 'Scan failed')
     } finally {
+      await load()
       setScanning(false)
     }
   }
@@ -151,20 +151,14 @@ function PaymentWatchPage() {
   }
 
   return (
-    <section className="dashboard-page payment-watch-page">
+    <section className="dashboard-page dashboard-page--compact payment-watch-page">
       <PageHeader
-        breadcrumb="Bankability › Payments"
         title="Payment Watch"
         subtitle="Track buyer remittances into Digisi — expected vs received from live contracts."
         actions={
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-secondary" onClick={onScanAlerts} disabled={scanning || loading}>
-              {scanning ? 'Scanning…' : 'Refresh alerts'}
-            </button>
-            <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-              {loading ? 'Loading…' : 'Refresh'}
-            </button>
-          </div>
+          <button type="button" className="btn-secondary" onClick={onScanAlerts} disabled={scanning || loading}>
+            {scanning || loading ? 'Refreshing…' : 'Refresh'}
+          </button>
         }
       />
 
