@@ -31,10 +31,13 @@ function visitScore(row) {
   return score
 }
 
+const defaultSchedule = () => new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+
 /**
  * Field inspections — only active visits and decide.
  * Buyer OTP already opens a case; staff work the visit then approve/reject.
  */
+/* eslint-disable react-hooks/set-state-in-effect -- initial queue fetch on mount, same as other role homes */
 function InspectionQueuePage() {
   const [queue, setQueue] = useState([])
   const [contracts, setContracts] = useState([])
@@ -58,7 +61,6 @@ function InspectionQueuePage() {
   })
 
   const workPanelRef = useRef(null)
-  const defaultSchedule = () => new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
 
   const rememberDismissed = (id) => {
     setDismissedIds((prev) => {
@@ -94,7 +96,7 @@ function InspectionQueuePage() {
   }
 
   useEffect(() => {
-    load()
+    void load()
   }, [])
 
   const contractById = useMemo(() => {
@@ -141,6 +143,17 @@ function InspectionQueuePage() {
   const openCaseIds = useMemo(
     () => new Set(primaryQueue.map((row) => Number(row.contractId))),
     [primaryQueue],
+  )
+
+  const unassignedCount = useMemo(
+    () => primaryQueue.filter((row) => !row.assignedInspectorId).length,
+    [primaryQueue],
+  )
+
+  const verifiedCount = useMemo(
+    () =>
+      contracts.filter((c) => String(c.status || '').toLowerCase() === 'verified').length,
+    [contracts],
   )
 
   const missingCases = useMemo(
@@ -216,7 +229,7 @@ function InspectionQueuePage() {
       if (selectedId === id) closeWorkPanel()
       rememberDismissed(id)
       await load()
-    } catch (e) {
+    } catch {
       rememberDismissed(id)
       if (selectedId === id) closeWorkPanel()
       toast.info(`Case #${id} hidden here`)
@@ -279,42 +292,26 @@ function InspectionQueuePage() {
   }
 
   return (
-    <section className="dashboard-page inspection-page">
+    <section className="dashboard-page dashboard-page--compact inspection-page">
       <PageHeader
-        breadcrumb="Bankability › Field inspections"
-        title="Inspections"
-        subtitle="Work the visit, save notes/evidence, then approve or reject."
+        title="Field inspections"
+        subtitle="Work the visit, save notes and evidence, then approve or reject."
         actions={
-          <div className="flex flex-wrap gap-2">
-            {duplicateQueue.length > 0 ? (
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={runDedupe}
-                disabled={busyId === 'dedupe' || loading}
-              >
-                {busyId === 'dedupe' ? 'Cleaning…' : `Remove ${duplicateQueue.length} duplicate(s)`}
-              </button>
-            ) : null}
-            <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
-            </button>
-          </div>
+          <button type="button" className="btn-secondary" onClick={load} disabled={loading}>
+            {loading ? 'Refreshing…' : 'Refresh'}
+          </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Active visits" value={String(primaryQueue.length)} />
-        <StatCard title="Missing case" value={String(missingCases.length)} meta="Rare" />
-        <StatCard title="Duplicates" value={String(duplicateQueue.length)} />
-        <StatCard
-          title="Verified"
-          value={String(contracts.filter((c) => c.status === 'verified').length)}
-        />
+        <StatCard title="Active visits" value={String(primaryQueue.length)} meta="Open cases" />
+        <StatCard title="Unassigned" value={String(unassignedCount)} meta="Need an inspector" />
+        <StatCard title="Awaiting case" value={String(missingCases.length)} meta="Buyer OTP done" />
+        <StatCard title="Verified" value={String(verifiedCount)} meta="Contracts cleared" />
       </div>
 
       {selectedCase ? (
-        <div className="inspection-work mt-4" ref={workPanelRef}>
+        <div className="inspection-work" ref={workPanelRef}>
           <div className="inspection-work__head">
             <div>
               <p className="inspection-work__eyebrow">Visit</p>
@@ -409,10 +406,10 @@ function InspectionQueuePage() {
       ) : null}
 
       {missingCases.length > 0 ? (
-        <section className="inspection-section mt-6">
+        <section className="inspection-section">
           <div className="inspection-section__head">
-            <h2>Waiting for a case</h2>
-            <p>Buyer OTP done but no visit case yet — open one.</p>
+            <h2>Awaiting a case</h2>
+            <p>Buyer OTP is done but no visit case exists yet — open one to start work.</p>
           </div>
           <div className="inspection-card-list">
             {missingCases.map((c) => (
@@ -420,7 +417,7 @@ function InspectionQueuePage() {
                 <div className="inspection-card__main">
                   <div className="inspection-card__title-row">
                     <h3>Contract #{c.contractId}</h3>
-                    <StatusBadge status={c.status} />
+                    <StatusBadge value={c.status} />
                   </div>
                   <p className="inspection-work__meta">
                     {c.buyerName || '—'} · {formatValue(c.contractValue)}
@@ -442,10 +439,10 @@ function InspectionQueuePage() {
         </section>
       ) : null}
 
-      <section className="inspection-section mt-6">
+      <section className="inspection-section">
         <div className="inspection-section__head">
           <h2>Active visits</h2>
-          <p>One case per contract. Open visit to save notes, then approve or reject.</p>
+          <p>One case per contract. Open a visit to save notes, then approve or reject.</p>
         </div>
 
         {primaryQueue.length === 0 ? (
@@ -468,7 +465,7 @@ function InspectionQueuePage() {
                         Contract #{row.contractId}
                         <span className="inspection-card__sub"> · Case #{row.inspectionId}</span>
                       </h3>
-                      <StatusBadge status="pending" />
+                      <StatusBadge value="pending" />
                     </div>
                     <dl className="inspection-card__facts">
                       <div>
@@ -506,10 +503,20 @@ function InspectionQueuePage() {
       </section>
 
       {duplicateQueue.length > 0 ? (
-        <section className="inspection-section mt-6">
-          <div className="inspection-section__head">
-            <h2>Duplicates</h2>
-            <p>Extra cases for the same contract — remove them.</p>
+        <section className="inspection-section">
+          <div className="inspection-section__head inspection-section__head--row">
+            <div>
+              <h2>Duplicate cases</h2>
+              <p>Extra cases opened for a contract that already has an active visit.</p>
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={runDedupe}
+              disabled={busyId === 'dedupe' || loading}
+            >
+              {busyId === 'dedupe' ? 'Cleaning…' : `Remove all ${duplicateQueue.length}`}
+            </button>
           </div>
           <div className="inspection-card-list">
             {duplicateQueue.map((row) => (
@@ -527,7 +534,7 @@ function InspectionQueuePage() {
                     disabled={busyId === `cancel-${row.inspectionId}`}
                     onClick={() => removeDuplicate(row.inspectionId)}
                   >
-                    Remove
+                    {busyId === `cancel-${row.inspectionId}` ? 'Removing…' : 'Remove'}
                   </button>
                 </div>
               </article>

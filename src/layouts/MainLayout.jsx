@@ -90,9 +90,7 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
   ],
   INSPECTOR: [
-    { to: '/inspections', label: 'Inspections', icon: ClipboardCheck, end: true },
-    { to: '/profile', label: 'Profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/', label: 'Home', icon: Home, end: true },
   ],
   GUARANTEE_OFFICER: [
     { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck, end: true },
@@ -133,7 +131,7 @@ const PAGE_TITLES = {
   '/notifications': 'Notifications',
   // New bankability pages
   '/contracts': 'Receivables',
-  '/inspections': 'Inspections',
+  '/inspections': 'Field inspections',
   '/bankability': 'Bankability ops',
   '/payment-watch': 'Payment Watch',
   '/consent-vault': 'OTP Consent Vault',

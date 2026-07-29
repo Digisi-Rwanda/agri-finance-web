@@ -4,7 +4,7 @@ const HOME_BY_ROLE = {
   INSURER: '/insurer',
   FARMER: '/payments',
   COOPERATIVE: '/',
-  INSPECTOR: '/inspections',
+  INSPECTOR: '/',
   GUARANTEE_OFFICER: '/bankability/v2',
   REGISTRATION_OFFICER: '/admin/reports',
 }

@@ -6,6 +6,7 @@ import DataTableShell from '../components/ui/DataTableShell'
 import StatusBadge from '../components/ui/StatusBadge'
 import {
   addCoopMember,
+  applyWarehouse,
   claimCoopWarehouse,
   confirmInputLoanByCoop,
   deliverInputLoan,
@@ -16,7 +17,7 @@ import {
   recordCoopStorage,
   updateCoopGovernance,
 } from '../services/bankabilityService'
-import { getCurrentUser } from '../services/auth'
+import { getCurrentUser, getProfile, hydrateSessionUser } from '../services/auth'
 
 /* Cooperative dashboard fetches on mount/selection — same pattern as other role homes. */
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -25,11 +26,13 @@ import { getCurrentUser } from '../services/auth'
  * Cooperative operator dashboard — membership, storage, receipts, input loans.
  */
 function CooperativeDashboardPage() {
-  const user = getCurrentUser()
-  const operatorUserId = user?.userId || user?.id
+  const [operatorUserId, setOperatorUserId] = useState(
+    () => getCurrentUser()?.userId || getCurrentUser()?.id || null,
+  )
   const [warehouses, setWarehouses] = useState([])
   const [allWarehouses, setAllWarehouses] = useState([])
   const [selectedId, setSelectedId] = useState(null)
+  const [linkWarehouseId, setLinkWarehouseId] = useState('')
   const [dash, setDash] = useState(null)
   const [loading, setLoading] = useState(true)
   const [memberFarmerId, setMemberFarmerId] = useState('')
@@ -49,31 +52,62 @@ function CooperativeDashboardPage() {
     grade: '',
     expiryDate: '',
   })
+  const [whForm, setWhForm] = useState({
+    cooperativeName: '',
+    location: '',
+    storageInsuranceRef: '',
+    governanceChecklist: '',
+    facilityNotes: '',
+  })
   const [governance, setGovernance] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const loadWarehouses = async () => {
+  const loadWarehouses = async (userId = operatorUserId) => {
     setLoading(true)
     try {
       const [mine, all] = await Promise.all([
-        operatorUserId ? listCoopWarehouses(operatorUserId) : Promise.resolve([]),
-        listWarehouses('approved').catch(() => listWarehouses()),
+        userId ? listCoopWarehouses(userId) : Promise.resolve([]),
+        listWarehouses().catch(() => []),
       ])
       const mineList = Array.isArray(mine) ? mine : []
       setWarehouses(mineList)
       setAllWarehouses(Array.isArray(all) ? all : [])
-      if (!selectedId && mineList.length) {
-        setSelectedId(mineList[0].warehouseId)
-      }
-      if (selectedId && !mineList.some((w) => w.warehouseId === selectedId)) {
-        setSelectedId(mineList[0]?.warehouseId || null)
-      }
+      setSelectedId((prev) => {
+        if (prev && mineList.some((w) => w.warehouseId === prev)) return prev
+        return mineList[0]?.warehouseId || null
+      })
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Failed to load warehouses')
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      let userId = getCurrentUser()?.userId || getCurrentUser()?.id || null
+      if (!userId) {
+        try {
+          await hydrateSessionUser()
+          userId = getCurrentUser()?.userId || getCurrentUser()?.id || null
+        } catch {
+          // fall through to profile fetch
+        }
+      }
+      if (!userId) {
+        try {
+          const profile = await getProfile()
+          userId = profile?.userId || null
+        } catch {
+          // keep null
+        }
+      }
+      setOperatorUserId(userId)
+      await loadWarehouses(userId)
+    }
+    void bootstrap()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time bootstrap
+  }, [])
 
   const loadDash = async (id) => {
     if (!id) {
@@ -90,28 +124,65 @@ function CooperativeDashboardPage() {
   }
 
   useEffect(() => {
-    void loadWarehouses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when operator changes
-  }, [operatorUserId])
-
-  useEffect(() => {
     if (selectedId) void loadDash(selectedId)
   }, [selectedId])
 
   const claimable = (allWarehouses || []).filter(
-    (w) => w.approvalStatus === 'approved' && !w.operatorUserId,
+    (w) =>
+      String(w.approvalStatus || '').toLowerCase() === 'approved' &&
+      !w.operatorUserId &&
+      !warehouses.some((mine) => mine.warehouseId === w.warehouseId),
   )
-  const needsWarehouseSetup = !loading && warehouses.length === 0
+  const selectedWarehouse =
+    warehouses.find((w) => w.warehouseId === selectedId) || dash?.warehouse || null
+  const selectedApproved =
+    String(selectedWarehouse?.approvalStatus || '').toLowerCase() === 'approved'
+  const canOperate = Boolean(selectedId && selectedApproved)
 
   const claim = async (warehouseId) => {
+    if (!operatorUserId) {
+      toast.error('Your account is still loading. Refresh and try again.')
+      return
+    }
     setBusy(true)
     try {
       await claimCoopWarehouse(warehouseId, operatorUserId)
       toast.success('Warehouse linked to your cooperative account')
-      await loadWarehouses()
+      setLinkWarehouseId('')
+      await loadWarehouses(operatorUserId)
       setSelectedId(warehouseId)
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Could not link warehouse')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const registerWarehouse = async (event) => {
+    event.preventDefault()
+    if (!operatorUserId) {
+      toast.error('Your account is still loading. Refresh and try again.')
+      return
+    }
+    setBusy(true)
+    try {
+      const created = await applyWarehouse({
+        ...whForm,
+        approvalStatus: 'pending',
+        operatorUserId,
+      })
+      toast.success('Warehouse registered. An administrator must approve it before operations unlock.')
+      setWhForm({
+        cooperativeName: '',
+        location: '',
+        storageInsuranceRef: '',
+        governanceChecklist: '',
+        facilityNotes: '',
+      })
+      await loadWarehouses(operatorUserId)
+      if (created?.warehouseId) setSelectedId(created.warehouseId)
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Could not register warehouse')
     } finally {
       setBusy(false)
     }
@@ -121,9 +192,14 @@ function CooperativeDashboardPage() {
     <section className="dashboard-page dashboard-page--compact coop-page">
       <PageHeader
         title="Cooperative operations"
-        subtitle="Members, storage lots, warehouse receipts, and input deliveries."
+        subtitle="Select a warehouse, then manage members, storage, receipts, and deliveries."
         actions={
-          <button type="button" className="btn-secondary" onClick={loadWarehouses} disabled={loading}>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => loadWarehouses(operatorUserId)}
+            disabled={loading}
+          >
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
         }
@@ -136,75 +212,134 @@ function CooperativeDashboardPage() {
         <StatCard title="Receipts" value={String(dash?.receipts?.length ?? 0)} meta="Issued" />
       </div>
 
-      {needsWarehouseSetup ? (
-        <div className="dash-section">
-          <div className="dash-section__head">
-            <h2>Link your warehouse</h2>
-            <p>Choose an approved warehouse to begin cooperative operations.</p>
-          </div>
-          {claimable.length === 0 ? (
-            <p className="coop-empty-note">
-              No approved warehouses are available to link yet. Ask an administrator to approve a
-              warehouse first.
-            </p>
-          ) : (
-            <div className="table-scroll">
-              <table className="desktop-table dashboard-table">
-                <thead>
-                  <tr>
-                    <th>Cooperative</th>
-                    <th>Location</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {claimable.map((w) => (
-                    <tr key={w.warehouseId}>
-                      <td>
-                        <strong className="dash-name">{w.cooperativeName}</strong>
-                      </td>
-                      <td>{w.location || '—'}</td>
-                      <td className="action-cell">
-                        <button
-                          type="button"
-                          className="btn-primary"
-                          disabled={busy}
-                          onClick={() => claim(w.warehouseId)}
-                        >
-                          Link warehouse
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      <div className="dash-section">
+        <div className="dash-section__head">
+          <h2>Select warehouse</h2>
+          <p>Choose the warehouse you want to work in. Operations unlock after approval.</p>
         </div>
-      ) : (
-        <div className="dash-section">
-          <div className="dash-section__head">
-            <h2>Working warehouse</h2>
-            <p>All actions below apply to the selected warehouse.</p>
-          </div>
+
+        <div className="coop-warehouse-bar">
           <label className="coop-select-field">
-            <span>Warehouse</span>
+            <span>My warehouses</span>
             <select
               value={selectedId || ''}
               onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+              disabled={loading || warehouses.length === 0}
             >
-              <option value="">Choose warehouse…</option>
+              <option value="">
+                {warehouses.length === 0 ? 'No warehouse linked yet…' : 'Choose warehouse…'}
+              </option>
               {warehouses.map((w) => (
                 <option key={w.warehouseId} value={w.warehouseId}>
-                  {w.cooperativeName} (#{w.warehouseId})
+                  {w.cooperativeName} (#{w.warehouseId}) · {w.approvalStatus || 'pending'}
                 </option>
               ))}
             </select>
           </label>
-        </div>
-      )}
 
-      {selectedId ? (
+          {selectedWarehouse ? (
+            <div className="coop-warehouse-status">
+              <StatusBadge value={selectedWarehouse.approvalStatus || 'pending'} />
+              <span>{selectedWarehouse.location || 'No location set'}</span>
+            </div>
+          ) : null}
+        </div>
+
+        {selectedId && !selectedApproved ? (
+          <p className="coop-empty-note">
+            This warehouse is waiting for administrator approval. You can review details here, but
+            member/storage/receipt actions unlock after it is approved.
+          </p>
+        ) : null}
+
+        {claimable.length > 0 ? (
+          <div className="coop-link-row">
+            <label className="coop-select-field">
+              <span>Link an approved warehouse</span>
+              <select
+                value={linkWarehouseId}
+                onChange={(e) => setLinkWarehouseId(e.target.value)}
+              >
+                <option value="">Choose approved warehouse…</option>
+                {claimable.map((w) => (
+                  <option key={w.warehouseId} value={w.warehouseId}>
+                    {w.cooperativeName} — {w.location || 'No location'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={busy || !linkWarehouseId}
+              onClick={() => claim(Number(linkWarehouseId))}
+            >
+              Link warehouse
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <form className="insurance-panel coop-register-panel" onSubmit={registerWarehouse}>
+        <div className="insurance-panel__head">
+          <h2>Register a warehouse</h2>
+          <p className="muted">
+            Create your cooperative warehouse here. It appears in the selector above as pending until
+            an administrator approves it.
+          </p>
+        </div>
+        <div className="insurance-panel__grid insurance-panel__grid--form">
+          <label>
+            Cooperative name
+            <input
+              required
+              placeholder="e.g. Musanze Farmers Coop"
+              value={whForm.cooperativeName}
+              onChange={(e) => setWhForm({ ...whForm, cooperativeName: e.target.value })}
+            />
+          </label>
+          <label>
+            Location
+            <input
+              required
+              placeholder="District / sector"
+              value={whForm.location}
+              onChange={(e) => setWhForm({ ...whForm, location: e.target.value })}
+            />
+          </label>
+          <label>
+            Storage insurance reference
+            <input
+              required
+              placeholder="Required for approval"
+              value={whForm.storageInsuranceRef}
+              onChange={(e) => setWhForm({ ...whForm, storageInsuranceRef: e.target.value })}
+            />
+          </label>
+          <label>
+            Governance checklist
+            <input
+              required
+              placeholder="Board, bylaws, insurance, grading"
+              value={whForm.governanceChecklist}
+              onChange={(e) => setWhForm({ ...whForm, governanceChecklist: e.target.value })}
+            />
+          </label>
+          <label>
+            Facility notes
+            <input
+              placeholder="Optional"
+              value={whForm.facilityNotes}
+              onChange={(e) => setWhForm({ ...whForm, facilityNotes: e.target.value })}
+            />
+          </label>
+        </div>
+        <button type="submit" className="btn-primary insurance-panel__submit" disabled={busy}>
+          Register warehouse
+        </button>
+      </form>
+
+      {canOperate ? (
         <>
           <div className="coop-forms-grid">
             <form

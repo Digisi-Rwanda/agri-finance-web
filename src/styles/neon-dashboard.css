@@ -901,3 +901,50 @@
 .neon-dashboard .settings-switch input:checked + .settings-switch__track {
   background: var(--neon-cyan);
 }
+
+/* —— Field inspections —— */
+.neon-dashboard .inspection-card {
+  background: var(--neon-card);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .inspection-work {
+  background: var(--neon-card);
+  border-color: var(--neon-cyan);
+}
+
+.neon-dashboard .inspection-work textarea {
+  background: #252b26;
+  color: var(--neon-text);
+  border-color: var(--neon-border);
+}
+
+.neon-dashboard .inspection-work label,
+.neon-dashboard .inspection-work__meta,
+.neon-dashboard .inspection-card__sub,
+.neon-dashboard .inspection-card__facts dt,
+.neon-dashboard .inspection-section__head p {
+  color: var(--neon-muted);
+}
+
+.neon-dashboard .inspection-section__head h2,
+.neon-dashboard .inspection-work__head h2,
+.neon-dashboard .inspection-card__title-row h3,
+.neon-dashboard .inspection-card__facts dd,
+.neon-dashboard .inspection-file-name {
+  color: var(--neon-text);
+}
+
+.neon-dashboard .inspection-work__eyebrow {
+  color: var(--neon-cyan);
+}
+
+.neon-dashboard .inspection-work__actions {
+  border-top-color: var(--neon-border);
+}
+
+.neon-dashboard .inspection-empty {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--neon-border);
+  color: var(--neon-muted);
+}

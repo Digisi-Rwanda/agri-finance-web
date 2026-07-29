@@ -4413,74 +4413,11 @@ th {
   gap: 1.25rem;
 }
 
-.inspection-guide {
-  border: 1px solid var(--border, #c0c9bb);
-  background: var(--surface, #fff);
-  border-radius: 14px;
-  padding: 1rem 1.15rem;
-}
-
-.inspection-next {
-  border: 1px solid #0a5c18;
-  background: rgba(10, 92, 24, 0.06);
-  border-radius: 14px;
-  padding: 1rem 1.15rem;
-}
-
-.inspection-next__title {
-  margin: 0 0 0.35rem;
-  font-weight: 700;
-  color: #0a5c18;
-}
-
-.inspection-next p {
-  margin: 0;
-  color: var(--text-muted, #5c6658);
-  font-size: 0.95rem;
-  line-height: 1.45;
-}
-
 .inspection-card--dup {
   opacity: 0.92;
   border-style: dashed;
 }
 
-.inspection-guide__title {
-  margin: 0 0 0.5rem;
-  font-weight: 700;
-  color: var(--text, #191c1a);
-}
-
-.inspection-guide ol {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: grid;
-  gap: 0.35rem;
-  color: var(--text-muted, #5c6658);
-  font-size: 0.95rem;
-}
-
-.inspection-defaults {
-  border: 1px solid var(--border, #c0c9bb);
-  background: var(--surface, #fff);
-  border-radius: 14px;
-  padding: 1rem 1.15rem;
-}
-
-.inspection-defaults__label {
-  margin: 0 0 0.65rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted, #5c6658);
-}
-
-.inspection-defaults__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.inspection-defaults label,
 .inspection-work label {
   display: flex;
   flex-direction: column;
@@ -4492,8 +4429,6 @@ th {
   flex: 1;
 }
 
-.inspection-defaults input,
-.inspection-defaults select,
 .inspection-work input,
 .inspection-work select,
 .inspection-work textarea {
@@ -4513,16 +4448,18 @@ th {
   min-height: 120px;
 }
 
-.inspection-hint {
-  margin: 0.65rem 0 0;
-  font-size: 0.85rem;
-  color: #8a5a00;
-}
-
 .inspection-section {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+}
+
+.inspection-section__head--row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .inspection-section__head h2 {
@@ -4610,10 +4547,6 @@ th {
   font-weight: 600;
   color: var(--text, #191c1a);
   word-break: break-word;
-}
-
-.inspection-card__notes {
-  grid-column: 1 / -1;
 }
 
 .inspection-card__actions {
@@ -4730,16 +4663,12 @@ th {
   }
 }
 
-.portal-light .inspection-guide,
-.portal-light .inspection-defaults,
 .portal-light .inspection-card,
 .portal-light .inspection-work {
   background: #fff;
   border-color: #c0c9bb;
 }
 
-.portal-light .inspection-defaults input,
-.portal-light .inspection-defaults select,
 .portal-light .inspection-work input,
 .portal-light .inspection-work select,
 .portal-light .inspection-work textarea {
