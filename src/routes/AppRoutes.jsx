@@ -10,14 +10,13 @@ import FarmerProfileRedirect from '../pages/FarmerProfileRedirect'
 import InsuranceManagementPage from '../pages/InsuranceManagementPage'
 import InsurerDashboardPage from '../pages/InsurerDashboardPage'
 import LoginPage from '../pages/LoginPage'
-import ForgotPasswordPage from '../pages/ForgotPasswordPage'
+import PartnerForgotPasswordPage from '../pages/PartnerForgotPasswordPage'
 import ResetPasswordPage from '../pages/ResetPasswordPage'
 import VerifyEmailPage from '../pages/VerifyEmailPage'
 import LoanManagementPage from '../pages/LoanManagementPage'
 import NotFoundPage from '../pages/NotFoundPage'
 import NotificationsPage from '../pages/NotificationsPage'
 import ProfilePage from '../pages/ProfilePage'
-import RegisterPage from '../pages/RegisterPage'
 import SettingsPage from '../pages/SettingsPage'
 import MomoPaymentsPage from '../pages/MomoPaymentsPage'
 import InspectionQueuePage from '../pages/InspectionQueuePage'
@@ -37,8 +36,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="login" element={<LoginPage />} />
-      <Route path="register" element={<RegisterPage />} />
-      <Route path="forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="register" element={<Navigate to="/login" replace />} />
+      <Route path="forgot-password" element={<PartnerForgotPasswordPage />} />
       <Route path="reset-password" element={<ResetPasswordPage />} />
       <Route path="verify-email" element={<VerifyEmailPage />} />
       <Route path="buyer-verify" element={<BuyerVerificationPage />} />

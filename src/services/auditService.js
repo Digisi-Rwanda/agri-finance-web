@@ -15,6 +15,11 @@ export const getAdminUsers = async () => {
   return response.data
 }
 
+export const inviteAdminPartner = async ({ email, role }) => {
+  const response = await apiClient.post('/admin/users', { email, role })
+  return response.data
+}
+
 export const updateAdminUserRole = async (userId, role) => {
   const response = await apiClient.patch(`/admin/users/${userId}/role`, { role })
   return response.data

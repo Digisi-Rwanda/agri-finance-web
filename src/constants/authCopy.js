@@ -14,15 +14,8 @@ export const authIllustration = {
 }
 
 export const loginCopy = {
-  farmerTitle: 'Farmer sign in',
-  farmerSubtitle: 'Use your phone number or email to access your account.',
   partnerTitle: 'Partner portal',
-  partnerSubtitle: 'Secure access for approved organizations and staff.',
-  portalLabel: 'Choose account portal',
-  farmerTab: 'Farmer',
-  partnerTab: 'Partner & staff',
-  farmerIdentifierLabel: 'Phone number or email',
-  farmerIdentifierPlaceholder: '+250 7XX XXX XXX or email',
+  partnerSubtitle: 'Secure access for approved organizations and authorized staff.',
   emailLabel: 'Email address',
   emailPlaceholder: 'you@company.com',
   passwordLabel: 'Password',
@@ -31,13 +24,9 @@ export const loginCopy = {
   forgotPassword: 'Forgot password?',
   submit: 'Sign in',
   submitting: 'Signing in…',
-  footerPrompt: "Don't have an account?",
-  footerAction: 'Create farmer account',
-  partnerAccessHelp: 'Partner accounts are created and assigned by an administrator.',
+  partnerAccessHelp: 'Access is invitation-only. Contact your organization administrator.',
   partnerEmailRequired: 'Enter your organization email address.',
-  farmerIdentifierInvalid: 'Enter a valid email or Rwanda mobile number.',
-  usePartnerPortal: 'This is a partner account. Use the Partner & staff portal.',
-  useFarmerPortal: 'This is a farmer account. Use the Farmer portal.',
+  partnerOnly: 'Farmer accounts use the Agri Trust mobile app.',
   toastSuccess: 'Welcome back. You are now signed in.',
   toastError: 'Incorrect email or password. Please try again.',
   reset: {

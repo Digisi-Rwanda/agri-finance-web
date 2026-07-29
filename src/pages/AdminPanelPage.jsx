@@ -1,4 +1,13 @@
-import { ArrowRight, Landmark, ScrollText, ShieldCheck, UserRound, Users, BarChart3 } from 'lucide-react'
+import {
+  ArrowRight,
+  BarChart3,
+  Landmark,
+  MailPlus,
+  ScrollText,
+  ShieldCheck,
+  UserRound,
+  Users,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -6,10 +15,12 @@ import QuickActionCard from '../components/dashboard/QuickActionCard'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
+import { getAuthErrorMessage } from '../services/auth'
 import {
   deleteAdminUser,
   getAdminStats,
   getAdminUsers,
+  inviteAdminPartner,
   updateAdminUserRole,
 } from '../services/auditService'
 
@@ -24,11 +35,22 @@ const ROLES = [
   'GUARANTEE_OFFICER',
 ]
 
+const PARTNER_ROLES = [
+  { value: 'BANK', label: 'Bank partner' },
+  { value: 'INSURER', label: 'Insurance partner' },
+  { value: 'COOPERATIVE', label: 'Cooperative' },
+  { value: 'INSPECTOR', label: 'Field inspector' },
+  { value: 'GUARANTEE_OFFICER', label: 'Guarantee officer' },
+  { value: 'REGISTRATION_OFFICER', label: 'Registration officer' },
+]
+
 function AdminPanelPage() {
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [busyUserId, setBusyUserId] = useState(null)
+  const [invite, setInvite] = useState({ email: '', role: 'BANK' })
+  const [sendingInvite, setSendingInvite] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -42,6 +64,25 @@ function AdminPanelPage() {
       toast.error('Failed to load admin panel data.')
     })
   }, [])
+
+  const handleInvitePartner = async (event) => {
+    event.preventDefault()
+    setSendingInvite(true)
+    try {
+      const created = await inviteAdminPartner({
+        email: invite.email.trim().toLowerCase(),
+        role: invite.role,
+      })
+      setUsers((prev) => [created, ...prev])
+      setStats((prev) => (prev ? { ...prev, users: Number(prev.users || 0) + 1 } : prev))
+      setInvite({ email: '', role: 'BANK' })
+      toast.success(`Invitation sent to ${created.email || created.username}.`)
+    } catch (error) {
+      toast.error(getAuthErrorMessage(error, 'Could not create and send the partner invitation.'))
+    } finally {
+      setSendingInvite(false)
+    }
+  }
 
   const handleRoleChange = async (userId, nextRole) => {
     setBusyUserId(userId)
@@ -109,6 +150,53 @@ function AdminPanelPage() {
         />
       </div>
 
+      <section className="admin-invite-card" aria-labelledby="partner-invite-title">
+        <div className="admin-invite-card__intro">
+          <span className="admin-invite-card__icon" aria-hidden="true">
+            <MailPlus size={20} />
+          </span>
+          <div>
+            <h2 id="partner-invite-title">Invite a partner or staff member</h2>
+            <p>
+              We email a one-time setup link. Passwords are created privately by the invited user.
+            </p>
+          </div>
+        </div>
+        <form className="admin-invite-form" onSubmit={handleInvitePartner}>
+          <label>
+            <span>Organization email</span>
+            <input
+              type="email"
+              required
+              autoComplete="off"
+              placeholder="name@organization.com"
+              value={invite.email}
+              onChange={(event) => setInvite((prev) => ({ ...prev, email: event.target.value }))}
+            />
+          </label>
+          <label>
+            <span>Access role</span>
+            <select
+              value={invite.role}
+              onChange={(event) => setInvite((prev) => ({ ...prev, role: event.target.value }))}
+            >
+              {PARTNER_ROLES.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="btn-primary" disabled={sendingInvite}>
+            <MailPlus size={16} />
+            {sendingInvite ? 'Sending invitation…' : 'Send secure invitation'}
+          </button>
+        </form>
+        <p className="admin-invite-card__note">
+          Setup links expire quickly and can only be used once.
+        </p>
+      </section>
+
       <div className="dash-section">
         <div className="dash-section__head">
           <h2>System shortcuts</h2>
@@ -160,7 +248,7 @@ function AdminPanelPage() {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Username</th>
+                <th>Account</th>
                 <th>Role</th>
                 <th>Farmer ID</th>
                 <th>Actions</th>
@@ -187,6 +275,9 @@ function AdminPanelPage() {
                     <td>{user.userId}</td>
                     <td>
                       <strong className="dash-name">{user.username}</strong>
+                      {user.email && user.email !== user.username ? (
+                        <span className="admin-user-email">{user.email}</span>
+                      ) : null}
                     </td>
                     <td>
                       <select
@@ -196,7 +287,7 @@ function AdminPanelPage() {
                         disabled={busyUserId === user.userId}
                         aria-label={`Role for ${user.username}`}
                       >
-                        {ROLES.map((role) => (
+                        {(user.farmerId ? ['FARMER'] : ROLES.filter((role) => role !== 'FARMER')).map((role) => (
                           <option key={role} value={role}>
                             {role}
                           </option>

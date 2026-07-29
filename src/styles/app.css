@@ -1374,6 +1374,117 @@ button.secondary {
   color: #191c1a;
 }
 
+.admin-invite-card {
+  margin-bottom: 0.85rem;
+  padding: 1rem;
+  border: 1px solid #d6e2d2;
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(224, 242, 224, 0.72), rgba(255, 255, 255, 0) 48%),
+    #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 72, 27, 0.06);
+}
+
+.admin-invite-card__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.admin-invite-card__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: #e0f2e0;
+  color: var(--green);
+}
+
+.admin-invite-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #191c1a;
+}
+
+.admin-invite-card__intro p,
+.admin-invite-card__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #657061;
+}
+
+.admin-invite-form {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1.4fr) minmax(12rem, 1fr) auto;
+  align-items: end;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.admin-invite-form label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #2c342a;
+}
+
+.admin-invite-form input,
+.admin-invite-form select {
+  width: 100%;
+  height: 2.45rem;
+  padding: 0 0.7rem;
+  border: 1px solid #bfcabb;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #191c1a;
+  font: inherit;
+  font-weight: 500;
+  outline: none;
+}
+
+.admin-invite-form input:focus,
+.admin-invite-form select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(15, 112, 31, 0.12);
+}
+
+.admin-invite-form .btn-primary {
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.admin-invite-form .btn-primary:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.admin-invite-card__note {
+  margin-top: 0.65rem;
+}
+
+.admin-user-email {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.75rem;
+  color: #717a6d;
+}
+
+@media (max-width: 860px) {
+  .admin-invite-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-invite-form .btn-primary {
+    width: 100%;
+  }
+}
+
 .dashboard-page--compact .card {
   padding: 0.85rem 0.95rem;
 }

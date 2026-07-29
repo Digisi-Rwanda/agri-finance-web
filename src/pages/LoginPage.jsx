@@ -5,11 +5,6 @@ import AuthLayout from '../components/auth/AuthLayout'
 import PasswordField from '../components/auth/PasswordField'
 import { loginCopy } from '../constants/authCopy'
 import { clearSession, getAuthErrorMessage, loginUser } from '../services/auth'
-import {
-  formatRwandaPhoneDisplay,
-  isValidRwandaMobile,
-  normalizeRwandaPhone,
-} from '../utils/rwandaPhone'
 import { getHomePathForRole } from '../utils/roles'
 import '../styles/auth.css'
 
@@ -28,9 +23,8 @@ function LoginPage() {
   const location = useLocation()
   const prefill = location.state?.prefill
   const copy = loginCopy
-  const [portal, setPortal] = useState('farmer')
   const [form, setForm] = useState({
-    identifier: prefill?.email || '',
+    email: prefill?.email || '',
     password: '',
     remember: false,
   })
@@ -38,29 +32,19 @@ function LoginPage() {
 
   const onSubmit = async (event) => {
     event.preventDefault()
-    const rawIdentifier = form.identifier.trim()
-    const isEmail = rawIdentifier.includes('@')
-
-    if (portal === 'partner' && !isEmail) {
+    const email = form.email.trim().toLowerCase()
+    if (!email.includes('@')) {
       toast.warning(copy.partnerEmailRequired)
       return
     }
-    if (portal === 'farmer' && !isEmail && !isValidRwandaMobile(rawIdentifier)) {
-      toast.warning(copy.farmerIdentifierInvalid)
-      return
-    }
-
-    const identifier = isEmail
-      ? rawIdentifier.toLowerCase()
-      : normalizeRwandaPhone(rawIdentifier)
 
     setLoading(true)
     try {
-      const { user } = await loginUser({ identifier, password: form.password, remember: form.remember })
+      const { user } = await loginUser({ identifier: email, password: form.password, remember: form.remember })
       const isPartner = PARTNER_ROLES.has(user.role)
-      if ((portal === 'farmer' && user.role !== 'FARMER') || (portal === 'partner' && !isPartner)) {
+      if (!isPartner) {
         clearSession()
-        toast.error(portal === 'farmer' ? copy.usePartnerPortal : copy.useFarmerPortal)
+        toast.error(copy.partnerOnly)
         return
       }
 
@@ -78,63 +62,25 @@ function LoginPage() {
   return (
     <AuthLayout
       compact
-      title={portal === 'farmer' ? copy.farmerTitle : copy.partnerTitle}
-      subtitle={portal === 'farmer' ? copy.farmerSubtitle : copy.partnerSubtitle}
+      title={copy.partnerTitle}
+      subtitle={copy.partnerSubtitle}
       footer={
         <p className="auth-footer-text">
-          {portal === 'farmer' ? (
-            <>
-              {copy.footerPrompt}{' '}
-              <Link to="/register" className="auth-link">
-                {copy.footerAction}
-              </Link>
-            </>
-          ) : (
-            copy.partnerAccessHelp
-          )}
+          {copy.partnerAccessHelp}
         </p>
       }
     >
       <form onSubmit={onSubmit} className="auth-form">
-        <div className="auth-method-switch" role="tablist" aria-label={copy.portalLabel}>
-          {[
-            { id: 'farmer', label: copy.farmerTab },
-            { id: 'partner', label: copy.partnerTab },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={portal === item.id}
-              className={`auth-method-switch__btn${portal === item.id ? ' auth-method-switch__btn--active' : ''}`}
-              onClick={() => setPortal(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
         <label className="auth-field-group">
-          <span className="auth-label">
-            {portal === 'farmer' ? copy.farmerIdentifierLabel : copy.emailLabel}
-          </span>
+          <span className="auth-label">{copy.emailLabel}</span>
           <input
-            type={portal === 'partner' ? 'email' : 'text'}
+            type="email"
             required
-            autoComplete={portal === 'partner' ? 'email' : 'username'}
-            placeholder={
-              portal === 'farmer' ? copy.farmerIdentifierPlaceholder : copy.emailPlaceholder
-            }
+            autoComplete="email"
+            placeholder={copy.emailPlaceholder}
             className="auth-input"
-            value={form.identifier}
-            onChange={(event) => {
-              const value = event.target.value
-              const identifier =
-                portal === 'farmer' && value && /^[+\d\s()-]+$/.test(value)
-                  ? formatRwandaPhoneDisplay(value)
-                  : value
-              setForm((prev) => ({ ...prev, identifier }))
-            }}
+            value={form.email}
+            onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
           />
         </label>
 
