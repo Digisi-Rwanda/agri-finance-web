@@ -5,20 +5,34 @@ export const USER_KEY = 'agri_finance_user'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 const authClient = axios.create({ baseURL: API_BASE_URL })
 
-export const getToken = () => localStorage.getItem(TOKEN_KEY)
+const getStoredValue = (key) => sessionStorage.getItem(key) || localStorage.getItem(key)
 
-export const setToken = (token) => {
-  localStorage.setItem(TOKEN_KEY, token)
+export const getToken = () => getStoredValue(TOKEN_KEY)
+
+export const setToken = (token, remember = false) => {
+  const storage = remember ? localStorage : sessionStorage
+  const otherStorage = remember ? sessionStorage : localStorage
+  otherStorage.removeItem(TOKEN_KEY)
+  storage.setItem(TOKEN_KEY, token)
 }
 
 export const clearSession = () => {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(USER_KEY)
 }
 
 export const getCurrentUser = () => {
-  const raw = localStorage.getItem(USER_KEY)
-  return raw ? JSON.parse(raw) : null
+  const raw = getStoredValue(USER_KEY)
+  if (!raw) return null
+
+  try {
+    return JSON.parse(raw)
+  } catch {
+    clearSession()
+    return null
+  }
 }
 
 export const hasAnyRole = (allowedRoles = []) => {
@@ -26,23 +40,31 @@ export const hasAnyRole = (allowedRoles = []) => {
   return Boolean(role) && allowedRoles.includes(role)
 }
 
-const persistSession = (responseData) => {
+const persistSession = (responseData, remember = false) => {
   const token = responseData?.token
+  const role = responseData?.role
+  if (!token || !role || isTokenExpired(token)) {
+    throw new Error('The server returned an invalid session')
+  }
+
   const user = {
     username: responseData?.username,
-    role: responseData?.role,
+    role,
   }
-  setToken(token)
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
+  const storage = remember ? localStorage : sessionStorage
+  const otherStorage = remember ? sessionStorage : localStorage
+  setToken(token, remember)
+  otherStorage.removeItem(USER_KEY)
+  storage.setItem(USER_KEY, JSON.stringify(user))
   return { token, user }
 }
 
-export const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ identifier, password, remember = false }) => {
   const response = await authClient.post('/auth/login', {
-    username: email,
+    username: identifier?.trim(),
     password,
   })
-  return persistSession(response.data)
+  return persistSession(response.data, remember)
 }
 
 export const registerUser = async ({ email, password, role, fullName, phone, institution }) => {
@@ -137,14 +159,15 @@ export const isTokenExpired = (token) => {
     const payload = JSON.parse(atob(token.split('.')[1]))
     return !payload.exp || payload.exp * 1000 < Date.now()
   } catch {
-    return false
+    return true
   }
 }
 
 export const hydrateSessionUser = async () => {
   try {
     const profile = await getProfile()
-    localStorage.setItem(
+    const storage = sessionStorage.getItem(TOKEN_KEY) ? sessionStorage : localStorage
+    storage.setItem(
       USER_KEY,
       JSON.stringify({
         userId: profile?.userId,

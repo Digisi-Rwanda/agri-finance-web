@@ -19,12 +19,11 @@ function RegisterPage() {
   const [form, setForm] = useState({
     fullName: '',
     email: '',
-    institution: '',
     phone: '',
-    role: 'BANK',
     password: '',
     accepted: false,
   })
+  const [loading, setLoading] = useState(false)
 
   const onSubmit = async (event) => {
     event.preventDefault()
@@ -36,16 +35,16 @@ function RegisterPage() {
       toast.warning(copy.toastPasswordMin)
       return
     }
-    if (form.role === 'FARMER') {
-      if (!isValidRwandaMobile(form.phone)) {
-        toast.warning(copy.toastPhoneInvalid)
-        return
-      }
+    if (!isValidRwandaMobile(form.phone)) {
+      toast.warning(copy.toastPhoneInvalid)
+      return
     }
+    setLoading(true)
     try {
       const result = await registerUser({
         ...form,
-        phone: form.role === 'FARMER' ? normalizeRwandaPhone(form.phone) : undefined,
+        role: 'FARMER',
+        phone: normalizeRwandaPhone(form.phone),
       })
       if (result?.requiresEmailVerification) {
         toast.success(result.message || copy.toastVerifyEmail)
@@ -55,14 +54,14 @@ function RegisterPage() {
       toast.success(copy.toastSuccess)
       navigate('/login', {
         replace: true,
-        state: { prefill: { email: form.email, password: form.password } },
+        state: { prefill: { email: form.email } },
       })
     } catch (error) {
       toast.error(getAuthErrorMessage(error, copy.toastError))
+    } finally {
+      setLoading(false)
     }
   }
-
-  const isFarmer = form.role === 'FARMER'
 
   return (
     <AuthLayout
@@ -104,47 +103,19 @@ function RegisterPage() {
           />
         </label>
 
-        {isFarmer ? (
-          <label className="auth-field-group">
-            <span className="auth-label">{copy.phoneLabel}</span>
-            <input
-              type="tel"
-              required
-              autoComplete="tel"
-              placeholder={RWANDA_PHONE_PLACEHOLDER}
-              className="auth-input"
-              value={form.phone}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, phone: formatRwandaPhoneDisplay(event.target.value) }))
-              }
-            />
-          </label>
-        ) : (
-          <label className="auth-field-group">
-            <span className="auth-label">{copy.organizationLabel}</span>
-            <input
-              required
-              autoComplete="organization"
-              placeholder={copy.organizationPlaceholder}
-              className="auth-input"
-              value={form.institution}
-              onChange={(event) => setForm((prev) => ({ ...prev, institution: event.target.value }))}
-            />
-          </label>
-        )}
-
         <label className="auth-field-group">
-          <span className="auth-label">{copy.roleLabel}</span>
-          <select
-            className="auth-select"
-            value={form.role}
-            onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
-          >
-            <option value="BANK">{copy.roles.BANK}</option>
-            <option value="INSURER">{copy.roles.INSURER}</option>
-            <option value="COOPERATIVE">{copy.roles.COOPERATIVE || 'Cooperative'}</option>
-            <option value="FARMER">{copy.roles.FARMER}</option>
-          </select>
+          <span className="auth-label">{copy.phoneLabel}</span>
+          <input
+            type="tel"
+            required
+            autoComplete="tel"
+            placeholder={RWANDA_PHONE_PLACEHOLDER}
+            className="auth-input"
+            value={form.phone}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, phone: formatRwandaPhoneDisplay(event.target.value) }))
+            }
+          />
         </label>
 
         <PasswordField
@@ -167,8 +138,12 @@ function RegisterPage() {
           {copy.terms}
         </label>
 
-        <button type="submit" className="auth-btn-primary auth-field-group--full">
-          {copy.submit}
+        <button
+          type="submit"
+          className="auth-btn-primary auth-field-group--full"
+          disabled={loading}
+        >
+          {loading ? copy.submitting : copy.submit}
         </button>
       </form>
     </AuthLayout>

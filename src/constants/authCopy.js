@@ -14,8 +14,15 @@ export const authIllustration = {
 }
 
 export const loginCopy = {
-  title: 'Welcome back',
-  subtitle: 'Sign in to your dashboard.',
+  farmerTitle: 'Farmer sign in',
+  farmerSubtitle: 'Use your phone number or email to access your account.',
+  partnerTitle: 'Partner portal',
+  partnerSubtitle: 'Secure access for approved organizations and staff.',
+  portalLabel: 'Choose account portal',
+  farmerTab: 'Farmer',
+  partnerTab: 'Partner & staff',
+  farmerIdentifierLabel: 'Phone number or email',
+  farmerIdentifierPlaceholder: '+250 7XX XXX XXX or email',
   emailLabel: 'Email address',
   emailPlaceholder: 'you@company.com',
   passwordLabel: 'Password',
@@ -23,8 +30,14 @@ export const loginCopy = {
   rememberMe: 'Keep me signed in',
   forgotPassword: 'Forgot password?',
   submit: 'Sign in',
+  submitting: 'Signing in…',
   footerPrompt: "Don't have an account?",
-  footerAction: 'Create account',
+  footerAction: 'Create farmer account',
+  partnerAccessHelp: 'Partner accounts are created and assigned by an administrator.',
+  partnerEmailRequired: 'Enter your organization email address.',
+  farmerIdentifierInvalid: 'Enter a valid email or Rwanda mobile number.',
+  usePartnerPortal: 'This is a partner account. Use the Partner & staff portal.',
+  useFarmerPortal: 'This is a farmer account. Use the Farmer portal.',
   toastSuccess: 'Welcome back. You are now signed in.',
   toastError: 'Incorrect email or password. Please try again.',
   reset: {
@@ -42,8 +55,8 @@ export const loginCopy = {
 }
 
 export const registerCopy = {
-  title: 'Create an account',
-  subtitle: 'Set up your bank, insurer, cooperative, or farmer access.',
+  title: 'Create a farmer account',
+  subtitle: 'Partners and staff receive access from an administrator.',
   fullNameLabel: 'Full name',
   fullNamePlaceholder: 'e.g. Jean Baptiste',
   emailLabel: 'Email address',
@@ -65,6 +78,7 @@ export const registerCopy = {
   phoneLabel: 'Phone number',
   terms: 'I accept the Terms of Service and Privacy Policy.',
   submit: 'Create account',
+  submitting: 'Creating account…',
   footerPrompt: 'Already have an account?',
   footerAction: 'Sign in',
   toastTerms: 'Please accept the terms and privacy policy to continue.',
