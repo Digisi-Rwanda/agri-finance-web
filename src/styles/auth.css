@@ -81,6 +81,8 @@
   height: 100%;
   object-fit: cover;
   object-position: center 65%;
+  /* Matches the grading of the desktop panel so the brand reads the same. */
+  filter: saturate(0.85) contrast(1.05) hue-rotate(-8deg);
 }
 
 .auth-mobile-banner__content {
@@ -718,6 +720,8 @@
   position: relative;
   display: none;
   overflow: hidden;
+  /* Contains the blend modes below so they never composite against the page. */
+  isolation: isolate;
   background: var(--agri-brand-deep);
 }
 
@@ -728,21 +732,73 @@
   }
 }
 
-.auth-illustration__bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
+.auth-illustration__bg,
+.auth-illustration__grade,
+.auth-illustration__glow,
+.auth-illustration__grid,
+.auth-illustration__noise,
 .auth-illustration__overlay {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+
+.auth-illustration__bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 60%;
+  /* The source is low resolution for a panel this large; leaning into a shallow
+     depth-of-field look turns the softness into an intentional backdrop. */
+  filter: contrast(1.06) saturate(0.92) blur(1.5px);
+  transform: scale(1.04);
+}
+
+/* Recolours the photo into the brand green so it stops reading as stock imagery. */
+.auth-illustration__grade {
+  background: linear-gradient(155deg, #00340a 0%, #005c22 48%, #00875a 100%);
+  mix-blend-mode: color;
+  opacity: 0.82;
+}
+
+.auth-illustration__glow {
   background:
-    linear-gradient(90deg, rgba(0, 47, 9, 0.55) 0%, transparent 42%),
-    linear-gradient(0deg, rgba(0, 30, 7, 0.75) 0%, transparent 50%);
+    radial-gradient(34rem 34rem at 76% 16%, rgba(150, 255, 200, 0.28), transparent 62%),
+    radial-gradient(26rem 26rem at 14% 74%, rgba(0, 214, 160, 0.2), transparent 66%);
+  mix-blend-mode: screen;
+  animation: auth-aurora 22s ease-in-out infinite alternate;
+}
+
+@keyframes auth-aurora {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.08);
+  }
+}
+
+/* Fine measurement mesh — the "engineered" cue. */
+.auth-illustration__grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.075) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  -webkit-mask-image: radial-gradient(circle at 72% 22%, #000 0%, transparent 68%);
+  mask-image: radial-gradient(circle at 72% 22%, #000 0%, transparent 68%);
+}
+
+/* Grain masks the upscaling artefacts and adds a premium print texture. */
+.auth-illustration__noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+}
+
+.auth-illustration__overlay {
+  background:
+    linear-gradient(90deg, rgba(0, 34, 10, 0.62) 0%, transparent 46%),
+    linear-gradient(0deg, rgba(0, 22, 6, 0.82) 0%, transparent 55%);
 }
 
 .auth-illustration__content {
@@ -757,7 +813,14 @@
 }
 
 .auth-illustration__eyebrow {
-  margin: 0 0 0.65rem;
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0 0 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(184, 230, 196, 0.32);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -784,11 +847,23 @@
 
 .auth-illustration__stats {
   display: flex;
-  gap: 2rem;
-  margin: 1.75rem 0 0;
-  padding: 1.25rem 0 0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.85rem 0 0;
+  padding: 0;
   list-style: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Frosted chips read as product UI sitting on top of the scene. */
+.auth-illustration__stats li {
+  flex: 1 1 8rem;
+  max-width: 13rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .auth-illustration__stats strong {
@@ -796,17 +871,17 @@
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .auth-illustration__stats span {
   display: block;
-  margin-top: 0.2rem;
-  max-width: 16ch;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.74);
 }
 
 /* —— Modal —— */
@@ -959,5 +1034,9 @@
   .auth-spinner {
     animation: none;
     border-top-color: currentColor;
+  }
+
+  .auth-illustration__glow {
+    animation: none;
   }
 }

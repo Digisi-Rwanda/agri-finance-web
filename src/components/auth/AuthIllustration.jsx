@@ -14,6 +14,12 @@ export default function AuthIllustration() {
         fetchPriority="high"
         decoding="async"
       />
+      {/* Layered treatment: brand duotone, engineering mesh, aurora glow, then grain.
+          Together they read as a designed surface rather than a stock photo. */}
+      <div className="auth-illustration__grade" />
+      <div className="auth-illustration__glow" />
+      <div className="auth-illustration__grid" />
+      <div className="auth-illustration__noise" />
       <div className="auth-illustration__overlay" />
       <div className="auth-illustration__content">
         <p className="auth-illustration__eyebrow">{copy.eyebrow}</p>
