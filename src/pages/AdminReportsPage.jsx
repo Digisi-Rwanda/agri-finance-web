@@ -4,6 +4,9 @@ import { toast } from 'react-toastify'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
+import StatusBadge from '../components/ui/StatusBadge'
+import { getCurrentUser } from '../services/auth'
+import { formatRwf } from '../utils/currency'
 import {
   getAdminReportHarvest,
   getAdminReportInsurance,
@@ -14,13 +17,70 @@ import {
 } from '../services/adminReportsService'
 
 const TABS = [
-  { id: 'loans', label: 'Loans issued' },
-  { id: 'repayments', label: 'Repayments' },
-  { id: 'harvest', label: 'Harvest' },
-  { id: 'receipts', label: 'Warehouse receipts' },
-  { id: 'insurance', label: 'Insurance compliance' },
+  {
+    id: 'loans',
+    label: 'Loans issued',
+    columns: [
+      { key: 'loanId', label: 'Loan' },
+      { key: 'farmerId', label: 'Farmer' },
+      { key: 'bankId', label: 'Bank' },
+      { key: 'amount', label: 'Amount', money: true },
+      { key: 'status', label: 'Status', badge: true },
+      { key: 'disbursementDate', label: 'Disbursed' },
+    ],
+  },
+  {
+    id: 'repayments',
+    label: 'Repayments',
+    columns: [
+      { key: 'repaymentId', label: 'Repayment' },
+      { key: 'loanId', label: 'Loan' },
+      { key: 'amountPaid', label: 'Amount paid', money: true },
+      { key: 'paymentDate', label: 'Paid on' },
+    ],
+  },
+  {
+    id: 'harvest',
+    label: 'Harvest',
+    columns: [
+      { key: 'yieldId', label: 'Yield' },
+      { key: 'farmId', label: 'Farm' },
+      { key: 'season', label: 'Season' },
+      { key: 'year', label: 'Year' },
+      { key: 'quantity', label: 'Quantity' },
+      { key: 'verificationStatus', label: 'Verification', badge: true },
+    ],
+  },
+  {
+    id: 'receipts',
+    label: 'Warehouse receipts',
+    columns: [
+      { key: 'receiptId', label: 'Receipt' },
+      { key: 'farmerId', label: 'Farmer' },
+      { key: 'cooperativeName', label: 'Cooperative' },
+      { key: 'commodity', label: 'Commodity' },
+      { key: 'status', label: 'Status', badge: true },
+      { key: 'expiryDate', label: 'Expires' },
+    ],
+  },
+  {
+    id: 'insurance',
+    label: 'Insurance compliance',
+    columns: [
+      { key: 'policyId', label: 'Policy' },
+      { key: 'farmerId', label: 'Farmer' },
+      { key: 'policyType', label: 'Cover' },
+      { key: 'status', label: 'Status', badge: true },
+      { key: 'validTo', label: 'Valid to' },
+      { key: 'complianceStatus', label: 'Compliance', badge: true },
+    ],
+  },
 ]
 
+const ROW_KEYS = ['loanId', 'repaymentId', 'yieldId', 'receiptId', 'policyId']
+
+/* Reports load once on mount, then per tab — same pattern as other role homes. */
+/* eslint-disable react-hooks/set-state-in-effect -- initial report fetch on mount */
 function AdminReportsPage() {
   const [summary, setSummary] = useState(null)
   const [tab, setTab] = useState('loans')
@@ -54,42 +114,38 @@ function AdminReportsPage() {
   }
 
   useEffect(() => {
-    loadSummary()
-    loadTab('loans')
+    void loadSummary()
+    void loadTab('loans')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time load on mount
   }, [])
 
   const onTab = (id) => {
     setTab(id)
-    loadTab(id)
+    void loadTab(id)
   }
 
-  const columns =
-    tab === 'loans'
-      ? ['loanId', 'farmerId', 'bankId', 'amount', 'status', 'disbursementDate']
-      : tab === 'repayments'
-        ? ['repaymentId', 'loanId', 'amountPaid', 'paymentDate']
-        : tab === 'harvest'
-          ? ['yieldId', 'farmId', 'season', 'year', 'quantity', 'verificationStatus']
-          : tab === 'receipts'
-            ? ['receiptId', 'farmerId', 'cooperativeName', 'commodity', 'status', 'expiryDate']
-            : ['policyId', 'farmerId', 'policyType', 'status', 'validTo', 'complianceStatus']
+  const activeTab = TABS.find((t) => t.id === tab) || TABS[0]
+  const columns = activeTab.columns
+  const isAdmin = getCurrentUser()?.role === 'ADMIN'
 
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Admin reports"
+        title="Reports"
         subtitle="Loans issued, repayments, harvest verification, warehouse receipts, and insurance compliance."
         actions={
           <>
-            <Link to="/admin" className="btn-secondary">
-              Users
-            </Link>
+            {isAdmin ? (
+              <Link to="/admin" className="btn-secondary">
+                Users
+              </Link>
+            ) : null}
             <button
               type="button"
-              className="btn-primary"
+              className="btn-secondary"
               onClick={() => {
-                loadSummary()
-                loadTab(tab)
+                void loadSummary()
+                void loadTab(tab)
               }}
               disabled={loading}
             >
@@ -100,8 +156,16 @@ function AdminReportsPage() {
       />
 
       <div className="widgets four">
-        <StatCard title="Loans issued" value={String(summary?.loansIssued ?? 0)} meta={`Volume ${summary?.loanVolume ?? 0}`} />
-        <StatCard title="Repayments" value={String(summary?.repaymentCount ?? 0)} meta={`Volume ${summary?.repaymentVolume ?? 0}`} />
+        <StatCard
+          title="Loans issued"
+          value={String(summary?.loansIssued ?? 0)}
+          meta={formatRwf(summary?.loanVolume ?? 0)}
+        />
+        <StatCard
+          title="Repayments"
+          value={String(summary?.repaymentCount ?? 0)}
+          meta={formatRwf(summary?.repaymentVolume ?? 0)}
+        />
         <StatCard
           title="Harvest verified"
           value={String(summary?.harvestVerified ?? 0)}
@@ -114,11 +178,13 @@ function AdminReportsPage() {
         />
       </div>
 
-      <div className="dash-section" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+      <div className="report-tabs" role="tablist" aria-label="Report type">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
+            role="tab"
+            aria-selected={tab === t.id}
             className={tab === t.id ? 'btn-primary' : 'btn-secondary'}
             onClick={() => onTab(t.id)}
           >
@@ -127,39 +193,49 @@ function AdminReportsPage() {
         ))}
       </div>
 
-      <DataTableShell title={TABS.find((t) => t.id === tab)?.label || 'Report'} footer={<span>{rows.length} row(s)</span>}>
-        <div className="table-scroll">
-          <table className="data-table desktop-table dashboard-table">
-            <thead>
+      <DataTableShell
+        title={activeTab.label}
+        footer={<span>{rows.length} row(s)</span>}
+      >
+        <table className="data-table desktop-table dashboard-table">
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c.key}>{c.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
               <tr>
-                {columns.map((c) => (
-                  <th key={c}>{c}</th>
-                ))}
+                <td colSpan={columns.length}>Loading…</td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={columns.length}>Loading…</td>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="empty-cell">
+                  No records.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, idx) => (
+                <tr key={ROW_KEYS.map((k) => row[k]).find(Boolean) || idx}>
+                  {columns.map((c) => {
+                    const value = row[c.key]
+                    if (value == null || value === '') return <td key={c.key}>—</td>
+                    if (c.badge) {
+                      return (
+                        <td key={c.key}>
+                          <StatusBadge value={value} />
+                        </td>
+                      )
+                    }
+                    return <td key={c.key}>{c.money ? formatRwf(value) : String(value)}</td>
+                  })}
                 </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={columns.length} className="empty-cell">
-                    No records.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row, idx) => (
-                  <tr key={row.loanId || row.repaymentId || row.yieldId || row.receiptId || row.policyId || idx}>
-                    {columns.map((c) => (
-                      <td key={c}>{row[c] != null && row[c] !== '' ? String(row[c]) : '—'}</td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </DataTableShell>
     </section>
   )

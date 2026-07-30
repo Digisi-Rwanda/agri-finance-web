@@ -298,8 +298,8 @@ function InspectionQueuePage() {
         subtitle="Work the visit, save notes and evidence, then approve or reject."
         actions={
           <button type="button" className="btn-secondary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
-          </button>
+              {loading ? 'Refreshing…' : 'Refresh'}
+            </button>
         }
       />
 

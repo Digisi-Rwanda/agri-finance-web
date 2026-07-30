@@ -4652,7 +4652,8 @@ th {
   gap: 1.15rem;
 }
 
-.pw-filters {
+.pw-filters,
+.report-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;

@@ -32,7 +32,7 @@ import { getHomePathForRole } from '../utils/roles'
 const navItemsByRole = {
   BANK: [
     { to: '/', label: 'Home', icon: Home, end: true },
-    { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
+    { to: '/farmer', label: 'Farmers', icon: UserRound },
     { to: '/loans', label: 'Loans', icon: Landmark },
     { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
@@ -48,7 +48,7 @@ const navItemsByRole = {
   ],
   ADMIN: [
     { to: '/', label: 'Home', icon: Home, end: true },
-    { to: '/farmer', label: 'Farmers', icon: UserRound, end: true },
+    { to: '/farmer', label: 'Farmers', icon: UserRound },
     { to: '/loans', label: 'Loans', icon: Landmark },
     { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
@@ -76,9 +76,10 @@ const navItemsByRole = {
     { to: '/contracts', label: 'Receivables', icon: Briefcase },
   ],
   REGISTRATION_OFFICER: [
-    { to: '/admin/reports', label: 'Reports', icon: ScrollText, end: true },
+    { to: '/admin/reports', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound },
     { to: '/loans', label: 'Loans', icon: Landmark },
+    { to: '/contracts', label: 'Receivables', icon: Briefcase },
     { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
     { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
