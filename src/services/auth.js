@@ -129,6 +129,43 @@ export const getProfile = async () => {
   return response.data
 }
 
+/**
+ * Updates fields the signed-in account holder owns. Email, username and role
+ * are intentionally excluded; those remain administrator-controlled.
+ */
+export const updateProfile = async ({ fullName, phone }) => {
+  const token = getToken()
+  await authClient.patch(
+    '/auth/profile',
+    {
+      fullName: fullName?.trim(),
+      phone,
+    },
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+  )
+
+  // Some APIs return only the changed fields (or 204). Re-read the canonical
+  // profile so every consumer receives the complete, server-normalized object.
+  const profile = await getProfile()
+  const storage = sessionStorage.getItem(TOKEN_KEY) ? sessionStorage : localStorage
+  const current = getCurrentUser() || {}
+  storage.setItem(
+    USER_KEY,
+    JSON.stringify({
+      ...current,
+      fullName: profile?.fullName,
+      phone: profile?.phone,
+      email: profile?.email ?? current.email,
+      username: profile?.username ?? current.username,
+      role: profile?.role ?? current.role,
+    }),
+  )
+  window.dispatchEvent(new CustomEvent('agri:profile-updated', { detail: profile }))
+  return profile
+}
+
 export const resolvePrimaryFarmerId = async () => {
   const cached = getCurrentUser()?.farmerId
   if (cached) return cached
@@ -179,7 +216,9 @@ export const hydrateSessionUser = async () => {
         farmerId: profile?.farmerId,
       }),
     )
+    return profile
   } catch {
     // ignore, session may still be valid with token only
+    return null
   }
 }

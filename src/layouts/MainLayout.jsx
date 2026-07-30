@@ -199,6 +199,7 @@ function MainLayout() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [routePath, setRoutePath] = useState(location.pathname)
+  const [profileIncomplete, setProfileIncomplete] = useState(false)
 
   if (location.pathname !== routePath) {
     setRoutePath(location.pathname)
@@ -242,7 +243,16 @@ function MainLayout() {
   }
 
   useEffect(() => {
-    hydrateSessionUser().catch(() => {})
+    const applyProfile = (profile) => {
+      if (!profile) return
+      setProfileIncomplete(!profile.fullName?.trim() || !profile.phone)
+    }
+
+    hydrateSessionUser().then(applyProfile).catch(() => {})
+
+    const onProfileUpdated = (event) => applyProfile(event.detail)
+    window.addEventListener('agri:profile-updated', onProfileUpdated)
+    return () => window.removeEventListener('agri:profile-updated', onProfileUpdated)
   }, [])
 
   useEffect(() => {
@@ -437,6 +447,20 @@ function MainLayout() {
           </header>
 
           <main className="main-content">
+            {profileIncomplete && location.pathname !== '/profile' ? (
+              <aside className="profile-nudge" aria-labelledby="profile-nudge-title">
+                <span className="profile-nudge__icon" aria-hidden>
+                  <UserRound size={17} />
+                </span>
+                <div>
+                  <strong id="profile-nudge-title">Complete your profile</strong>
+                  <p>Add your full name and phone number to help your organization identify you.</p>
+                </div>
+                <Link to="/profile" className="btn-primary">
+                  Complete profile
+                </Link>
+              </aside>
+            ) : null}
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

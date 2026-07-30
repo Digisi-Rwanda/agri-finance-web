@@ -1,24 +1,38 @@
-import { LockKeyhole, Mail, MapPin, Phone, Settings, UserRound } from 'lucide-react'
+import {
+  CheckCircle2,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Save,
+  Settings,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getProfile } from '../services/auth'
+import { getAuthErrorMessage, getProfile, updateProfile } from '../services/auth'
 import { getUserInitials, ROLE_LABELS } from '../utils/roles'
-import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
+import {
+  formatRwandaPhoneDisplay,
+  isValidRwandaMobile,
+  normalizeRwandaPhone,
+  RWANDA_PHONE_PLACEHOLDER,
+} from '../utils/rwandaPhone'
 
-function formatDisplayName(name) {
-  return String(name || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(' ')
-}
+const EMPTY_FORM = { fullName: '', phone: '' }
 
 function ProfilePage() {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [formErrors, setFormErrors] = useState({})
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +48,60 @@ function ProfilePage() {
     }
     load()
   }, [])
+
+  const beginEdit = () => {
+    setForm({
+      fullName: profile?.fullName || '',
+      phone: profile?.phone ? formatRwandaPhoneDisplay(profile.phone) : '',
+    })
+    setFormErrors({})
+    setEditing(true)
+  }
+
+  const cancelEdit = () => {
+    setEditing(false)
+    setFormErrors({})
+  }
+
+  const updateField = (field) => (event) => {
+    setForm((current) => ({ ...current, [field]: event.target.value }))
+    setFormErrors((current) =>
+      current[field] ? { ...current, [field]: undefined } : current,
+    )
+  }
+
+  const saveProfile = async (event) => {
+    event.preventDefault()
+
+    const nextErrors = {}
+    const fullName = form.fullName.trim().replace(/\s+/g, ' ')
+    if (fullName.length < 2) nextErrors.fullName = 'Enter your full name.'
+    else if (fullName.length > 100) nextErrors.fullName = 'Use 100 characters or fewer.'
+    if (!form.phone.trim()) nextErrors.phone = 'Enter your Rwanda mobile number.'
+    else if (!isValidRwandaMobile(form.phone)) {
+      nextErrors.phone = 'Enter a valid Rwanda mobile number (+250 7XX XXX XXX).'
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors)
+      return
+    }
+
+    setSaving(true)
+    try {
+      const updated = await updateProfile({
+        fullName,
+        phone: normalizeRwandaPhone(form.phone),
+      })
+      setProfile(updated)
+      setEditing(false)
+      toast.success('Your profile has been updated.')
+    } catch (requestError) {
+      toast.error(getAuthErrorMessage(requestError, 'Could not update your profile.'))
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -57,9 +125,10 @@ function ProfilePage() {
     )
   }
 
-  const displayName = formatDisplayName(profile.fullName || profile.username || 'User')
+  const displayName = profile.fullName?.trim() || 'Complete your profile'
   const initials = getUserInitials(profile)
   const roleLabel = ROLE_LABELS[profile.role] || profile.role
+  const profileComplete = Boolean(profile.fullName?.trim() && profile.phone)
 
   const details = [
     { label: 'Full name', value: profile.fullName || '—' },
@@ -143,19 +212,117 @@ function ProfilePage() {
         </div>
       </article>
 
+      {!profileComplete ? (
+        <aside className="account-completion" aria-labelledby="profile-completion-title">
+          <span className="account-completion__icon" aria-hidden>
+            <UserRound size={18} />
+          </span>
+          <div>
+            <strong id="profile-completion-title">Complete your profile</strong>
+            <p>Add your full name and phone number so colleagues can identify and contact you.</p>
+          </div>
+          {!editing ? (
+            <button type="button" className="btn-primary" onClick={beginEdit}>
+              Complete now
+            </button>
+          ) : null}
+        </aside>
+      ) : null}
+
       <article className="card account-panel">
         <div className="account-panel__head">
           <UserRound size={18} />
-          <h3>Details</h3>
+          <div>
+            <h3>Personal details</h3>
+            <p>Your name and phone are visible only to authorized portal users.</p>
+          </div>
+          {!editing ? (
+            <button type="button" className="btn-secondary account-panel__edit" onClick={beginEdit}>
+              <Pencil size={14} />
+              Edit
+            </button>
+          ) : null}
         </div>
-        <dl className="account-details account-details--rows">
-          {details.map((row) => (
-            <div key={row.label}>
-              <dt>{row.label}</dt>
-              <dd>{row.value}</dd>
+        {editing ? (
+          <form className="account-edit-form" onSubmit={saveProfile} noValidate>
+            <label className="account-edit-field">
+              <span>Full name</span>
+              <input
+                type="text"
+                autoComplete="name"
+                autoFocus
+                maxLength={100}
+                placeholder="e.g. Celine Umukamisha"
+                value={form.fullName}
+                onChange={updateField('fullName')}
+                aria-invalid={formErrors.fullName ? true : undefined}
+                aria-describedby={formErrors.fullName ? 'profile-full-name-error' : undefined}
+              />
+              {formErrors.fullName ? (
+                <em id="profile-full-name-error">{formErrors.fullName}</em>
+              ) : null}
+            </label>
+
+            <label className="account-edit-field">
+              <span>Phone number</span>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder={RWANDA_PHONE_PLACEHOLDER}
+                value={form.phone}
+                onChange={updateField('phone')}
+                onBlur={() =>
+                  setForm((current) => ({
+                    ...current,
+                    phone: current.phone.trim()
+                      ? formatRwandaPhoneDisplay(current.phone)
+                      : '',
+                  }))
+                }
+                aria-invalid={formErrors.phone ? true : undefined}
+                aria-describedby={formErrors.phone ? 'profile-phone-error' : undefined}
+              />
+              {formErrors.phone ? <em id="profile-phone-error">{formErrors.phone}</em> : null}
+            </label>
+
+            <div className="account-edit-readonly">
+              <Mail size={15} aria-hidden />
+              <span>
+                Email and role are managed by your organization administrator.
+                <strong>{profile.email}</strong>
+              </span>
             </div>
-          ))}
-        </dl>
+
+            <div className="account-edit-actions">
+              <button type="submit" className="btn-primary" disabled={saving}>
+                <Save size={15} />
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+              <button type="button" className="btn-secondary" onClick={cancelEdit} disabled={saving}>
+                <X size={15} />
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            {profileComplete ? (
+              <p className="account-profile-status">
+                <CheckCircle2 size={15} aria-hidden />
+                Profile complete
+              </p>
+            ) : null}
+            <dl className="account-details account-details--rows">
+              {details.map((row) => (
+                <div key={row.label}>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
       </article>
 
       <article className="card account-panel">

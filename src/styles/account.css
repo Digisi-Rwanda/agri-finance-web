@@ -283,10 +283,168 @@
   color: #191c1a;
 }
 
+.account-panel__head {
+  align-items: flex-start;
+}
+
+.account-panel__head > div {
+  min-width: 0;
+}
+
+.account-panel__head p {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #717a6d;
+}
+
+.account-panel__edit {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .settings-panel__head p {
   margin: 0.2rem 0 0;
   font-size: 0.84rem;
   color: #717a6d;
+}
+
+/* —— Profile completion + self-service edit —— */
+
+.account-completion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #c8dfc7;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #edf8ef 0%, #f9fcf8 100%);
+}
+
+.account-completion__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: #dff1e2;
+  color: #00450d;
+}
+
+.account-completion strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #191c1a;
+}
+
+.account-completion p {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #5f6962;
+}
+
+.account-edit-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.account-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.account-edit-field > span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2c342a;
+}
+
+.account-edit-field input {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0 0.75rem;
+  border: 1px solid #bfcabb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #191c1a;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.account-edit-field input:focus {
+  border-color: #00450d;
+  box-shadow: 0 0 0 3px rgba(0, 69, 13, 0.12);
+}
+
+.account-edit-field input[aria-invalid='true'] {
+  border-color: #ba1a1a;
+  background: #fdeceb;
+}
+
+.account-edit-field input[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.14);
+}
+
+.account-edit-field em {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.35;
+  color: #ba1a1a;
+}
+
+.account-edit-readonly {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #f5f7f3;
+  color: #5f6962;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.account-edit-readonly svg {
+  flex-shrink: 0;
+  margin-top: 0.08rem;
+}
+
+.account-edit-readonly strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: #2c342a;
+  word-break: break-word;
+}
+
+.account-edit-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.account-profile-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  margin: -0.25rem 0 0.65rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #eaf6ee;
+  color: #1c6b32;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .account-details {
@@ -545,12 +703,45 @@
 
 .dark .account-id-card__meta,
 .dark .account-toolbar__crumb,
+.dark .account-panel__head p,
 .dark .settings-panel__head p,
 .dark .settings-row__text p,
 .dark .account-details dt,
 .dark .settings-account-summary small,
 .dark .account-id-card__status small {
   color: #94a3b8;
+}
+
+.dark .account-completion {
+  border-color: #244c31;
+  background: linear-gradient(135deg, #10291a 0%, #111b2e 100%);
+}
+
+.dark .account-completion__icon,
+.dark .account-profile-status {
+  background: rgba(134, 239, 172, 0.12);
+  color: #86efac;
+}
+
+.dark .account-completion strong,
+.dark .account-edit-field > span,
+.dark .account-edit-readonly strong {
+  color: #dbe6f5;
+}
+
+.dark .account-completion p,
+.dark .account-edit-readonly {
+  color: #94a3b8;
+}
+
+.dark .account-edit-field input {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.dark .account-edit-readonly {
+  background: #0f172a;
 }
 
 @media (max-width: 900px) {
@@ -575,5 +766,18 @@
   .account-details--rows > div {
     grid-template-columns: 1fr;
     gap: 0.2rem;
+  }
+
+  .account-completion {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .account-completion .btn-primary {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .account-edit-form {
+    grid-template-columns: 1fr;
   }
 }

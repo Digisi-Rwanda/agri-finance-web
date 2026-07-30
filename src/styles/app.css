@@ -466,6 +466,70 @@ a {
   overflow-x: auto;
 }
 
+.profile-nudge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: 1180px;
+  margin: 0 auto 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #c8dfc7;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #edf8ef 0%, #ffffff 100%);
+  box-shadow: 0 4px 14px rgba(0, 69, 13, 0.05);
+}
+
+.profile-nudge__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #dff1e2;
+  color: #00450d;
+}
+
+.profile-nudge strong {
+  display: block;
+  font-size: 0.82rem;
+  color: #191c1a;
+}
+
+.profile-nudge p {
+  margin: 0.1rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #5f6962;
+}
+
+.profile-nudge .btn-primary {
+  min-height: 2.2rem;
+  padding: 0 0.75rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.neon-dashboard .profile-nudge {
+  border-color: #244c31;
+  background: linear-gradient(135deg, #10291a 0%, #111b2e 100%);
+  box-shadow: none;
+}
+
+.neon-dashboard .profile-nudge__icon {
+  background: rgba(134, 239, 172, 0.12);
+  color: #86efac;
+}
+
+.neon-dashboard .profile-nudge strong {
+  color: #dbe6f5;
+}
+
+.neon-dashboard .profile-nudge p {
+  color: #94a3b8;
+}
+
 .topbar-search {
   flex: 1;
 }
@@ -4018,6 +4082,15 @@ th {
   .main-content {
     padding: 0.9rem 0.8rem 1.1rem;
     overflow-x: hidden;
+  }
+
+  .profile-nudge {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .profile-nudge .btn-primary {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .card {
