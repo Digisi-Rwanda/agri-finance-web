@@ -16,7 +16,8 @@
   --agri-border-hairline: #e8eee9;
   --agri-text-primary: #121712;
   --agri-text-secondary: #3d4740;
-  --agri-text-muted: #6b756e;
+  /* Darkened from #6b756e to clear 4.5:1 against --agri-surface-muted. */
+  --agri-text-muted: #5f6962;
   --agri-text-on-brand: #ffffff;
   --agri-error: #ba1a1a;
   --agri-radius-md: 14px;

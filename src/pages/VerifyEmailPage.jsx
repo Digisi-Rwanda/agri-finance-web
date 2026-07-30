@@ -1,13 +1,15 @@
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import AuthLayout from '../components/auth/AuthLayout'
-import { verifyEmailCopy } from '../constants/authCopy'
+import { useAuthCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage, verifyEmailWithToken } from '../services/auth'
+import '../styles/auth.css'
 
 function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')?.trim() || ''
-  const copy = verifyEmailCopy
+  const copy = useAuthCopy().verifyEmail
   const [status, setStatus] = useState(token ? 'loading' : 'missing')
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -31,70 +33,49 @@ function VerifyEmailPage() {
     }
   }, [token, copy.failed])
 
+  const backToSignIn = (
+    <p className="auth-footer-text">
+      <Link to="/login" className="auth-link">
+        {copy.backToSignIn}
+      </Link>
+    </p>
+  )
+
   if (status === 'loading') {
     return (
       <AuthLayout compact title={copy.title} subtitle={copy.verifying}>
-        <p className="auth-card__subtitle">{copy.verifying}</p>
+        <p className="auth-form-notice auth-form-notice--busy" role="status">
+          <span className="auth-spinner auth-spinner--brand" aria-hidden />
+          {copy.verifying}
+        </p>
       </AuthLayout>
     )
   }
 
-  if (status === 'missing') {
-    return (
-      <AuthLayout
-        compact
-        title={copy.title}
-        subtitle={copy.missingLink}
-        footer={
-          <p className="auth-footer-text">
-            <Link to="/login" className="auth-link">
-              {copy.backToSignIn}
-            </Link>
-          </p>
-        }
-      >
-        <Link to="/login" className="auth-btn-primary auth-btn-primary--link">
-          {copy.backToSignIn}
-        </Link>
-      </AuthLayout>
-    )
-  }
-
-  if (status === 'success') {
-    return (
-      <AuthLayout
-        compact
-        title={copy.title}
-        subtitle={copy.success}
-        footer={
-          <p className="auth-footer-text">
-            <Link to="/login" className="auth-link">
-              {copy.backToSignIn}
-            </Link>
-          </p>
-        }
-      >
-        <Link to="/login" className="auth-btn-primary auth-btn-primary--link">
-          {copy.backToSignIn}
-        </Link>
-      </AuthLayout>
-    )
-  }
+  const failureMessage = status === 'missing' ? copy.missingLink : errorMessage || copy.failed
 
   return (
     <AuthLayout
       compact
       title={copy.title}
-      subtitle={errorMessage || copy.failed}
-      footer={
-        <p className="auth-footer-text">
-          <Link to="/login" className="auth-link">
-            {copy.backToSignIn}
-          </Link>
-        </p>
-      }
+      subtitle={status === 'success' ? copy.success : failureMessage}
+      footer={backToSignIn}
     >
-      <p className="auth-card__subtitle">{errorMessage || copy.failed}</p>
+      <p
+        className={`auth-result ${status === 'success' ? 'auth-result--success' : 'auth-result--error'}`}
+        role="status"
+      >
+        {status === 'success' ? (
+          <CheckCircle2 size={16} strokeWidth={2.25} aria-hidden />
+        ) : (
+          <XCircle size={16} strokeWidth={2.25} aria-hidden />
+        )}
+        <span>{status === 'success' ? copy.success : failureMessage}</span>
+      </p>
+
+      <Link to="/login" className="auth-btn-primary auth-btn-primary--link">
+        {copy.backToSignIn}
+      </Link>
     </AuthLayout>
   )
 }

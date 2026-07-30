@@ -1,32 +1,38 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import AuthField from '../components/auth/AuthField'
 import AuthLayout from '../components/auth/AuthLayout'
-import { forgotPasswordCopy } from '../constants/authCopy'
+import AuthSubmitButton from '../components/auth/AuthSubmitButton'
+import { useAuthCopy } from '../context/AuthLocaleContext'
 import { forgotPasswordByEmail, getAuthErrorMessage } from '../services/auth'
 import '../styles/auth.css'
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 function PartnerForgotPasswordPage() {
-  const copy = forgotPasswordCopy
+  const copy = useAuthCopy().forgotPassword
   const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
 
   const onSubmit = async (event) => {
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
-    if (!normalizedEmail.includes('@')) {
-      toast.warning(copy.invalidEmail)
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      setError(copy.invalidEmail)
       return
     }
+    setError('')
 
     setLoading(true)
     try {
       await forgotPasswordByEmail(normalizedEmail)
       setSent(true)
       toast.success(copy.emailSent)
-    } catch (error) {
-      toast.error(getAuthErrorMessage(error, copy.resetFailed))
+    } catch (requestError) {
+      toast.error(getAuthErrorMessage(requestError, copy.resetFailed))
     } finally {
       setLoading(false)
     }
@@ -36,11 +42,7 @@ function PartnerForgotPasswordPage() {
     <AuthLayout
       compact
       title={copy.title}
-      subtitle={
-        sent
-          ? 'If the account exists, a secure reset link has been sent.'
-          : 'Enter your partner account email to receive a secure reset link.'
-      }
+      subtitle={sent ? copy.partnerSentSubtitle : copy.partnerSubtitle}
       footer={
         <p className="auth-footer-text">
           <Link to="/login" className="auth-link">
@@ -49,23 +51,25 @@ function PartnerForgotPasswordPage() {
         </p>
       }
     >
-      <form className="auth-form" onSubmit={onSubmit}>
-        <label className="auth-field-group">
-          <span className="auth-label">{copy.emailLabel}</span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            placeholder={copy.emailPlaceholder}
-            className="auth-input"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
+      <form className="auth-form" onSubmit={onSubmit} noValidate>
+        <AuthField
+          label={copy.emailLabel}
+          type="email"
+          autoComplete="email"
+          autoFocus
+          inputMode="email"
+          placeholder={copy.emailPlaceholder}
+          value={email}
+          onChange={(event) => {
+            setEmail(event.target.value)
+            if (error) setError('')
+          }}
+          error={error}
+        />
 
-        <button type="submit" className="auth-btn-primary" disabled={loading}>
-          {loading ? 'Sending…' : sent ? 'Send another link' : copy.sendLink}
-        </button>
+        <AuthSubmitButton loading={loading} loadingLabel={copy.sending}>
+          {sent ? copy.sendAnotherLink : copy.sendLink}
+        </AuthSubmitButton>
       </form>
     </AuthLayout>
   )

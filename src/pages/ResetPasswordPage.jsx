@@ -2,42 +2,55 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import AuthLayout from '../components/auth/AuthLayout'
+import AuthSubmitButton from '../components/auth/AuthSubmitButton'
 import PasswordField from '../components/auth/PasswordField'
-import { resetPasswordCopy } from '../constants/authCopy'
+import { useAuthCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage, resetPasswordWithToken, validateResetToken } from '../services/auth'
 import '../styles/auth.css'
+
+const MIN_PASSWORD_LENGTH = 8
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')?.trim() || ''
-  const copy = resetPasswordCopy
+  const fullCopy = useAuthCopy()
+  const copy = fullCopy.resetPassword
 
-  const [valid, setValid] = useState(null)
+  const [valid, setValid] = useState(() => (token ? null : false))
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!token) {
-      setValid(false)
-      return
-    }
+    if (!token) return undefined
+
+    let cancelled = false
     validateResetToken(token)
-      .then((response) => setValid(Boolean(response?.valid)))
-      .catch(() => setValid(false))
+      .then((response) => {
+        if (!cancelled) setValid(Boolean(response?.valid))
+      })
+      .catch(() => {
+        if (!cancelled) setValid(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   const onSubmit = async (event) => {
     event.preventDefault()
-    if (newPassword.length < 8) {
-      toast.warning(copy.passwordMin)
+
+    const nextErrors = {}
+    if (newPassword.length < MIN_PASSWORD_LENGTH) nextErrors.newPassword = copy.passwordMin
+    if (newPassword !== confirmPassword) nextErrors.confirmPassword = copy.passwordMismatch
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
       return
     }
-    if (newPassword !== confirmPassword) {
-      toast.warning(copy.passwordMismatch)
-      return
-    }
+    setErrors({})
 
     setLoading(true)
     try {
@@ -54,7 +67,10 @@ function ResetPasswordPage() {
   if (valid === null) {
     return (
       <AuthLayout compact title={copy.title} subtitle={copy.validating}>
-        <p className="auth-card__subtitle">{copy.validating}</p>
+        <p className="auth-form-notice auth-form-notice--busy" role="status">
+          <span className="auth-spinner auth-spinner--brand" aria-hidden />
+          {copy.validating}
+        </p>
       </AuthLayout>
     )
   }
@@ -79,28 +95,36 @@ function ResetPasswordPage() {
       }
     >
       {valid ? (
-        <form onSubmit={onSubmit} className="auth-form">
+        <form onSubmit={onSubmit} className="auth-form" noValidate>
           <PasswordField
             label={copy.newPasswordLabel}
-            required
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder={copy.newPasswordPlaceholder}
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
+            onChange={(event) => {
+              setNewPassword(event.target.value)
+              setErrors({})
+            }}
+            error={errors.newPassword}
+            capsLockWarning={fullCopy.login.capsLockOn}
           />
 
           <PasswordField
             label={copy.confirmPasswordLabel}
-            required
             autoComplete="new-password"
-            placeholder="Re-enter password"
+            placeholder={copy.confirmPasswordPlaceholder}
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value)
+              setErrors({})
+            }}
+            error={errors.confirmPassword}
+            capsLockWarning={fullCopy.login.capsLockOn}
           />
 
-          <button type="submit" className="auth-btn-primary" disabled={loading}>
-            {loading ? 'Updating…' : copy.updatePassword}
-          </button>
+          <AuthSubmitButton loading={loading} loadingLabel={copy.updating}>
+            {copy.updatePassword}
+          </AuthSubmitButton>
         </form>
       ) : (
         <Link to="/forgot-password" className="auth-btn-primary auth-btn-primary--link">

@@ -7,14 +7,35 @@ export const authIllustration = {
   eyebrow: 'Rwanda · Agricultural finance',
   headline: 'Smarter lending for farmers and partners',
   body: 'Manage loans, review farmer profiles, and track mobile money — securely, in one place.',
+  // Swap these for business-approved metrics (disbursed value, farmers onboarded,
+  // partner banks live). Keep `value` under ~7 characters so both columns stay balanced.
   stats: [
-    { value: '8 roles', label: 'Bank · Insurer · Coop · Farmer · Admin · Ops' },
-    { value: '24/7', label: 'Secure cloud access' },
+    { value: '7', label: 'Partner roles supported' },
+    { value: '256-bit', label: 'Encrypted in transit' },
+  ],
+}
+
+export const authSecurity = {
+  note: 'Encrypted session. Sign-in activity is logged and monitored.',
+  supportPrompt: 'Need help signing in?',
+  supportAction: 'Contact support',
+  terms: 'Terms',
+  privacy: 'Privacy',
+  versionLabel: (version) => `v${version}`,
+}
+
+export const authLanguage = {
+  label: 'Language',
+  options: [
+    { code: 'en', label: 'English', short: 'EN' },
+    { code: 'rw', label: 'Kinyarwanda', short: 'RW' },
+    { code: 'fr', label: 'Français', short: 'FR' },
   ],
 }
 
 export const loginCopy = {
-  partnerTitle: 'Partner portal',
+  partnerEyebrow: 'Partner portal',
+  partnerTitle: 'Welcome back',
   partnerSubtitle: 'Secure access for approved organizations and authorized staff.',
   emailLabel: 'Email address',
   emailPlaceholder: 'you@company.com',
@@ -29,6 +50,14 @@ export const loginCopy = {
   partnerOnly: 'Farmer accounts use the Agri Trust mobile app.',
   toastSuccess: 'Welcome back. You are now signed in.',
   toastError: 'Incorrect email or password. Please try again.',
+  emailRequired: 'Enter your email address.',
+  emailInvalid: 'Enter a valid email address, for example you@company.com.',
+  passwordRequired: 'Enter your password.',
+  capsLockOn: 'Caps Lock is on.',
+  repeatedFailures:
+    'Still not working? After a few more attempts your account is locked for 15 minutes — reset your password instead.',
+  farmerPrompt: 'Are you a farmer?',
+  farmerAction: 'Use the Agri Trust mobile app',
   reset: {
     title: 'Reset your password',
     description: 'Enter your email and we will send you a link to choose a new password.',
@@ -81,6 +110,8 @@ export const registerCopy = {
 export const forgotPasswordCopy = {
   title: 'Reset password',
   subtitle: 'Choose email or phone. Email sends a secure link; phone sends a 6-digit code via SMS.',
+  partnerSubtitle: 'Enter your partner account email to receive a secure reset link.',
+  partnerSentSubtitle: 'If the account exists, a secure reset link has been sent.',
   emailTab: 'Email',
   phoneTab: 'Phone',
   emailLabel: 'Email address',
@@ -88,7 +119,10 @@ export const forgotPasswordCopy = {
   phoneLabel: 'Phone number',
   phonePlaceholder: '+250 7XX XXX XXX',
   sendLink: 'Send reset link',
+  sendAnotherLink: 'Send another link',
   sendCode: 'Send reset code',
+  sending: 'Sending…',
+  updating: 'Updating…',
   resendIn: (seconds) => `Resend in ${seconds}s`,
   codeLabel: '6-digit code',
   codePlaceholder: 'Enter SMS code',
@@ -125,12 +159,28 @@ export const resetPasswordCopy = {
   invalidLink: 'This reset link is invalid or has expired.',
   requestNew: 'Request a new reset',
   newPasswordLabel: 'New password',
+  newPasswordPlaceholder: 'At least 8 characters',
   confirmPasswordLabel: 'Confirm password',
+  confirmPasswordPlaceholder: 'Re-enter password',
   updatePassword: 'Update password',
+  updating: 'Updating…',
   validating: 'Checking your reset link…',
   passwordMin: 'Password must be at least 8 characters.',
   passwordMismatch: 'Passwords do not match.',
   passwordUpdated: 'Your password was updated. You can sign in now.',
   resetFailed: 'Could not reset password. Please try again.',
   backToSignIn: 'Back to sign in',
+}
+
+/** English is the source of truth; other locales fall back to it key by key. */
+export const authCopyEn = {
+  brand: authBrand,
+  illustration: authIllustration,
+  security: authSecurity,
+  language: authLanguage,
+  login: loginCopy,
+  register: registerCopy,
+  forgotPassword: forgotPasswordCopy,
+  verifyEmail: verifyEmailCopy,
+  resetPassword: resetPasswordCopy,
 }
