@@ -310,6 +310,15 @@
   grid-column: 1 / -1;
 }
 
+/* Keeps a field and its helper block (e.g. strength meter) visually joined,
+   rather than spaced apart by the form's own gap. */
+.auth-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 /* —— Fields —— */
 
 .auth-field-group {

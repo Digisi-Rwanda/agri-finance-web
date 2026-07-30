@@ -84,8 +84,17 @@ export const passwordPolicyCopy = {
     symbol: 'At least one symbol, such as ! ? # or @',
     notCommon: 'No common words, repeats or your own name',
   },
+  /** Chip labels — the full `rules` text stays as each chip's tooltip. */
+  rulesShort: {
+    length: '8+ characters',
+    case: 'Upper + lower',
+    number: 'Number',
+    symbol: 'Symbol',
+    notCommon: 'Not predictable',
+  },
+  allMet: 'Strong enough — all requirements met.',
   tooWeak: 'Your password does not meet all the requirements yet.',
-  tipsTitle: 'Also keep your account safer:',
+  tipsTitle: 'Security tips',
   tips: [
     'Never reuse passwords across different websites.',
     'Use a password manager to generate and store unique passwords for every account.',

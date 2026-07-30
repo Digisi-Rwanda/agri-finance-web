@@ -1,11 +1,13 @@
-import { Check, Circle, Shield } from 'lucide-react'
+import { Check, ChevronDown, Shield } from 'lucide-react'
 import { evaluatePassword } from '../../utils/passwordPolicy'
 import '../../styles/password-strength.css'
 
 const SEGMENTS = [1, 2, 3, 4]
 
 /**
- * Live strength band plus the full requirements checklist.
+ * Live strength band plus the requirements, kept deliberately short: the rules
+ * render as wrapping chips and collapse to one line once they all pass, so the
+ * form does not grow tall enough to push the submit button off screen.
  *
  * @param blocklist personal values (email, name) the password must not contain
  * @param copy      the `passwordPolicy` copy tree for the active locale
@@ -18,7 +20,7 @@ export default function PasswordStrength({
   id,
   showTips = true,
 }) {
-  const { rules, met, total, score } = evaluatePassword(password, { blocklist })
+  const { rules, met, total, score, valid } = evaluatePassword(password, { blocklist })
   const hasInput = password.length > 0
   const tips = Array.isArray(copy.tips) ? copy.tips : []
 
@@ -33,47 +35,52 @@ export default function PasswordStrength({
         ))}
       </div>
 
-      {hasInput ? (
-        <p className="pw-strength__head" role="status">
-          <span className="pw-strength__label">
-            {copy.strengthLabel}: {copy.levels[score]}
-          </span>
-          <span className="pw-strength__count">{copy.progress(met, total)}</span>
+      <p className="pw-strength__head" role="status">
+        {hasInput ? (
+          <>
+            <span className="pw-strength__label">
+              {copy.strengthLabel}: {copy.levels[score]}
+            </span>
+            <span className="pw-strength__count">{copy.progress(met, total)}</span>
+          </>
+        ) : (
+          <span className="pw-strength__count">{copy.requirementsTitle}</span>
+        )}
+      </p>
+
+      {valid ? (
+        <p className="pw-strength__done">
+          <Check size={13} strokeWidth={3} aria-hidden />
+          <span>{copy.allMet}</span>
         </p>
       ) : (
-        <p className="pw-strength__head">
-          <span className="pw-strength__count">{copy.requirementsTitle}</span>
-        </p>
+        <ul className="pw-strength__chips">
+          {rules.map((rule) => (
+            <li
+              key={rule.id}
+              className={`pw-strength__chip${rule.met ? ' pw-strength__chip--met' : ''}`}
+              title={copy.rules[rule.id]}
+            >
+              {rule.met ? <Check size={11} strokeWidth={3} aria-hidden /> : null}
+              <span>{copy.rulesShort?.[rule.id] || copy.rules[rule.id]}</span>
+            </li>
+          ))}
+        </ul>
       )}
 
-      <ul className="pw-strength__list">
-        {rules.map((rule) => (
-          <li
-            key={rule.id}
-            className={`pw-strength__item${rule.met ? ' pw-strength__item--met' : ''}`}
-          >
-            {rule.met ? (
-              <Check size={13} strokeWidth={3} aria-hidden />
-            ) : (
-              <Circle size={13} strokeWidth={2} aria-hidden />
-            )}
-            <span>{copy.rules[rule.id]}</span>
-          </li>
-        ))}
-      </ul>
-
       {showTips && tips.length > 0 ? (
-        <div className="pw-strength__tips">
-          <p className="pw-strength__tips-title">
-            <Shield size={13} strokeWidth={2.25} aria-hidden />
+        <details className="pw-strength__tips">
+          <summary>
+            <Shield size={12} strokeWidth={2.25} aria-hidden />
             <span>{copy.tipsTitle}</span>
-          </p>
+            <ChevronDown className="pw-strength__tips-chevron" size={12} strokeWidth={2.5} aria-hidden />
+          </summary>
           <ul className="pw-strength__tips-list">
             {tips.map((tip) => (
               <li key={tip}>{tip}</li>
             ))}
           </ul>
-        </div>
+        </details>
       ) : null}
     </div>
   )

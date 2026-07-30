@@ -97,20 +97,21 @@ function ResetPasswordPage() {
     >
       {valid ? (
         <form onSubmit={onSubmit} className="auth-form" noValidate>
-          <PasswordField
-            label={copy.newPasswordLabel}
-            autoComplete="new-password"
-            placeholder={copy.newPasswordPlaceholder}
-            value={newPassword}
-            onChange={(event) => {
-              setNewPassword(event.target.value)
-              setErrors({})
-            }}
-            error={errors.newPassword}
-            capsLockWarning={fullCopy.login.capsLockOn}
-          />
-
-          <PasswordStrength password={newPassword} copy={policyCopy} />
+          <div className="auth-field-stack">
+            <PasswordField
+              label={copy.newPasswordLabel}
+              autoComplete="new-password"
+              placeholder={copy.newPasswordPlaceholder}
+              value={newPassword}
+              onChange={(event) => {
+                setNewPassword(event.target.value)
+                setErrors({})
+              }}
+              error={errors.newPassword}
+              capsLockWarning={fullCopy.login.capsLockOn}
+            />
+            <PasswordStrength password={newPassword} copy={policyCopy} />
+          </div>
 
           <PasswordField
             label={copy.confirmPasswordLabel}
