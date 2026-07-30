@@ -34,6 +34,26 @@ const rw = {
   language: {
     label: 'Ururimi',
   },
+  passwordPolicy: {
+    strengthLabel: 'Imbaraga z’ijambobanga',
+    levels: ['Ridakomeye na gato', 'Ridakomeye', 'Rihagije', 'Rikomeye', 'Rikomeye cyane'],
+    requirementsTitle: 'Ijambobanga rigomba kugira:',
+    progress: (met, total) => `Ibisabwa ${met} kuri ${total} byujujwe`,
+    rules: {
+      length: 'Nibura inyuguti 8',
+      case: 'Inyuguti nkuru n’into',
+      number: 'Nibura umubare umwe',
+      symbol: 'Nibura ikimenyetso, nka ! ? # cyangwa @',
+      notCommon: 'Nta magambo asanzwe, asubiramo cyangwa izina ryawe',
+    },
+    tooWeak: 'Ijambobanga ryawe ntiryujuje ibisabwa byose.',
+    tipsTitle: 'Kandi menya uko ukomeza umutekano:',
+    tips: [
+      'Ntukongere ukoreshe ijambobanga rimwe ku rubuga runtandukanye.',
+      'Koresha porogaramu yo kubika amajambobanga kugira ngo ukore kandi ubike ajya ku konti yose.',
+      'Koresha uburyo bwa kabiri bwo kwemeza (2FA) iyo bubonetse.',
+    ],
+  },
   login: {
     partnerEyebrow: "Urubuga rw'abafatanyabikorwa",
     partnerTitle: 'Murakaza neza',
@@ -78,7 +98,7 @@ const rw = {
     invalidLink: 'Uyu muyoboro ntiwemewe cyangwa warangiye.',
     requestNew: 'Saba undi muyoboro',
     newPasswordLabel: 'Ijambobanga rishya',
-    newPasswordPlaceholder: 'Nibura inyuguti 8',
+    newPasswordPlaceholder: 'Vanga inyuguti, imibare n’ikimenyetso',
     confirmPasswordLabel: 'Emeza ijambobanga',
     confirmPasswordPlaceholder: 'Ongera wandike ijambobanga',
     updatePassword: 'Hindura ijambobanga',
@@ -122,6 +142,26 @@ const fr = {
   },
   language: {
     label: 'Langue',
+  },
+  passwordPolicy: {
+    strengthLabel: 'Robustesse du mot de passe',
+    levels: ['Très faible', 'Faible', 'Moyen', 'Robuste', 'Très robuste'],
+    requirementsTitle: 'Votre mot de passe doit contenir :',
+    progress: (met, total) => `${met} exigence(s) sur ${total} remplie(s)`,
+    rules: {
+      length: 'Au moins 8 caractères',
+      case: 'Des majuscules et des minuscules',
+      number: 'Au moins un chiffre',
+      symbol: 'Au moins un symbole, par exemple ! ? # ou @',
+      notCommon: 'Aucun mot courant, répétition ou votre propre nom',
+    },
+    tooWeak: 'Votre mot de passe ne remplit pas encore toutes les exigences.',
+    tipsTitle: 'Pour plus de sécurité :',
+    tips: [
+      'Ne réutilisez jamais le même mot de passe sur plusieurs sites.',
+      'Utilisez un gestionnaire de mots de passe pour créer et stocker un mot de passe unique pour chaque compte.',
+      'Activez l’authentification à deux facteurs (2FA) dès qu’elle est disponible.',
+    ],
   },
   login: {
     partnerEyebrow: 'Portail partenaire',
@@ -169,7 +209,7 @@ const fr = {
     invalidLink: 'Ce lien de réinitialisation est invalide ou a expiré.',
     requestNew: 'Demander un nouveau lien',
     newPasswordLabel: 'Nouveau mot de passe',
-    newPasswordPlaceholder: 'Au moins 8 caractères',
+    newPasswordPlaceholder: 'Mélangez lettres, chiffres et un symbole',
     confirmPasswordLabel: 'Confirmer le mot de passe',
     confirmPasswordPlaceholder: 'Ressaisissez le mot de passe',
     updatePassword: 'Mettre à jour',

@@ -15,8 +15,19 @@ export const getAdminUsers = async () => {
   return response.data
 }
 
-export const inviteAdminPartner = async ({ email, role }) => {
-  const response = await apiClient.post('/admin/users', { email, role })
+export const createAdminPartner = async ({ email, role, fullName, phone, password }) => {
+  const normalizedEmail = email?.trim().toLowerCase()
+  const payload = {
+    // The backend derives `username` from the email, so both are sent together.
+    username: normalizedEmail,
+    email: normalizedEmail,
+    role,
+    fullName: fullName?.trim(),
+    password,
+  }
+  if (phone) payload.phone = phone
+
+  const response = await apiClient.post('/admin/users', payload)
   return response.data
 }
 

@@ -4,11 +4,11 @@ import { toast } from 'react-toastify'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthSubmitButton from '../components/auth/AuthSubmitButton'
 import PasswordField from '../components/auth/PasswordField'
+import PasswordStrength from '../components/auth/PasswordStrength'
 import { useAuthCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage, resetPasswordWithToken, validateResetToken } from '../services/auth'
+import { evaluatePassword } from '../utils/passwordPolicy'
 import '../styles/auth.css'
-
-const MIN_PASSWORD_LENGTH = 8
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -16,6 +16,7 @@ function ResetPasswordPage() {
   const token = searchParams.get('token')?.trim() || ''
   const fullCopy = useAuthCopy()
   const copy = fullCopy.resetPassword
+  const policyCopy = fullCopy.passwordPolicy
 
   const [valid, setValid] = useState(() => (token ? null : false))
   const [newPassword, setNewPassword] = useState('')
@@ -44,7 +45,7 @@ function ResetPasswordPage() {
     event.preventDefault()
 
     const nextErrors = {}
-    if (newPassword.length < MIN_PASSWORD_LENGTH) nextErrors.newPassword = copy.passwordMin
+    if (!evaluatePassword(newPassword).valid) nextErrors.newPassword = policyCopy.tooWeak
     if (newPassword !== confirmPassword) nextErrors.confirmPassword = copy.passwordMismatch
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
@@ -108,6 +109,8 @@ function ResetPasswordPage() {
             error={errors.newPassword}
             capsLockWarning={fullCopy.login.capsLockOn}
           />
+
+          <PasswordStrength password={newPassword} copy={policyCopy} />
 
           <PasswordField
             label={copy.confirmPasswordLabel}

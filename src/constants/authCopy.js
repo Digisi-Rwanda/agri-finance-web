@@ -72,6 +72,27 @@ export const loginCopy = {
   },
 }
 
+export const passwordPolicyCopy = {
+  strengthLabel: 'Password strength',
+  levels: ['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'],
+  requirementsTitle: 'Your password must have:',
+  progress: (met, total) => `${met} of ${total} requirements met`,
+  rules: {
+    length: 'At least 8 characters',
+    case: 'Upper and lower case letters',
+    number: 'At least one number',
+    symbol: 'At least one symbol, such as ! ? # or @',
+    notCommon: 'No common words, repeats or your own name',
+  },
+  tooWeak: 'Your password does not meet all the requirements yet.',
+  tipsTitle: 'Also keep your account safer:',
+  tips: [
+    'Never reuse passwords across different websites.',
+    'Use a password manager to generate and store unique passwords for every account.',
+    'Enable two-factor authentication (2FA) whenever it is available.',
+  ],
+}
+
 export const registerCopy = {
   title: 'Create a farmer account',
   subtitle: 'Partners and staff receive access from an administrator.',
@@ -159,7 +180,7 @@ export const resetPasswordCopy = {
   invalidLink: 'This reset link is invalid or has expired.',
   requestNew: 'Request a new reset',
   newPasswordLabel: 'New password',
-  newPasswordPlaceholder: 'At least 8 characters',
+  newPasswordPlaceholder: 'Mix letters, numbers and a symbol',
   confirmPasswordLabel: 'Confirm password',
   confirmPasswordPlaceholder: 'Re-enter password',
   updatePassword: 'Update password',
@@ -178,6 +199,7 @@ export const authCopyEn = {
   illustration: authIllustration,
   security: authSecurity,
   language: authLanguage,
+  passwordPolicy: passwordPolicyCopy,
   login: loginCopy,
   register: registerCopy,
   forgotPassword: forgotPasswordCopy,

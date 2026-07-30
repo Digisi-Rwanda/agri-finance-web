@@ -1409,8 +1409,8 @@ button.secondary {
 
 .admin-invite-form {
   display: grid;
-  grid-template-columns: minmax(15rem, 1.4fr) minmax(12rem, 1fr) auto;
-  align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+  align-items: start;
   gap: 0.7rem;
   margin-top: 0.85rem;
 }
@@ -1444,8 +1444,35 @@ button.secondary {
   box-shadow: 0 0 0 3px rgba(15, 112, 31, 0.12);
 }
 
+.admin-invite-form input[aria-invalid='true'] {
+  border-color: #ba1a1a;
+  background: #fdeceb;
+}
+
+.admin-invite-form input[aria-invalid='true']:focus {
+  border-color: #ba1a1a;
+  box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.14);
+}
+
+/* The checklist makes this field taller than the rest, so give it a full row. */
+.admin-invite-form__password {
+  grid-column: 1 / -1;
+  max-width: 26rem;
+}
+
+.admin-invite-form__error {
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.35;
+  color: #ba1a1a;
+}
+
 .admin-invite-form .btn-primary {
+  grid-column: 1 / -1;
+  justify-self: start;
   gap: 0.4rem;
+  min-height: 2.45rem;
   white-space: nowrap;
 }
 
