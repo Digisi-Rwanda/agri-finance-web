@@ -5,6 +5,10 @@
       "destination": "https://agri-finance.onrender.com/api/:path*"
     },
     {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
