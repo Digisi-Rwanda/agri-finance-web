@@ -5,9 +5,10 @@ import AgriTrustMark from '../ui/AgriTrustMark'
 import AuthIllustration from './AuthIllustration'
 import LanguageSwitcher from './LanguageSwitcher'
 
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || ''
-const TERMS_URL = import.meta.env.VITE_TERMS_URL || ''
-const PRIVACY_URL = import.meta.env.VITE_PRIVACY_URL || ''
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@agritrust.rw'
+const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL || '/support'
+const TERMS_URL = import.meta.env.VITE_TERMS_URL || '/terms'
+const PRIVACY_URL = import.meta.env.VITE_PRIVACY_URL || '/privacy'
 const APP_VERSION = __APP_VERSION__
 
 export default function AuthLayout({ title, subtitle, eyebrow, footer, children, compact = false }) {
@@ -17,6 +18,7 @@ export default function AuthLayout({ title, subtitle, eyebrow, footer, children,
   const legalLinks = [
     TERMS_URL && { href: TERMS_URL, label: security.terms },
     PRIVACY_URL && { href: PRIVACY_URL, label: security.privacy },
+    SUPPORT_URL && { href: SUPPORT_URL, label: security.support },
   ].filter(Boolean)
 
   return (

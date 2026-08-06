@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertCircle, Download, Plus, Search, ShieldCheck, X } from 'lucide-react'
 import { toast } from 'react-toastify'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -20,6 +20,7 @@ import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 const STATUS_FILTERS = [
   { value: 'All', label: 'All' },
   { value: 'ACTIVE', label: 'Active' },
+  { value: 'PENDING', label: 'Pending' },
   { value: 'CLAIMED', label: 'Claimed' },
   { value: 'EXPIRED', label: 'Expired' },
 ]
@@ -299,6 +300,18 @@ function InsuranceManagementPage() {
         </button>
       )
     }
+    if (status === 'PENDING') {
+      return (
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={busy}
+          onClick={() => handleStatus(policy.id, 'ACTIVE')}
+        >
+          {busy ? 'Saving…' : 'Activate'}
+        </button>
+      )
+    }
     return (
       <button
         type="button"
@@ -318,6 +331,9 @@ function InsuranceManagementPage() {
         subtitle="Issue active crop policies, manage claims, and keep farmers bankable."
         actions={
           <>
+            <Link to="/payments" className="btn-secondary">
+              Collect premiums
+            </Link>
             <button type="button" className="btn-secondary" onClick={handleExportReport}>
               <Download size={16} aria-hidden />
               Export PDF
@@ -438,7 +454,10 @@ function InsuranceManagementPage() {
           <div className="insurance-panel__head">
             <div>
               <h2>Issue policy</h2>
-              <p className="muted">Creates an ACTIVE policy banks can rely on for loan approval.</p>
+              <p className="muted">
+                Creates an ACTIVE policy banks can rely on for loan approval. After issuing, collect
+                premium under Payments if required.
+              </p>
             </div>
             <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>
               <X size={14} />

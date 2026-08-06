@@ -19,6 +19,7 @@ export const authSecurity = {
   note: 'Encrypted session. Sign-in activity is logged and monitored.',
   supportPrompt: 'Need help signing in?',
   supportAction: 'Contact support',
+  support: 'Support',
   terms: 'Terms',
   privacy: 'Privacy',
   versionLabel: (version) => `v${version}`,

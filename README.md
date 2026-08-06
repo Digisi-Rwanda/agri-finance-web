@@ -47,6 +47,13 @@ src/
 
 ## Environment
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `VITE_API_BASE_URL` | `http://localhost:8080/api` | Backend API base URL |
+| Variable | Default / production | Purpose |
+|----------|----------------------|---------|
+| `VITE_API_BASE_URL` | Local: `http://localhost:8080/api` · Prod: `https://agri-finance.onrender.com/api` | Backend API base URL |
+| `VITE_SUPPORT_EMAIL` | `support@agritrust.rw` | Auth footer support mailto |
+| `VITE_SUPPORT_URL` | `/support` | Public support page |
+| `VITE_TERMS_URL` | `/terms` | Terms & Conditions |
+| `VITE_PRIVACY_URL` | `/privacy` | Privacy Policy |
+| `VITE_MOBILE_APP_URL` | Play Store (`com.agritrust.agrifinance.app`) | Farmer app download link on login |
+
+Production values are in `.env.production` (picked up by `npm run build` / Vercel). Public legal pages: `/privacy`, `/terms`, `/support`.

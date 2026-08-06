@@ -325,7 +325,7 @@ function LoanManagementPage() {
     <section className="dashboard-page dashboard-page--compact loan-directory-page">
       <PageHeader
         title="Loans"
-        subtitle="Review applications, approve or reject, and track disbursed amounts."
+        subtitle="Review applications, approve or reject, and track disbursed amounts. Approve needs ACTIVE insurance for the same farmer."
         actions={
           <>
             <Link to="/farmer" className="btn-secondary">
@@ -343,6 +343,19 @@ function LoanManagementPage() {
           </>
         }
       />
+
+      {!loading ? (
+        <div className="dash-alerts">
+          <div className="dash-alert dash-alert--warn">
+            <AlertCircle size={18} />
+            <span>
+              <strong>Insurance gate:</strong> Approve only works when the farmer has an ACTIVE
+              policy covering today (same Farmer ID). If approve fails, the toast explains why —
+              ask the insurer to issue/activate cover, then retry.
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       {(pendingCount > 0 || highRiskPending > 0) && !loading ? (
         <div className="dash-alerts">

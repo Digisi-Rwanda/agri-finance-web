@@ -135,7 +135,17 @@ function RegisterPage() {
             checked={form.accepted}
             onChange={(event) => setForm((prev) => ({ ...prev, accepted: event.target.checked }))}
           />
-          {copy.terms}
+          <span>
+            I accept the{' '}
+            <a className="auth-link" href="/terms" target="_blank" rel="noreferrer">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a className="auth-link" href="/privacy" target="_blank" rel="noreferrer">
+              Privacy Policy
+            </a>
+            .
+          </span>
         </label>
 
         <button

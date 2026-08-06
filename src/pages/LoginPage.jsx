@@ -25,7 +25,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 /** Failed attempts before we point people at password reset instead of retrying. */
 const FAILURES_BEFORE_RESET_HINT = 2
 
-const MOBILE_APP_URL = import.meta.env.VITE_MOBILE_APP_URL || ''
+const MOBILE_APP_URL =
+  import.meta.env.VITE_MOBILE_APP_URL ||
+  'https://play.google.com/store/apps/details?id=com.agritrust.agrifinance.app'
 
 function LoginPage() {
   const navigate = useNavigate()

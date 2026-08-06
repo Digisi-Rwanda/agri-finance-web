@@ -1,0 +1,136 @@
+:root {
+  --ink: #14261a;
+  --muted: #4a5c50;
+  --brand: #1f6b3a;
+  --brand-deep: #0f3d22;
+  --paper: #f7faf7;
+  --line: #d5e3d9;
+  --warn-bg: #fff8e8;
+  --warn-ink: #6b4e00;
+  --warn-line: #e8d49a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(31, 107, 58, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(15, 61, 34, 0.08), transparent 50%),
+    linear-gradient(180deg, #eef5ef 0%, var(--paper) 40%, #f3f7f4 100%);
+  line-height: 1.65;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
+  text-decoration: none;
+  color: var(--brand-deep);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.brand-mark {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  background: linear-gradient(145deg, var(--brand), var(--brand-deep));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+h1 {
+  font-size: clamp(1.85rem, 4vw, 2.35rem);
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.meta {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+.banner {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-ink);
+  border-radius: 0.65rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.9rem;
+}
+
+.banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.intro {
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.5rem;
+  color: var(--brand-deep);
+}
+
+p,
+li {
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+}
+
+ul {
+  padding-left: 1.2rem;
+  margin: 0 0 1rem;
+}
+
+.contact {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 0.95rem;
+}
+
+.contact a {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.nav-legal {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.nav-legal a {
+  color: var(--brand);
+}
