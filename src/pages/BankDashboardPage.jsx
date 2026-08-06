@@ -7,8 +7,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import NeonSegmentChart from '../components/dashboard/NeonSegmentChart'
 import PageHeader from '../components/ui/PageHeader'
+import SimpleBarChart from '../components/dashboard/SimpleBarChart'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getCurrentUser } from '../services/auth'
@@ -215,7 +215,7 @@ function BankDashboardPage() {
   if (loading) {
     return (
       <section className="dashboard-page dashboard-page--compact bank-dashboard-page">
-        <PageHeader title="Bank dashboard" subtitle="Loading today’s portfolio…" />
+        <PageHeader subtitle="Loading today’s portfolio…" />
         <div className="widgets three">
           {[1, 2, 3].map((id) => (
             <article key={id} className="widget card dashboard-skeleton" />
@@ -228,8 +228,7 @@ function BankDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact bank-dashboard-page">
       <PageHeader
-        title="Bank dashboard"
-        subtitle={`${totalFarmers.toLocaleString()} consented farmers · focus on what needs review today.`}
+        subtitle={`${totalFarmers.toLocaleString()} consented farmers in portfolio · prioritize reviews below.`}
         actions={
           pendingCount > 0 ? (
             <Link to="/loans" className="btn-primary">
@@ -381,7 +380,7 @@ function BankDashboardPage() {
                     <tr>
                       <td colSpan={5} className="empty-cell">
                         No consented farmers yet. Farmers appear here after they grant bank
-                        consent in the Consent Vault / mobile app.
+                        consent in the mobile app or under More → Farmer consent.
                       </td>
                     </tr>
                   ) : (
@@ -434,7 +433,7 @@ function BankDashboardPage() {
             {previewFarmers.length === 0 ? (
               <p className="muted">
                 No consented farmers yet. They appear after granting bank consent on mobile or
-                Consent Vault.
+                under More → Farmer consent.
               </p>
             ) : (
               previewFarmers.map((farmer) => {
@@ -506,11 +505,21 @@ function BankDashboardPage() {
         ) : null}
       </div>
 
-      <details className="bank-dash-insights">
-        <summary>
-          <span>Insights</span>
-          <small>Loan pipeline &amp; credit risk tiers</small>
-        </summary>
+      <div className="dash-section bank-dash-overview">
+        <div className="dash-section__head">
+          <div>
+            <h2>Portfolio overview</h2>
+            <p>Loan pipeline and credit risk for consented farmers</p>
+          </div>
+          <div className="bank-dash-overview__actions">
+            <Link to="/loans" className="btn-view">
+              Loans
+            </Link>
+            <Link to="/farmer" className="btn-view">
+              Farmers
+            </Link>
+          </div>
+        </div>
         <div className="dashboard-grid dashboard-grid--equal dashboard-grid--compact">
           <article className="card">
             <div className="section-head">
@@ -518,11 +527,8 @@ function BankDashboardPage() {
                 <h2>Loan pipeline</h2>
                 <p className="card-subtitle">Applications by status</p>
               </div>
-              <Link to="/loans" className="btn-view">
-                Open
-              </Link>
             </div>
-            <NeonSegmentChart rows={loanStatusRows} emptyMessage="No loan applications yet." />
+            <SimpleBarChart rows={loanStatusRows} emptyMessage="No loan applications yet." />
           </article>
 
           <article className="card">
@@ -531,14 +537,11 @@ function BankDashboardPage() {
                 <h2>Credit risk</h2>
                 <p className="card-subtitle">Latest farmer risk tiers</p>
               </div>
-              <Link to="/farmer" className="btn-view">
-                Open
-              </Link>
             </div>
-            <NeonSegmentChart rows={riskRows} emptyMessage="No risk scores yet." />
+            <SimpleBarChart rows={riskRows} emptyMessage="No risk scores yet." />
           </article>
         </div>
-      </details>
+      </div>
     </section>
   )
 }

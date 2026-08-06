@@ -286,3 +286,49 @@
     margin-left: 260px;
   }
 }
+
+/* —— Bank partner institutional shell —— */
+.app-shell--bank.portal-light .brand::after {
+  content: 'Partner credit desk';
+}
+
+.app-shell--bank.portal-light {
+  --neon-bg: #f8faf5;
+  --neon-border: #e1e3de;
+  --neon-text: #191c1a;
+  --neon-muted: #717a6d;
+}
+
+.app-shell--bank.portal-light .sidebar {
+  background: #00450d;
+  box-shadow: none;
+}
+
+.app-shell--bank.portal-light .nav-link.active {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 3px 0 0 #ffffff;
+}
+
+.app-shell--bank .bank-dashboard-page > .page-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--neon-border, #e1e3de);
+}
+
+.app-shell--bank .bank-dashboard-page > .page-header h1 {
+  display: none;
+}
+
+.app-shell--bank .bank-dash-overview {
+  margin-top: 1.25rem;
+}
+
+.app-shell--bank .bank-dash-overview__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.app-shell--bank.neon-dashboard .brand::after {
+  content: 'Partner credit desk';
+}

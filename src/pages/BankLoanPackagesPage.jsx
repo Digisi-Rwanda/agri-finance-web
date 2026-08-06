@@ -114,8 +114,8 @@ function BankLoanPackagesPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Loan application inbox"
-        subtitle="Review Spec v2 packages, approve or reject, disburse funds, and download bank PDFs."
+        title="Loan products"
+        subtitle="Review submitted packages, approve or reject, disburse funds, and download bank PDFs."
         actions={
           <>
             <button type="button" className="btn-secondary" onClick={onExportVerified}>

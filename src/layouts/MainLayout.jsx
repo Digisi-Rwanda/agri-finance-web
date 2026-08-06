@@ -34,11 +34,7 @@ const navItemsByRole = {
     { to: '/', label: 'Home', icon: Home, end: true },
     { to: '/farmer', label: 'Farmers', icon: UserRound },
     { to: '/loans', label: 'Loans', icon: Landmark },
-    { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
-    { to: '/contracts', label: 'Receivables', icon: Briefcase },
-    { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
-    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
-    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
+    { to: '/loan-packages', label: 'Loan products', icon: ClipboardCheck },
     { to: '/payments', label: 'Payments', icon: CreditCard },
   ],
   INSURER: [
@@ -87,9 +83,15 @@ const navItemsByRole = {
 }
 
 const moreItemsByRole = {
+  BANK: [
+    { to: '/contracts', label: 'Receivables', icon: Briefcase },
+    { to: '/payment-watch', label: 'Remittances', icon: Eye },
+    { to: '/consent-vault', label: 'Farmer consent', icon: FileKey },
+    { to: '/trust-ladder', label: 'Credit tiers', icon: Layers },
+  ],
   ADMIN: [
-    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
-    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
+    { to: '/consent-vault', label: 'Farmer consent', icon: FileKey },
+    { to: '/trust-ladder', label: 'Credit tiers', icon: Layers },
     { to: '/bankability', label: 'Warehouse claims', icon: Warehouse },
     { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck },
     { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
@@ -101,7 +103,7 @@ const moreItemsByRole = {
 const PAGE_TITLES = {
   '/': 'Dashboard',
   '/loans': 'Loans',
-  '/loan-packages': 'Loan packages',
+  '/loan-packages': 'Loan products',
   '/payments': 'Payments',
   '/farmer': 'Farmers',
   '/insurer': 'Dashboard',
@@ -113,15 +115,18 @@ const PAGE_TITLES = {
   '/profile': 'My profile',
   '/settings': 'Settings',
   '/notifications': 'Notifications',
-  // New bankability pages
   '/contracts': 'Receivables',
   '/inspections': 'Field inspections',
   '/bankability': 'Warehouse claims',
-  '/payment-watch': 'Payment Watch',
-  '/consent-vault': 'OTP Consent Vault',
-  '/trust-ladder': 'Trust Ladder',
+  '/payment-watch': 'Remittances',
+  '/consent-vault': 'Farmer consent',
+  '/trust-ladder': 'Credit tiers',
   '/bankability/v2': 'Guarantee operations',
   '/cooperative': 'Cooperative ops',
+}
+
+const BANK_PAGE_TITLES = {
+  '/': 'Credit desk',
 }
 
 const SEARCH_CONFIG = {
@@ -131,13 +136,14 @@ const SEARCH_CONFIG = {
   default: { placeholder: 'Search farmers…', target: '/farmer', label: 'Search farmers' },
 }
 
-function getPageTitle(pathname) {
+function getPageTitle(pathname, role) {
   if (pathname.startsWith('/farmer/') && pathname !== '/farmer/profile') return 'Farmer Profile'
   if (pathname === '/farmer/profile') return 'Farmer Profile'
+  if (role === 'BANK' && BANK_PAGE_TITLES[pathname]) return BANK_PAGE_TITLES[pathname]
   return PAGE_TITLES[pathname] || 'Portal'
 }
 
-function getBreadcrumbs(pathname, homePath) {
+function getBreadcrumbs(pathname, homePath, role) {
   const crumbs = [{ label: 'Home', to: homePath }]
 
   // Role home pages should not show Home › Dashboard.
@@ -156,7 +162,11 @@ function getBreadcrumbs(pathname, homePath) {
     pathname === '/consent-vault' ||
     pathname === '/trust-ladder'
   ) {
-    crumbs.push({ label: PAGE_TITLES[pathname] || 'Dashboard' })
+    const label =
+      role === 'BANK' && BANK_PAGE_TITLES[pathname]
+        ? BANK_PAGE_TITLES[pathname]
+        : PAGE_TITLES[pathname] || 'Dashboard'
+    crumbs.push({ label })
     return crumbs
   }
 
@@ -194,7 +204,13 @@ function MainLayout() {
   const moreRef = useRef(null)
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const currentRole = getCurrentUser()?.role || 'BANK'
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored === 'dark' || stored === 'light') return stored === 'dark'
+    // Bank partners default to institutional light theme
+    return false
+  })
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -207,7 +223,6 @@ function MainLayout() {
     setMoreOpen(false)
   }
 
-  const currentRole = getCurrentUser()?.role || 'BANK'
   const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
   const moreItems = moreItemsByRole[currentRole] || []
   const moreActive = moreItems.some(
@@ -216,10 +231,13 @@ function MainLayout() {
   )
   const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
   const homePath = getHomePathForRole(currentRole)
-  const pageTitle = useMemo(() => getPageTitle(location.pathname), [location.pathname])
+  const pageTitle = useMemo(
+    () => getPageTitle(location.pathname, currentRole),
+    [location.pathname, currentRole],
+  )
   const breadcrumbs = useMemo(
-    () => getBreadcrumbs(location.pathname, homePath),
-    [location.pathname, homePath],
+    () => getBreadcrumbs(location.pathname, homePath, currentRole),
+    [location.pathname, homePath, currentRole],
   )
   const searchConfig = useMemo(() => getSearchConfig(location.pathname), [location.pathname])
   const settingsPath = '/settings'
@@ -269,9 +287,10 @@ function MainLayout() {
   }, [])
 
   const shellThemeClass = darkMode ? 'neon-dashboard' : 'portal-light'
+  const roleShellClass = currentRole === 'BANK' ? 'app-shell--bank' : ''
   return (
     <PortalThemeContext.Provider value={{ isDark: darkMode, setIsDark: setDarkMode }}>
-      <div className={`app-shell ${shellThemeClass}`}>
+      <div className={`app-shell ${shellThemeClass} ${roleShellClass}`.trim()}>
         <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
           <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
             Agri Trust
@@ -310,7 +329,9 @@ function MainLayout() {
               <div className="sidebar-more__menu" role="menu">
                 {moreItems.length > 0 ? (
                   <>
-                    <span className="sidebar-more__heading">More tools</span>
+                    <span className="sidebar-more__heading">
+                      {currentRole === 'BANK' ? 'Risk & receivables' : 'More tools'}
+                    </span>
                     {moreItems.map((item) => (
                       <button
                         key={item.to}

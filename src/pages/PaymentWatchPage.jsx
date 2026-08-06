@@ -153,8 +153,8 @@ function PaymentWatchPage() {
   return (
     <section className="dashboard-page dashboard-page--compact payment-watch-page">
       <PageHeader
-        title="Payment Watch"
-        subtitle="Track buyer remittances into Digisi — expected vs received from live contracts."
+        title="Remittances"
+        subtitle="Track buyer remittances — expected vs received from live contracts."
         actions={
           <button type="button" className="btn-secondary" onClick={onScanAlerts} disabled={scanning || loading}>
             {scanning || loading ? 'Refreshing…' : 'Refresh'}

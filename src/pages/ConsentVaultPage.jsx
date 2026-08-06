@@ -93,8 +93,8 @@ function ConsentVaultPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="OTP Consent Vault"
-        subtitle="Buyer OTP consents with audit history and PDF certificates for underwriting."
+        title="Farmer consent"
+        subtitle="OTP-verified farmer consents with audit history and PDF certificates for underwriting."
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>
             {loading ? 'Refreshing…' : 'Refresh'}

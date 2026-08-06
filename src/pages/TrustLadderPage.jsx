@@ -53,8 +53,8 @@ function TrustLadderPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Trust Ladder"
-        subtitle="Reward strong repayment, savings, contract fulfillment, and mobile money behavior."
+        title="Credit tiers"
+        subtitle="Tier farmers by repayment, savings, contract fulfillment, and mobile money behavior."
       />
 
       <div className="widgets four">
