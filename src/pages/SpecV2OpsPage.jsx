@@ -3,6 +3,7 @@ import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import DataTableShell from '../components/ui/DataTableShell'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   applyWarehouse,
   attachInputInsurance,
@@ -28,6 +29,7 @@ import { exportLoanPackagePdf } from '../utils/exportPdf'
  * Spec v2 Phase 2/3 admin ops + PDF loan package export + bank CRUD.
  */
 function SpecV2OpsPage() {
+  const { s, p } = usePageCopy('specV2Ops')
   const [warehouses, setWarehouses] = useState([])
   const [inputLoans, setInputLoans] = useState([])
   const [guarantees, setGuarantees] = useState([])
@@ -71,7 +73,7 @@ function SpecV2OpsPage() {
       setBanks(Array.isArray(b) ? b : [])
       setFacilities(Array.isArray(f) ? f : [])
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Failed to load Spec v2 ops')
+      toast.error(e?.response?.data?.error || p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -96,20 +98,20 @@ function SpecV2OpsPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Guarantee operations"
-        subtitle="Warehouse onboarding, input loans, guarantee requests, bank registry, and PDF loan packages."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
+            {loading ? s.refreshing : s.refresh}
           </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Warehouses" value={String(warehouses.length)} />
-        <StatCard title="Input loans" value={String(inputLoans.length)} />
-        <StatCard title="Guarantee requests" value={String(guarantees.length)} />
-        <StatCard title="Partner banks" value={String(banks.length)} />
+        <StatCard title={p.warehouses} value={String(warehouses.length)} />
+        <StatCard title={p.inputLoans} value={String(inputLoans.length)} />
+        <StatCard title={p.guaranteeRequests} value={String(guarantees.length)} />
+        <StatCard title={p.partnerBanks} value={String(banks.length)} />
       </div>
 
       <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -330,7 +332,7 @@ function SpecV2OpsPage() {
                             }
                           }}
                         >
-                          Approve
+                          {s.approve}
                         </button>
                         <button
                           type="button"
@@ -340,7 +342,7 @@ function SpecV2OpsPage() {
                             load()
                           }}
                         >
-                          Reject
+                          {s.reject}
                         </button>
                       </>
                     ) : null}
@@ -495,7 +497,7 @@ function SpecV2OpsPage() {
                             load()
                           }}
                         >
-                          Approve
+                          {s.approve}
                         </button>
                         <button
                           type="button"
@@ -508,7 +510,7 @@ function SpecV2OpsPage() {
                             load()
                           }}
                         >
-                          Reject
+                          {s.reject}
                         </button>
                       </>
                     ) : null}

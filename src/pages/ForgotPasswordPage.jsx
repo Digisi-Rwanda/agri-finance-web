@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 import AuthLayout from '../components/auth/AuthLayout'
 import AuthMethodSwitch from '../components/auth/AuthMethodSwitch'
 import PasswordField from '../components/auth/PasswordField'
-import { forgotPasswordCopy } from '../constants/authCopy'
+import { useAuthCopy } from '../context/AuthLocaleContext'
 import {
   forgotPasswordByEmail,
   forgotPasswordByPhone,
@@ -24,7 +24,7 @@ const COOLDOWN_SECONDS = 60
 function ForgotPasswordPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const copy = forgotPasswordCopy
+  const copy = useAuthCopy().forgotPassword
   const presetPhone = location.state?.presetPhone || ''
 
   const [method, setMethod] = useState(presetPhone ? 'phone' : 'email')
@@ -187,7 +187,7 @@ function ForgotPasswordPage() {
             onClick={requestReset}
             disabled={loading || cooldown > 0}
           >
-            {loading ? 'Sending…' : sendLabel}
+            {loading ? copy.sending : sendLabel}
           </button>
         </div>
       ) : (
@@ -221,7 +221,7 @@ function ForgotPasswordPage() {
           />
 
           <button type="submit" className="auth-btn-primary" disabled={loading}>
-            {loading ? 'Updating…' : copy.updatePassword}
+            {loading ? copy.updating : copy.updatePassword}
           </button>
 
           <button

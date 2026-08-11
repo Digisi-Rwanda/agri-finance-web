@@ -4,6 +4,7 @@ import {
   SUPPORTED_AUTH_LOCALES,
   getAuthCopy,
 } from '../constants/authLocales'
+import { getPortalCopy } from '../constants/portalLocales'
 
 const STORAGE_KEY = 'agri.auth.locale'
 
@@ -11,6 +12,7 @@ const AuthLocaleContext = createContext({
   locale: DEFAULT_AUTH_LOCALE,
   setLocale: () => {},
   copy: getAuthCopy(DEFAULT_AUTH_LOCALE),
+  portal: getPortalCopy(DEFAULT_AUTH_LOCALE),
 })
 
 function readInitialLocale() {
@@ -41,7 +43,7 @@ export function AuthLocaleProvider({ children }) {
   }, [locale])
 
   const value = useMemo(
-    () => ({ locale, setLocale, copy: getAuthCopy(locale) }),
+    () => ({ locale, setLocale, copy: getAuthCopy(locale), portal: getPortalCopy(locale) }),
     [locale, setLocale],
   )
 
@@ -57,5 +59,21 @@ export function useAuthLocale() {
 /** Copy tree for the active locale, with English filling any untranslated key. */
 export function useAuthCopy() {
   return useContext(AuthLocaleContext).copy
+}
+
+export function usePortalCopy() {
+  return useContext(AuthLocaleContext).portal
+}
+
+/** Shared + one page section from portal copy. */
+export function usePageCopy(pageKey) {
+  const portal = usePortalCopy()
+  return {
+    s: portal.shared,
+    p: portal.pages?.[pageKey] || {},
+    layout: portal.layout,
+    nav: portal.nav,
+    roles: portal.roles,
+  }
 }
 /* eslint-enable react-refresh/only-export-components */

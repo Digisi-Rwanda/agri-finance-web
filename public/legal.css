@@ -134,3 +134,31 @@ ul {
 .nav-legal a {
   color: var(--brand);
 }
+
+.lang-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.lang-bar__btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lang-bar__btn--active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+[hidden] {
+  display: none !important;
+}

@@ -5,6 +5,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   listBankLoanPackages,
   approveLoanPackage,
@@ -21,6 +22,7 @@ import { formatRwf } from '../utils/currency'
  * Bank portal inbox for Spec v2 loan packages: review, approve/reject, disburse, PDF.
  */
 function BankLoanPackagesPage() {
+  const { s, p } = usePageCopy('loanPackages')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState(null)
@@ -31,7 +33,7 @@ function BankLoanPackagesPage() {
       const data = await listBankLoanPackages()
       setRows(Array.isArray(data) ? data : [])
     } catch {
-      toast.error('Failed to load loan packages')
+      toast.error(s.toasts.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -39,6 +41,7 @@ function BankLoanPackagesPage() {
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onApprove = async (id) => {
@@ -55,7 +58,7 @@ function BankLoanPackagesPage() {
         )
         return
       }
-      toast.error(e?.response?.data?.error || 'Approve failed')
+      toast.error(e?.response?.data?.error || s.toasts.updateFailed)
     } finally {
       setBusyId(null)
     }
@@ -68,7 +71,7 @@ function BankLoanPackagesPage() {
       toast.success('Package rejected')
       load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Reject failed')
+      toast.error(e?.response?.data?.error || s.toasts.updateFailed)
     } finally {
       setBusyId(null)
     }
@@ -81,7 +84,7 @@ function BankLoanPackagesPage() {
       toast.success('Loan marked disbursed')
       load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Disburse failed')
+      toast.error(e?.response?.data?.error || s.toasts.updateFailed)
     } finally {
       setBusyId(null)
     }
@@ -93,7 +96,7 @@ function BankLoanPackagesPage() {
       exportLoanPackagePdf(full)
       toast.success('PDF downloaded')
     } catch {
-      toast.error('PDF export failed')
+      toast.error(s.toasts.exportFailed)
     }
   }
 
@@ -103,7 +106,7 @@ function BankLoanPackagesPage() {
       exportVerifiedFarmersPdf(data)
       toast.success(`Exported ${data.count || 0} verified farmers`)
     } catch {
-      toast.error('Verified farmers export failed')
+      toast.error(s.toasts.exportFailed)
     }
   }
 
@@ -114,39 +117,39 @@ function BankLoanPackagesPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Loan products"
-        subtitle="Review submitted packages, approve or reject, disburse funds, and download bank PDFs."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <>
             <button type="button" className="btn-secondary" onClick={onExportVerified}>
-              Export verified farmers
+              {p.exportVerified}
             </button>
             <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
+              {loading ? s.refreshing : s.refresh}
             </button>
           </>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Inbox rows" value={String(rows.length)} />
-        <StatCard title="Submitted" value={String(submitted)} />
-        <StatCard title="Approved" value={String(approved)} />
-        <StatCard title="Disbursed" value={String(disbursed)} />
+        <StatCard title={p.inbox} value={String(rows.length)} />
+        <StatCard title={p.submitted} value={String(submitted)} />
+        <StatCard title={p.approved} value={String(approved)} />
+        <StatCard title={p.disbursed} value={String(disbursed)} />
       </div>
 
       <div className="mt-6">
-        <DataTableShell title="Packages">
+        <DataTableShell title={p.tableTitle}>
           <table className="data-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Farmer</th>
-                <th>Amount</th>
-                <th>Collateral</th>
-                <th>Score</th>
-                <th>Status</th>
-                <th>Linked loan</th>
+                <th>{p.colFarmer}</th>
+                <th>{p.colAmount}</th>
+                <th>{p.colCollateral}</th>
+                <th>{p.colScore}</th>
+                <th>{p.colStatus}</th>
+                <th>{p.colLinkedLoan}</th>
                 <th />
               </tr>
             </thead>
@@ -154,49 +157,49 @@ function BankLoanPackagesPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="empty-cell">
-                    No packages yet. Farmers submit from the mobile Suggest Loan flow.
+                    {p.empty}
                   </td>
                 </tr>
               ) : (
-                rows.map((p) => {
-                  const status = String(p.status || '')
+                rows.map((row) => {
+                  const status = String(row.status || '')
                   const canDecide = status.startsWith('submitted') || status === 'bank_selected'
                   const canDisburse = status === 'approved'
                   return (
-                    <tr key={p.packageId}>
-                      <td>#{p.packageId}</td>
+                    <tr key={row.packageId}>
+                      <td>#{row.packageId}</td>
                       <td>
-                        <Link to={`/farmer/${p.farmerId}`}>#{p.farmerId}</Link>
+                        <Link to={`/farmer/${row.farmerId}`}>#{row.farmerId}</Link>
                       </td>
-                      <td>{formatRwf(p.suggestedAmount)}</td>
-                      <td>{p.suggestedCollateralType || '—'}</td>
-                      <td>{p.creditScoreSnapshot ?? '—'}</td>
+                      <td>{formatRwf(row.suggestedAmount)}</td>
+                      <td>{row.suggestedCollateralType || '—'}</td>
+                      <td>{row.creditScoreSnapshot ?? '—'}</td>
                       <td>
-                        <StatusBadge value={p.status} />
+                        <StatusBadge value={row.status} />
                       </td>
-                      <td>{p.linkedLoanId ? `#${p.linkedLoanId}` : '—'}</td>
+                      <td>{row.linkedLoanId ? `#${row.linkedLoanId}` : '—'}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <button type="button" className="btn-secondary" onClick={() => onPdf(p.packageId)}>
-                            PDF
+                          <button type="button" className="btn-secondary" onClick={() => onPdf(row.packageId)}>
+                            {p.pdf}
                           </button>
                           {canDecide ? (
                             <>
                               <button
                                 type="button"
                                 className="btn-primary"
-                                disabled={busyId === p.packageId}
-                                onClick={() => onApprove(p.packageId)}
+                                disabled={busyId === row.packageId}
+                                onClick={() => onApprove(row.packageId)}
                               >
-                                Approve
+                                {s.approve}
                               </button>
                               <button
                                 type="button"
                                 className="btn-secondary"
-                                disabled={busyId === p.packageId}
-                                onClick={() => onReject(p.packageId)}
+                                disabled={busyId === row.packageId}
+                                onClick={() => onReject(row.packageId)}
                               >
-                                Reject
+                                {s.reject}
                               </button>
                             </>
                           ) : null}
@@ -204,10 +207,10 @@ function BankLoanPackagesPage() {
                             <button
                               type="button"
                               className="btn-primary"
-                              disabled={busyId === p.packageId}
-                              onClick={() => onDisburse(p.packageId)}
+                              disabled={busyId === row.packageId}
+                              onClick={() => onDisburse(row.packageId)}
                             >
-                              Disburse
+                              {s.disburse}
                             </button>
                           ) : null}
                         </div>

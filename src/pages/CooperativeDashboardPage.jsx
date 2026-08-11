@@ -4,6 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import DataTableShell from '../components/ui/DataTableShell'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   addCoopMember,
   applyWarehouse,
@@ -26,6 +27,7 @@ import { getCurrentUser, getProfile, hydrateSessionUser } from '../services/auth
  * Cooperative operator dashboard — membership, storage, receipts, input loans.
  */
 function CooperativeDashboardPage() {
+  const { s, p } = usePageCopy('cooperative')
   const [operatorUserId, setOperatorUserId] = useState(
     () => getCurrentUser()?.userId || getCurrentUser()?.id || null,
   )
@@ -77,7 +79,7 @@ function CooperativeDashboardPage() {
         return mineList[0]?.warehouseId || null
       })
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Failed to load warehouses')
+      toast.error(e?.response?.data?.error || p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -191,8 +193,8 @@ function CooperativeDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact coop-page">
       <PageHeader
-        title="Cooperative operations"
-        subtitle="Select a warehouse, then manage members, storage, receipts, and deliveries."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <button
             type="button"
@@ -200,16 +202,16 @@ function CooperativeDashboardPage() {
             onClick={() => loadWarehouses(operatorUserId)}
             disabled={loading}
           >
-            {loading ? 'Refreshing…' : 'Refresh'}
+            {loading ? s.refreshing : s.refresh}
           </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Warehouses" value={String(warehouses.length)} meta="Linked to you" />
-        <StatCard title="Members" value={String(dash?.memberCount ?? 0)} meta="Active farmers" />
-        <StatCard title="Storage lots" value={String(dash?.storage?.length ?? 0)} meta="On hand" />
-        <StatCard title="Receipts" value={String(dash?.receipts?.length ?? 0)} meta="Issued" />
+        <StatCard title={p.warehouses} value={String(warehouses.length)} meta={p.warehousesMeta} />
+        <StatCard title={p.members} value={String(dash?.memberCount ?? 0)} meta={p.membersMeta} />
+        <StatCard title={p.storageLots} value={String(dash?.storage?.length ?? 0)} meta={p.storageMeta} />
+        <StatCard title={p.receipts} value={String(dash?.receipts?.length ?? 0)} meta={p.receiptsMeta} />
       </div>
 
       <div className="dash-section">

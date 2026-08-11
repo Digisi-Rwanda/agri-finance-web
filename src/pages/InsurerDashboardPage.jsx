@@ -6,21 +6,23 @@ import QuickActionCard from '../components/dashboard/QuickActionCard'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { getAnalyticsOverview } from '../services/analyticsService'
 import { getFarmers, enrichFarmersWithInsights } from '../services/farmerService'
 import { mapCountsToBarRows } from '../utils/dashboard'
 
-function suggestPolicy(riskLevel = '') {
-  const risk = riskLevel.toLowerCase()
-  if (risk === 'high') return 'Flood protection'
-  if (risk === 'medium') return 'Crop protection'
-  return 'Basic crop cover'
-}
-
 function InsurerDashboardPage() {
+  const { s, p } = usePageCopy('insurerDashboard')
   const [farmers, setFarmers] = useState([])
   const [overview, setOverview] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const suggestPolicy = (riskLevel = '') => {
+    const risk = riskLevel.toLowerCase()
+    if (risk === 'high') return p.flood
+    if (risk === 'medium') return p.crop
+    return p.basicCrop
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -64,7 +66,7 @@ function InsurerDashboardPage() {
   if (loading) {
     return (
       <section className="dashboard-page dashboard-page--compact">
-        <PageHeader title="Insurer dashboard" subtitle="Loading…" />
+        <PageHeader title={p.title} subtitle={s.loading} />
         <div className="widgets four">
           {[1, 2, 3, 4].map((id) => (
             <article key={id} className="widget card dashboard-skeleton" />
@@ -77,11 +79,11 @@ function InsurerDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Insurer dashboard"
-        subtitle="Monitor farmer risk and insurance exposure."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <Link to="/insurance" className="btn-primary">
-            Manage policies
+            {p.managePolicies}
             <ArrowRight size={16} />
           </Link>
         }
@@ -92,47 +94,46 @@ function InsurerDashboardPage() {
           <Link to="/insurance" className="dash-alert dash-alert--risk">
             <AlertCircle size={18} />
             <span>
-              <strong>{highRiskCount} high-risk farmer{highRiskCount === 1 ? '' : 's'}</strong> may need
-              stronger cover
+              <strong>{p.highRiskAlert(highRiskCount)}</strong>
             </span>
-            <span className="dash-alert__action">Review policies</span>
+            <span className="dash-alert__action">{p.reviewPolicies}</span>
           </Link>
         </div>
       ) : null}
 
       <div className="widgets four">
-        <StatCard title="Monitored farmers" value={farmers.length.toLocaleString()} meta="Consented" />
+        <StatCard title={p.monitored} value={farmers.length.toLocaleString()} meta={p.monitoredMeta} />
         <StatCard
-          title="High risk"
+          title={p.highRisk}
           value={highRiskCount.toLocaleString()}
-          meta="Priority review"
+          meta={p.highRiskMeta}
           accent="amber"
         />
         <StatCard
-          title="Medium risk"
+          title={p.mediumRisk}
           value={mediumRiskCount.toLocaleString()}
-          meta="Watch list"
+          meta={p.mediumRiskMeta}
           accent="blue"
         />
-        <StatCard title="Active policies" value={policyCount.toLocaleString()} meta="On book" />
+        <StatCard title={p.activePolicies} value={policyCount.toLocaleString()} meta={p.activePoliciesMeta} />
       </div>
 
       <div className="dash-section">
         <div className="dash-section__head">
-          <h2>Quick actions</h2>
-          <p>Insurance workflows</p>
+          <h2>{p.quickActions}</h2>
+          <p>{p.workflows}</p>
         </div>
         <div className="dash-quick-grid">
           <QuickActionCard
             to="/insurance"
-            title="Policies"
-            description="Create and manage cover"
+            title={p.policiesCard}
+            description={p.policiesDesc}
             icon={ShieldCheck}
           />
           <QuickActionCard
             to="/payments"
-            title="Premiums"
-            description="Collect MoMo premiums for issued policies"
+            title={p.premiumsCard}
+            description={p.premiumsDesc}
             icon={CreditCard}
           />
         </div>
@@ -142,37 +143,37 @@ function InsurerDashboardPage() {
         <article className="card">
           <div className="section-head">
             <div>
-              <h2>Risk distribution</h2>
-              <p className="card-subtitle">Latest credit tiers across portfolio</p>
+              <h2>{p.riskDistribution}</h2>
+              <p className="card-subtitle">{p.riskMeta}</p>
             </div>
           </div>
-          <NeonSegmentChart rows={riskRows} emptyMessage="No risk data available yet." />
+          <NeonSegmentChart rows={riskRows} emptyMessage={p.noRisk} />
         </article>
 
         <article className="card">
           <div className="section-head">
             <div>
-              <h2>Farmer portfolio</h2>
-              <p className="card-subtitle">Suggested cover by risk (highest first)</p>
+              <h2>{p.farmerPortfolio}</h2>
+              <p className="card-subtitle">{p.portfolioSubtitle}</p>
             </div>
             <Link to="/insurance" className="btn-view">
-              Policies
+              {p.policiesCard}
             </Link>
           </div>
           <div className="table-scroll">
             <table className="desktop-table dashboard-table">
               <thead>
                 <tr>
-                  <th>Farmer</th>
-                  <th>Risk</th>
-                  <th>Suggested policy</th>
+                  <th>{p.colFarmer}</th>
+                  <th>{p.colRisk}</th>
+                  <th>{p.colSuggested}</th>
                 </tr>
               </thead>
               <tbody>
                 {previewFarmers.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="empty-cell">
-                      No consented farmers available yet.
+                      {p.portfolioEmpty}
                     </td>
                   </tr>
                 ) : (
@@ -182,7 +183,7 @@ function InsurerDashboardPage() {
                         <strong className="dash-name">{farmer.fullName}</strong>
                       </td>
                       <td>
-                        <StatusBadge value={farmer.riskLevel || 'Unknown'} />
+                        <StatusBadge value={farmer.riskLevel || p.unknown} />
                       </td>
                       <td>{suggestPolicy(farmer.riskLevel)}</td>
                     </tr>

@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { apiClient } from '../api/client'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { formatRwf } from '../utils/currency'
 
-/**
- * Public buyer verification: confirm name/qty/value/terms + OTP, or dispute.
- */
 function BuyerVerificationPage() {
+  const { p } = usePageCopy('buyerVerification')
   const [params] = useSearchParams()
   const [contractId, setContractId] = useState(params.get('contractId') || '')
   const [form, setForm] = useState(null)
@@ -35,39 +34,40 @@ function BuyerVerificationPage() {
           : '',
       )
     } catch {
-      toast.error('Contract not found')
+      toast.error(p.loadFailed)
       setForm(null)
     }
   }
 
   useEffect(() => {
     if (contractId) loadForm(contractId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contractId])
 
   const start = async () => {
-    if (!contractId) return toast.error('Contract ID required')
+    if (!contractId) return toast.error(p.contractIdRequired)
     setBusy(true)
     try {
       const { data } = await apiClient.post(`/contracts/${contractId}/buyer-consent/start`)
       setDemoOtp(data.otpCode || '')
       setVerifyLink(data.verificationLink || verifyLink)
       const channels = (data.channels || []).join(', ')
-      toast.success(`Verification sent (${channels || 'web link'})`)
+      toast.success(p.verificationSent(channels))
       loadForm(contractId)
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Failed to start verification')
+      toast.error(e?.response?.data?.error || p.startFailed)
     } finally {
       setBusy(false)
     }
   }
 
   const decide = async (decision) => {
-    if (!contractId) return toast.error('Contract ID required')
+    if (!contractId) return toast.error(p.contractIdRequired)
     if (decision === 'confirmed') {
       if (!confirmName || !confirmQuantity || !confirmValue || !confirmTerms) {
-        return toast.error('Tick all confirmation boxes')
+        return toast.error(p.confirmAll)
       }
-      if (!otp) return toast.error('Enter OTP from SMS/email')
+      if (!otp) return toast.error(p.enterOtp)
     }
     setBusy(true)
     try {
@@ -80,10 +80,10 @@ function BuyerVerificationPage() {
         confirmTerms,
       })
       setDoneStatus(data.status)
-      toast.success(data.message || `Status: ${data.status}`)
+      toast.success(data.message || p.verificationComplete(data.status))
       loadForm(contractId)
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Decision failed')
+      toast.error(e?.response?.data?.error || p.decisionFailed)
     } finally {
       setBusy(false)
     }
@@ -91,13 +91,10 @@ function BuyerVerificationPage() {
 
   return (
     <div className="mx-auto min-h-screen max-w-md bg-[var(--surface-page,#f8faf5)] p-6">
-      <h1 className="text-2xl font-bold text-[var(--brand,#00450d)]">Buyer verification</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Confirm the purchase contract details below, or dispute if anything is wrong. You also
-        confirm you will <strong>not</strong> pay the farmer directly.
-      </p>
+      <h1 className="text-2xl font-bold text-[var(--brand,#00450d)]">{p.title}</h1>
+      <p className="mt-2 text-sm text-slate-600">{p.subtitle}</p>
 
-      <label className="mt-6 block text-xs font-semibold text-slate-500">Contract ID</label>
+      <label className="mt-6 block text-xs font-semibold text-slate-500">{p.contractId}</label>
       <input
         className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3"
         value={contractId}
@@ -110,28 +107,30 @@ function BuyerVerificationPage() {
         disabled={busy}
         onClick={() => loadForm(contractId)}
       >
-        Load contract
+        {p.loadContract}
       </button>
 
       {form ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm">
           <p>
-            <strong>Status:</strong> {form.status}
+            <strong>{p.statusLabel}</strong> {form.status}
           </p>
           <p className="mt-2">
-            <strong>Buyer name:</strong> {form.buyerName || '—'}
+            <strong>{p.buyerName}</strong> {form.buyerName || '—'}
           </p>
           <p>
-            <strong>Quantity:</strong> {form.quantity ?? '—'}
+            <strong>{p.quantity}</strong> {form.quantity ?? '—'}
           </p>
           <p>
-            <strong>Contract value:</strong> {formatRwf(form.contractValue)}
+            <strong>{p.contractValue}</strong> {formatRwf(form.contractValue)}
           </p>
           <p>
-            <strong>Payment terms:</strong> {form.paymentTerms || '—'}
+            <strong>{p.paymentTerms}</strong> {form.paymentTerms || '—'}
           </p>
           {form.designatedAccount ? (
-            <p className="mt-2 text-slate-600">Pay into: {form.designatedAccount}</p>
+            <p className="mt-2 text-slate-600">
+              {p.payInto} {form.designatedAccount}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -141,25 +140,25 @@ function BuyerVerificationPage() {
       || doneStatus === 'field_inspection_pending' ? (
         <p className="mt-6 rounded-xl bg-white p-4 text-center font-semibold text-[var(--brand,#00450d)]">
           {doneStatus === 'field_inspection_pending'
-            ? 'Thank you — Digisi will schedule a field inspection before final verification.'
-            : `Verification complete: ${doneStatus}`}
+            ? p.thankYouInspection
+            : p.verificationComplete(doneStatus)}
         </p>
       ) : (
         <>
           <button type="button" className="btn-primary mt-4 w-full" disabled={busy} onClick={start}>
-            Send OTP (SMS / email / web link)
+            {p.sendOtp}
           </button>
           {verifyLink ? (
             <p className="mt-2 break-all text-center text-xs text-slate-500">{verifyLink}</p>
           ) : null}
           {demoOtp ? (
-            <p className="mt-2 text-center text-sm text-slate-500">Demo OTP: {demoOtp}</p>
+            <p className="mt-2 text-center text-sm text-slate-500">{p.demoOtp(demoOtp)}</p>
           ) : null}
 
           <div className="mt-6 space-y-3 text-sm">
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={confirmName} onChange={(e) => setConfirmName(e.target.checked)} />
-              <span>I confirm the buyer name is correct</span>
+              <span>{p.confirmName}</span>
             </label>
             <label className="flex items-start gap-2">
               <input
@@ -167,25 +166,25 @@ function BuyerVerificationPage() {
                 checked={confirmQuantity}
                 onChange={(e) => setConfirmQuantity(e.target.checked)}
               />
-              <span>I confirm the quantity is correct</span>
+              <span>{p.confirmQuantity}</span>
             </label>
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={confirmValue} onChange={(e) => setConfirmValue(e.target.checked)} />
-              <span>I confirm the contract value is correct</span>
+              <span>{p.confirmValue}</span>
             </label>
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={confirmTerms} onChange={(e) => setConfirmTerms(e.target.checked)} />
-              <span>I confirm the payment terms are correct</span>
+              <span>{p.confirmTerms}</span>
             </label>
           </div>
 
-          <label className="mt-6 block text-xs font-semibold text-slate-500">OTP</label>
+          <label className="mt-6 block text-xs font-semibold text-slate-500">{p.otpLabel}</label>
           <input
             className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 text-center text-lg tracking-widest"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             inputMode="numeric"
-            placeholder="6 digits"
+            placeholder={p.otpPlaceholder}
           />
 
           <button
@@ -194,7 +193,7 @@ function BuyerVerificationPage() {
             disabled={busy}
             onClick={() => decide('confirmed')}
           >
-            Confirm — verify contract
+            {p.confirmVerify}
           </button>
           <button
             type="button"
@@ -202,7 +201,7 @@ function BuyerVerificationPage() {
             disabled={busy}
             onClick={() => decide('disputed')}
           >
-            Dispute details
+            {p.dispute}
           </button>
         </>
       )}

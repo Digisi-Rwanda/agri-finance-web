@@ -5,6 +5,7 @@ import BankFarmerPaymentsView from '../components/payments/BankFarmerPaymentsVie
 import InsurerPaymentsView from '../components/payments/InsurerPaymentsView'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { getCurrentUser, resolvePrimaryFarmerId } from '../services/auth'
 import { getFarmerById, getFarmers, getLoansByFarmerId } from '../services/farmerService'
 import { fetchPaymentHistory, fetchWalletBalance } from '../services/momoPaymentService'
@@ -21,6 +22,7 @@ function formatDisplayName(name) {
 }
 
 export default function MomoPaymentsPage() {
+  const { s, p } = usePageCopy('momoPayments')
   const [searchParams, setSearchParams] = useSearchParams()
   const role = getCurrentUser()?.role || 'BANK'
   const isBankViewer = role === 'BANK' || role === 'ADMIN'
@@ -82,10 +84,10 @@ export default function MomoPaymentsPage() {
         if (initialId) {
           await selectFarmer(initialId)
         } else {
-          setLoadError('No consented farmers available to view payment activity.')
+          setLoadError(p.noFarmers)
         }
       } catch {
-        setLoadError('Unable to load farmers for payment overview.')
+        setLoadError(p.loadFarmersFailed)
       } finally {
         setLoading(false)
       }
@@ -112,7 +114,7 @@ export default function MomoPaymentsPage() {
         setWallet(null)
         setHistory([])
         setLoanId(null)
-        setLoadError('No farmer available for payment profile.')
+        setLoadError(p.noFarmerProfile)
         return
       }
       const [w, h, loans] = await Promise.all([
@@ -127,7 +129,7 @@ export default function MomoPaymentsPage() {
       setWallet(w)
       setHistory(h)
     } catch {
-      setLoadError('Unable to load MoMo payment data.')
+      setLoadError(p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -146,32 +148,29 @@ export default function MomoPaymentsPage() {
   if (isBankViewer) {
     return (
       <section className="dashboard-page momo-page dashboard-page--compact bank-payments-page">
-        <PageHeader
-          title="Payments"
-          subtitle="View payment history, MoMo ledger, eKash, and repayment schedule for consented farmers."
-        />
+        <PageHeader title={p.title} subtitle={p.bankSubtitle} />
 
         <article className="card bank-pay-picker">
           <div className="bank-pay-picker__row">
             <label htmlFor="bank-pay-farmer-search">
-              Farmer
+              {p.farmerLabel}
               <input
                 id="bank-pay-farmer-search"
                 type="search"
-                placeholder="Search name, ID, phone, NID…"
+                placeholder={p.searchPlaceholder}
                 value={farmerQuery}
                 onChange={(event) => setFarmerQuery(event.target.value)}
               />
             </label>
             <label htmlFor="bank-pay-farmer-select">
-              Select
+              {p.select}
               <select
                 id="bank-pay-farmer-select"
                 value={farmerId || ''}
                 onChange={(event) => selectFarmer(event.target.value)}
                 disabled={loading && !farmers.length}
               >
-                <option value="">Choose farmer…</option>
+                <option value="">{p.chooseFarmer}</option>
                 {filteredFarmers.map((farmer) => (
                   <option key={farmer.farmerId} value={farmer.farmerId}>
                     {formatDisplayName(farmer.fullName) || `Farmer #${farmer.farmerId}`} · #{farmer.farmerId}
@@ -181,13 +180,11 @@ export default function MomoPaymentsPage() {
             </label>
             {farmerId ? (
               <Link to={`/farmer/${farmerId}`} className="btn-secondary bank-pay-picker__profile">
-                Open profile
+                {p.openProfile}
               </Link>
             ) : null}
           </div>
-          <p className="bank-pay-picker__hint">
-            View only — repay and disbursement stay on the farmer app.
-          </p>
+          <p className="bank-pay-picker__hint">{p.viewOnlyHint}</p>
         </article>
 
         {loadError && !selectedFarmer ? (
@@ -205,27 +202,24 @@ export default function MomoPaymentsPage() {
 
   return (
     <section className="dashboard-page momo-page dashboard-page--compact">
-      <PageHeader
-        title="Payments"
-        subtitle="Track your wallet, repay loans with MoMo, and review recent transactions."
-      />
+      <PageHeader title={p.title} subtitle={p.farmerSubtitle} />
 
       <div className="widgets three">
         <StatCard
-          title="Wallet balance"
+          title={p.walletBalance}
           value={wallet ? formatRwf(wallet.balance) : '—'}
           meta={wallet?.currency || 'RWF'}
           accent="green"
         />
         <StatCard
-          title="Transactions"
+          title={p.transactions}
           value={String(history.length)}
-          meta={`${successfulCount} successful`}
+          meta={p.successful(successfulCount)}
         />
         <StatCard
-          title="Loan repay"
-          value={loanId ? 'Ready' : 'None'}
-          meta={loanId ? 'Active loan found' : 'No repayable loan'}
+          title={p.loanRepay}
+          value={loanId ? p.ready : s.none}
+          meta={loanId ? p.activeLoanFound : p.noRepayableLoan}
           accent={loanId ? 'blue' : 'slate'}
         />
       </div>
@@ -239,29 +233,29 @@ export default function MomoPaymentsPage() {
       <div className="dashboard-grid momo-grid">
         <MomoPaymentForm farmerId={farmerId} loanId={loanId} onPaymentCreated={loadFarmerSelf} />
         {!loanId && !loading ? (
-          <p className="muted momo-form-hint">No active loan found for repayment.</p>
+          <p className="muted momo-form-hint">{p.noActiveLoan}</p>
         ) : null}
 
         <article className="card">
           <div className="section-head">
             <div>
-              <h2>Recent transactions</h2>
-              <p className="card-subtitle">Latest MoMo payment activity</p>
+              <h2>{p.recentTransactions}</h2>
+              <p className="card-subtitle">{p.recentMeta}</p>
             </div>
           </div>
           {loading ? (
-            <p className="muted">Loading payment history…</p>
+            <p className="muted">{p.loadingHistory}</p>
           ) : history.length === 0 ? (
-            <p className="muted">No transactions yet. Successful repayments will show here.</p>
+            <p className="muted">{p.empty}</p>
           ) : (
             <div className="table-scroll">
               <table className="desktop-table">
                 <thead>
                   <tr>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Phone</th>
+                    <th>{p.colType}</th>
+                    <th>{p.colStatus}</th>
+                    <th>{p.colAmount}</th>
+                    <th>{p.colPhone}</th>
                   </tr>
                 </thead>
                 <tbody>

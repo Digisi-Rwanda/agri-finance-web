@@ -1,9 +1,12 @@
+import { translateStatusLabel } from '../../i18n/portalUtils'
+import { usePortalCopy } from '../../context/AuthLocaleContext'
+
 function StatusBadge({ value, status }) {
+  const portal = usePortalCopy()
   const raw = value ?? status
   const normalized = String(raw || '').toLowerCase().trim()
 
   let toneClass = 'status-neutral'
-  let label = raw
 
   if (
     normalized === 'low' ||
@@ -34,16 +37,11 @@ function StatusBadge({ value, status }) {
     normalized.includes('watching')
   ) {
     toneClass = 'status-warning'
-  } else if (
-    normalized.includes('matched') ||
-    normalized.includes('verified')
-  ) {
+  } else if (normalized.includes('matched') || normalized.includes('verified')) {
     toneClass = 'status-success'
   }
 
-  if (normalized === 'high' || normalized === 'medium' || normalized === 'low') {
-    label = normalized.charAt(0).toUpperCase() + normalized.slice(1)
-  }
+  const label = translateStatusLabel(portal, raw)
 
   return <span className={`status-badge ${toneClass}`}>{label || '—'}</span>
 }

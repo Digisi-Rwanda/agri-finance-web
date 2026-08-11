@@ -12,39 +12,12 @@ import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePageCopy } from '../context/AuthLocaleContext'
+import { translateStatusLabel } from '../i18n/portalUtils'
 import { getFarmersWithInsights } from '../services/farmerService'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
 
 const PAGE_SIZE = 12
-
-const RISK_OPTIONS = [
-  { value: 'All', label: 'All risk' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'LOW', label: 'Low' },
-  { value: 'UNKNOWN', label: 'Unknown' },
-]
-
-const LOAN_OPTIONS = [
-  { value: 'All', label: 'All loans' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'DISBURSED', label: 'Disbursed' },
-  { value: 'NONE', label: 'No active loan' },
-]
-
-const SORT_OPTIONS = [
-  { value: 'name', label: 'Name A–Z' },
-  { value: 'score-desc', label: 'Score · high to low' },
-  { value: 'score-asc', label: 'Score · low to high' },
-  { value: 'risk', label: 'Risk · high first' },
-]
-
-function formatLoanStatus(status) {
-  if (!status) return 'None'
-  const lower = String(status).toLowerCase()
-  return lower.charAt(0).toUpperCase() + lower.slice(1)
-}
 
 function normalizeRisk(risk) {
   const value = String(risk || '').trim().toUpperCase()
@@ -69,6 +42,8 @@ function scoreTone(score) {
 }
 
 export default function FarmerAnalysisEntryPage() {
+  const { s, p } = usePageCopy('farmerDirectory')
+  const portal = useMemo(() => ({ shared: s, pages: { farmerDirectory: p } }), [s, p])
   const location = useLocation()
   const [farmers, setFarmers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -79,6 +54,43 @@ export default function FarmerAnalysisEntryPage() {
   const [scoreFilter, setScoreFilter] = useState('')
   const [sortBy, setSortBy] = useState('risk')
   const [page, setPage] = useState(1)
+
+  const riskOptions = useMemo(
+    () => [
+      { value: 'All', label: p.allRisk },
+      { value: 'HIGH', label: s.risk.high },
+      { value: 'MEDIUM', label: s.risk.medium },
+      { value: 'LOW', label: s.risk.low },
+      { value: 'UNKNOWN', label: 'Unknown' },
+    ],
+    [p.allRisk, s.risk],
+  )
+
+  const loanOptions = useMemo(
+    () => [
+      { value: 'All', label: `${s.all} ${s.loans.toLowerCase()}` },
+      { value: 'PENDING', label: s.statuses.PENDING },
+      { value: 'APPROVED', label: s.statuses.APPROVED },
+      { value: 'DISBURSED', label: s.statuses.DISBURSED },
+      { value: 'NONE', label: 'No active loan' },
+    ],
+    [s],
+  )
+
+  const sortOptions = useMemo(
+    () => [
+      { value: 'name', label: p.sortName },
+      { value: 'score-desc', label: p.sortScoreDesc },
+      { value: 'score-asc', label: p.sortScoreAsc },
+      { value: 'risk', label: p.sortRisk },
+    ],
+    [p],
+  )
+
+  const formatLoanStatus = (status) => {
+    if (!status) return s.none
+    return translateStatusLabel(portal, status)
+  }
 
   useEffect(() => {
     if (location.state?.search) {
@@ -95,14 +107,14 @@ export default function FarmerAnalysisEntryPage() {
         const data = await getFarmersWithInsights()
         setFarmers(Array.isArray(data) ? data : [])
       } catch {
-        setLoadError('Could not load farmer profiles. Check your connection and try again.')
+        setLoadError(p.loadFailed)
         setFarmers([])
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [p.loadFailed])
 
   const filteredFarmers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -181,18 +193,21 @@ export default function FarmerAnalysisEntryPage() {
     setPage(1)
   }
 
+  const footerFrom = filteredFarmers.length === 0 ? 0 : start + 1
+  const footerTo = Math.min(start + PAGE_SIZE, filteredFarmers.length)
+
   return (
     <section className="dashboard-page dashboard-page--compact farmer-directory-page">
       <PageHeader
-        title="Farmers"
-        subtitle="Browse consented profiles, credit scores, and lending status."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <>
             <Link to="/loans" className="btn-secondary">
-              Loan applications
+              {p.loanApplications}
             </Link>
             <Link to="/" className="btn-primary">
-              Dashboard
+              {p.dashboard}
               <ArrowRight size={16} />
             </Link>
           </>
@@ -211,48 +226,42 @@ export default function FarmerAnalysisEntryPage() {
               }}
             >
               <AlertCircle size={18} />
-              <span>
-                <strong>
-                  {highRisk} high-risk farmer{highRisk === 1 ? '' : 's'}
-                </strong>{' '}
-                in the consented portfolio
-              </span>
-              <span className="dash-alert__action">Filter high risk</span>
+              <span>{p.highRiskAlert(highRisk)}</span>
+              <span className="dash-alert__action">{p.filterHighRisk}</span>
             </button>
           ) : null}
           {pendingLoans > 0 ? (
             <Link to="/loans" className="dash-alert dash-alert--warn">
               <HandCoins size={18} />
-              <span>
-                <strong>
-                  {pendingLoans} farmer{pendingLoans === 1 ? '' : 's'}
-                </strong>{' '}
-                with a pending loan application
-              </span>
-              <span className="dash-alert__action">Open loans</span>
+              <span>{p.pendingAlert(pendingLoans)}</span>
+              <span className="dash-alert__action">{p.openLoans}</span>
             </Link>
           ) : null}
         </div>
       ) : null}
 
       <div className="widgets four">
-        <StatCard title="Registered" value={loading ? '…' : String(farmers.length)} meta="With bank consent" />
         <StatCard
-          title="With score"
+          title={p.registered}
+          value={loading ? '…' : String(farmers.length)}
+          meta={p.registeredMeta}
+        />
+        <StatCard
+          title={p.withScore}
           value={loading ? '…' : String(withScore)}
-          meta="Credit assessed"
+          meta={p.withScoreMeta}
           accent="blue"
         />
         <StatCard
-          title="Active loans"
+          title={p.activeLoans}
           value={loading ? '…' : String(withActiveLoan)}
           meta="Pending / approved / disbursed"
           accent="slate"
         />
         <StatCard
-          title="High risk"
+          title={p.highRisk}
           value={loading ? '…' : String(highRisk)}
-          meta="Needs closer review"
+          meta={p.highRiskMeta}
           accent="amber"
         />
       </div>
@@ -264,16 +273,16 @@ export default function FarmerAnalysisEntryPage() {
       ) : null}
 
       <DataTableShell
-        title="Farmer directory"
+        title={p.tableTitle}
         filters={
           <div className="farmer-filters">
             <label className="filter-search farmer-filters__search">
-              <span>Search</span>
+              <span>{s.search}</span>
               <div className="filter-search__field">
                 <Search size={14} aria-hidden />
                 <input
                   type="search"
-                  placeholder="Name, ID, phone, email, or location"
+                  placeholder={p.searchPlaceholder}
                   value={searchQuery}
                   onChange={(event) => {
                     setSearchQuery(event.target.value)
@@ -284,7 +293,7 @@ export default function FarmerAnalysisEntryPage() {
             </label>
 
             <div className="farmer-filters__chips" role="group" aria-label="Risk filter">
-              {RISK_OPTIONS.map((option) => (
+              {riskOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -301,7 +310,7 @@ export default function FarmerAnalysisEntryPage() {
 
             <div className="farmer-filters__row">
               <label>
-                Loan status
+                {p.loanStatus}
                 <select
                   value={loanFilter}
                   onChange={(event) => {
@@ -309,7 +318,7 @@ export default function FarmerAnalysisEntryPage() {
                     setPage(1)
                   }}
                 >
-                  {LOAN_OPTIONS.map((option) => (
+                  {loanOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -317,12 +326,12 @@ export default function FarmerAnalysisEntryPage() {
                 </select>
               </label>
               <label>
-                Min. score
+                {p.minScore}
                 <input
                   type="number"
                   min="0"
                   max="100"
-                  placeholder="e.g. 60"
+                  placeholder={p.minScorePlaceholder}
                   value={scoreFilter}
                   onChange={(event) => {
                     setScoreFilter(event.target.value)
@@ -339,7 +348,7 @@ export default function FarmerAnalysisEntryPage() {
                     setPage(1)
                   }}
                 >
-                  {SORT_OPTIONS.map((option) => (
+                  {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -349,7 +358,7 @@ export default function FarmerAnalysisEntryPage() {
               {hasActiveFilters ? (
                 <button type="button" className="btn-secondary farmer-filters__clear" onClick={clearFilters}>
                   <X size={14} />
-                  Clear filters
+                  {s.clearFilters}
                 </button>
               ) : null}
             </div>
@@ -358,8 +367,7 @@ export default function FarmerAnalysisEntryPage() {
         footer={
           <>
             <span>
-              Showing {filteredFarmers.length === 0 ? 0 : start + 1}–
-              {Math.min(start + PAGE_SIZE, filteredFarmers.length)} of {filteredFarmers.length}
+              {s.showing(footerFrom, footerTo, filteredFarmers.length)}
               {filteredFarmers.length !== farmers.length ? ` (filtered from ${farmers.length})` : ''}
             </span>
             <div className="page-actions">
@@ -367,20 +375,18 @@ export default function FarmerAnalysisEntryPage() {
                 type="button"
                 className="btn-secondary"
                 disabled={safePage === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               >
-                Previous
+                {s.previous}
               </button>
-              <span className="page-indicator">
-                Page {safePage} of {totalPages}
-              </span>
+              <span className="page-indicator">{s.pageOf(safePage, totalPages)}</span>
               <button
                 type="button"
                 className="btn-secondary"
                 disabled={safePage === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
               >
-                Next
+                {s.next}
               </button>
             </div>
           </>
@@ -389,12 +395,12 @@ export default function FarmerAnalysisEntryPage() {
         <table className="desktop-table dashboard-table farmer-directory-table">
           <thead>
             <tr>
-              <th>Farmer</th>
-              <th>Contact</th>
-              <th>Location</th>
-              <th>Credit score</th>
-              <th>Risk</th>
-              <th>Loan</th>
+              <th>{p.colFarmer}</th>
+              <th>{p.colContact}</th>
+              <th>{p.colLocation}</th>
+              <th>{p.colScore}</th>
+              <th>{p.colRisk}</th>
+              <th>{p.colLoan}</th>
               <th aria-label="Actions" />
             </tr>
           </thead>
@@ -410,9 +416,7 @@ export default function FarmerAnalysisEntryPage() {
             ) : pagedFarmers.length === 0 ? (
               <tr>
                 <td colSpan={7} className="empty-cell">
-                  {farmers.length === 0
-                    ? 'No farmer profiles are available with bank consent right now.'
-                    : 'No farmers match your search or filters.'}
+                  {farmers.length === 0 ? p.empty : p.emptyFilter}
                 </td>
               </tr>
             ) : (
@@ -451,7 +455,7 @@ export default function FarmerAnalysisEntryPage() {
                     </td>
                     <td className="action-cell">
                       <Link to={`/farmer/${farmer.farmerId}`} className="btn-view">
-                        Open
+                        {p.open}
                         <ChevronRight size={14} aria-hidden />
                       </Link>
                     </td>
@@ -462,15 +466,11 @@ export default function FarmerAnalysisEntryPage() {
           </tbody>
         </table>
 
-        <div className="farmer-mobile-list" aria-label="Farmer directory">
+        <div className="farmer-mobile-list" aria-label={p.tableTitle}>
           {loading ? (
             <div className="skeleton-row" />
           ) : pagedFarmers.length === 0 ? (
-            <p className="empty-cell">
-              {farmers.length === 0
-                ? 'No farmer profiles are available with bank consent right now.'
-                : 'No farmers match your search or filters.'}
-            </p>
+            <p className="empty-cell">{farmers.length === 0 ? p.empty : p.emptyFilter}</p>
           ) : (
             pagedFarmers.map((farmer) => (
               <article key={`m-${farmer.farmerId}`} className="farmer-mobile-card">
@@ -483,15 +483,15 @@ export default function FarmerAnalysisEntryPage() {
                 </div>
                 <div className="farmer-mobile-card__meta">
                   <div>
-                    <span>Score</span>
+                    <span>{p.colScore}</span>
                     {farmer.latestCreditScore ?? '—'}
                   </div>
                   <div>
-                    <span>Loan</span>
+                    <span>{p.colLoan}</span>
                     {formatLoanStatus(farmer.activeLoan)}
                   </div>
                   <div>
-                    <span>Location</span>
+                    <span>{p.colLocation}</span>
                     {farmer.location || '—'}
                   </div>
                   <div>
@@ -500,7 +500,7 @@ export default function FarmerAnalysisEntryPage() {
                   </div>
                 </div>
                 <Link to={`/farmer/${farmer.farmerId}`} className="btn-view btn-view--block">
-                  View full profile
+                  {p.viewProfile}
                   <ChevronRight size={14} aria-hidden />
                 </Link>
               </article>

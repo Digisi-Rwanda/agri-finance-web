@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import DataTableShell from '../components/ui/DataTableShell'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   createBankProduct,
   createSettlement,
@@ -30,6 +31,7 @@ import { exportGuaranteeClaimPackagePdf } from '../utils/exportPdf'
  * Comment: consolidates proposal items #4, #5, #7, #12, #13 into one staff page.
  */
 function BankabilityOpsPage() {
+  const { s, p } = usePageCopy('bankabilityOps')
   const [products, setProducts] = useState([])
   const [banks, setBanks] = useState([])
   const [settlements, setSettlements] = useState([])
@@ -95,7 +97,7 @@ function BankabilityOpsPage() {
         setProductForm((f) => ({ ...f, bankId: String(b[0].bankId) }))
       }
     } catch (err) {
-      toast.error(err?.response?.data?.error || 'Failed to load bankability data')
+      toast.error(err?.response?.data?.error || p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -247,15 +249,15 @@ function BankabilityOpsPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Bankability operations"
-        subtitle="Bank products, coop settlements, warehouse receipts, payment watch, and guarantee claims."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link to="/payment-watch" className="btn-secondary">
-              Payment Watch
+              {p.paymentWatch}
             </Link>
             <Link to="/trust-ladder" className="btn-secondary">
-              Trust Ladder
+              {p.trustLadder}
             </Link>
             <button
               type="button"
@@ -270,20 +272,20 @@ function BankabilityOpsPage() {
                 }
               }}
             >
-              Scan collateral expiry
+              {p.scanExpiry}
             </button>
             <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
+              {loading ? s.refreshing : s.refresh}
             </button>
           </div>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Bank products" value={String(products.length)} />
-        <StatCard title="Open payment watches" value={String(watches.length)} />
-        <StatCard title="Collateral expiring (30d)" value={String(expiring.length)} />
-        <StatCard title="Guarantee claims" value={String(claims.length)} />
+        <StatCard title={p.bankProducts} value={String(products.length)} />
+        <StatCard title={p.openWatches} value={String(watches.length)} />
+        <StatCard title={p.collateralExpiring} value={String(expiring.length)} />
+        <StatCard title={p.guaranteeClaims} value={String(claims.length)} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -554,7 +556,7 @@ function BankabilityOpsPage() {
                 Farmer timeline · #{timeline.settlementId} · {timeline.cooperativeName}
               </h3>
               <button type="button" className="btn-secondary" onClick={() => setTimeline(null)}>
-                Close
+                {s.close}
               </button>
             </div>
             <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
@@ -625,7 +627,7 @@ function BankabilityOpsPage() {
                             load()
                           }}
                         >
-                          Approve
+                          {s.approve}
                         </button>
                         <button
                           type="button"
@@ -636,7 +638,7 @@ function BankabilityOpsPage() {
                             load()
                           }}
                         >
-                          Reject
+                          {s.reject}
                         </button>
                       </>
                     ) : null}
@@ -654,7 +656,7 @@ function BankabilityOpsPage() {
                 Claim package #{claimPackage.claim?.claimId} · loan #{claimPackage.loan?.loanId}
               </h3>
               <button type="button" className="btn-secondary" onClick={() => setClaimPackage(null)}>
-                Close
+                {s.close}
               </button>
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>

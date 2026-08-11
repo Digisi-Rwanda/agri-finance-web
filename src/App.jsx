@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { ToastContainer, toast } from 'react-toastify'
+import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { setUnauthorizedHandler } from './api/client'
+import UnauthorizedHandler from './components/UnauthorizedHandler'
 import { AuthLocaleProvider } from './context/AuthLocaleContext'
 import AppRoutes from './routes/AppRoutes'
 import './styles/app.css'
@@ -18,16 +18,10 @@ function App() {
     document.documentElement.classList.toggle('dark', localStorage.getItem('theme') === 'dark')
   }, [])
 
-  useEffect(() => {
-    setUnauthorizedHandler(() => {
-      toast.error('Session expired. Please sign in again.')
-      window.location.assign('/login')
-    })
-  }, [])
-
   return (
     <BrowserRouter>
       <AuthLocaleProvider>
+        <UnauthorizedHandler />
         <AppRoutes />
       </AuthLocaleProvider>
       <ToastContainer position="top-right" autoClose={2500} newestOnTop />

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import AuthLayout from '../components/auth/AuthLayout'
 import PasswordField from '../components/auth/PasswordField'
-import { registerCopy } from '../constants/authCopy'
+import { useAuthCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage, registerUser } from '../services/auth'
 import {
   formatRwandaPhoneDisplay,
@@ -15,7 +15,7 @@ import '../styles/auth.css'
 
 function RegisterPage() {
   const navigate = useNavigate()
-  const copy = registerCopy
+  const copy = useAuthCopy().register
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -136,15 +136,15 @@ function RegisterPage() {
             onChange={(event) => setForm((prev) => ({ ...prev, accepted: event.target.checked }))}
           />
           <span>
-            I accept the{' '}
+            {copy.termsPrefix}
             <a className="auth-link" href="/terms" target="_blank" rel="noreferrer">
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a className="auth-link" href="/privacy" target="_blank" rel="noreferrer">
-              Privacy Policy
+              {copy.termsOfService}
             </a>
-            .
+            {copy.termsAnd}
+            <a className="auth-link" href="/privacy" target="_blank" rel="noreferrer">
+              {copy.privacyPolicy}
+            </a>
+            {copy.termsSuffix}
           </span>
         </label>
 

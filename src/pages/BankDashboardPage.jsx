@@ -11,6 +11,8 @@ import PageHeader from '../components/ui/PageHeader'
 import SimpleBarChart from '../components/dashboard/SimpleBarChart'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePageCopy } from '../context/AuthLocaleContext'
+import { translateStatusLabel } from '../i18n/portalUtils'
 import { getCurrentUser } from '../services/auth'
 import { getAnalyticsOverview } from '../services/analyticsService'
 import { getAuditLogs } from '../services/auditService'
@@ -23,24 +25,10 @@ import {
 } from '../utils/dashboard'
 import { formatRwandaPhoneDisplay } from '../utils/rwandaPhone'
 
-const LOAN_STATUS_LABELS = {
-  PENDING: 'Pending',
-  APPROVED: 'Approved',
-  REJECTED: 'Rejected',
-  DISBURSED: 'Disbursed',
-  REPAID: 'Repaid',
-}
-
 function normalizeRisk(risk) {
   const value = String(risk || '').trim().toUpperCase()
   if (value === 'HIGH' || value === 'MEDIUM' || value === 'LOW') return value
   return null
-}
-
-function formatRiskLabel(risk) {
-  const value = normalizeRisk(risk)
-  if (!value) return 'Unknown'
-  return value.charAt(0) + value.slice(1).toLowerCase()
 }
 
 function scoreTone(score) {
@@ -68,13 +56,40 @@ function riskRank(risk) {
   return 3
 }
 
+function loanStatusLabel(portal, status) {
+  if (!status) return portal.pages?.bankDashboard?.none ?? portal.shared?.none ?? 'None'
+  return translateStatusLabel(portal, status)
+}
+
 function BankDashboardPage() {
+  const { s, p } = usePageCopy('bankDashboard')
+  const portal = useMemo(() => ({ shared: s, pages: { bankDashboard: p } }), [s, p])
   const isAdmin = getCurrentUser()?.role === 'ADMIN'
   const [farmers, setFarmers] = useState([])
   const [overview, setOverview] = useState(null)
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+
+  const loanStatusLabels = useMemo(
+    () => ({
+      PENDING: s.statuses.PENDING,
+      APPROVED: s.statuses.APPROVED,
+      REJECTED: s.statuses.REJECTED,
+      DISBURSED: s.statuses.DISBURSED,
+      REPAID: 'Repaid',
+    }),
+    [s],
+  )
+
+  const riskLabels = useMemo(
+    () => ({
+      HIGH: s.risk.high,
+      MEDIUM: s.risk.medium,
+      LOW: s.risk.low,
+    }),
+    [s],
+  )
 
   useEffect(() => {
     const load = async () => {
@@ -90,7 +105,7 @@ function BankDashboardPage() {
         setFarmers(Array.isArray(farmersData.value) ? farmersData.value : [])
       } else {
         setFarmers([])
-        setLoadError('Could not load portfolio farmers.')
+        setLoadError(p.loadFailed)
       }
 
       if (overviewData.status === 'fulfilled') setOverview(overviewData.value)
@@ -110,7 +125,7 @@ function BankDashboardPage() {
       setLoading(false)
     }
     load()
-  }, [isAdmin])
+  }, [isAdmin, p.loadFailed])
 
   const previewFarmers = useMemo(
     () =>
@@ -141,12 +156,12 @@ function BankDashboardPage() {
       key: `pending-${farmer.farmerId}`,
       kind: 'pending',
       farmer,
-      label: 'Pending application',
+      label: p.pendingApplication,
       detail:
         farmer.activeLoanAmount != null
           ? formatRwfCompact(farmer.activeLoanAmount)
-          : 'Amount pending',
-      meta: farmer.activeLoanPurpose || 'Review credit & repay capacity',
+          : p.amountPending,
+      meta: farmer.activeLoanPurpose || p.reviewCredit,
       href: `/farmer/${farmer.farmerId}`,
     }))
 
@@ -157,14 +172,14 @@ function BankDashboardPage() {
         key: `risk-${farmer.farmerId}`,
         kind: 'risk',
         farmer,
-        label: 'High risk',
+        label: p.highRiskLabel,
         detail: `Score ${farmer.latestCreditScore ?? farmer.creditScore ?? '—'}`,
-        meta: 'Open profile to review drivers',
+        meta: p.openProfileReview,
         href: `/farmer/${farmer.farmerId}`,
       }))
 
     return [...pending, ...riskRows].slice(0, 5)
-  }, [pendingLoanFarmers, highRiskFarmers])
+  }, [pendingLoanFarmers, highRiskFarmers, p])
 
   const totalFarmers = overview?.farmers ?? farmers.length
   const activeLoans =
@@ -179,43 +194,26 @@ function BankDashboardPage() {
           tone: 'warn',
           href: '/loans',
           icon: HandCoins,
-          body: (
-            <>
-              <strong>
-                {pendingCount} loan application{pendingCount === 1 ? '' : 's'}
-              </strong>{' '}
-              waiting for review
-              {pendingLoanFarmers.length > 0
-                ? ` · ${pendingLoanFarmers.length} in your consented portfolio`
-                : ''}
-            </>
-          ),
-          action: 'Open loans',
+          body: p.pendingAlert(pendingCount, pendingLoanFarmers.length),
+          action: p.openLoans,
         }
       : highRiskCount > 0
         ? {
             tone: 'risk',
             href: '/farmer',
             icon: AlertCircle,
-            body: (
-              <>
-                <strong>
-                  {highRiskCount} high-risk farmer{highRiskCount === 1 ? '' : 's'}
-                </strong>{' '}
-                in your consented portfolio
-              </>
-            ),
-            action: 'View farmers',
+            body: p.highRiskAlert(highRiskCount),
+            action: p.viewFarmers,
           }
         : null
 
-  const loanStatusRows = mapCountsToBarRows(overview?.loansByStatus, LOAN_STATUS_LABELS)
-  const riskRows = mapCountsToBarRows(overview?.creditRiskLatestByTier)
+  const loanStatusRows = mapCountsToBarRows(overview?.loansByStatus, loanStatusLabels)
+  const riskRows = mapCountsToBarRows(overview?.creditRiskLatestByTier, riskLabels)
 
   if (loading) {
     return (
       <section className="dashboard-page dashboard-page--compact bank-dashboard-page">
-        <PageHeader subtitle="Loading today’s portfolio…" />
+        <PageHeader subtitle={p.loadingSubtitle} />
         <div className="widgets three">
           {[1, 2, 3].map((id) => (
             <article key={id} className="widget card dashboard-skeleton" />
@@ -228,16 +226,16 @@ function BankDashboardPage() {
   return (
     <section className="dashboard-page dashboard-page--compact bank-dashboard-page">
       <PageHeader
-        subtitle={`${totalFarmers.toLocaleString()} consented farmers in portfolio · prioritize reviews below.`}
+        subtitle={p.subtitle(totalFarmers.toLocaleString())}
         actions={
           pendingCount > 0 ? (
             <Link to="/loans" className="btn-primary">
-              Review {pendingCount} pending
+              {p.reviewPending(pendingCount)}
               <ArrowRight size={16} />
             </Link>
           ) : (
             <Link to="/loans" className="btn-primary">
-              Manage loans
+              {p.manageLoans}
               <ArrowRight size={16} />
             </Link>
           )
@@ -273,21 +271,21 @@ function BankDashboardPage() {
 
       <div className="widgets three">
         <StatCard
-          title="Pending review"
+          title={p.pendingReview}
           value={pendingCount.toLocaleString()}
-          meta="Loan applications waiting"
+          meta={p.pendingReviewMeta}
           accent={pendingCount > 0 ? 'amber' : 'green'}
         />
         <StatCard
-          title="Active loans"
+          title={p.activeLoans}
           value={activeLoans.toLocaleString()}
-          meta="Approved + disbursed"
+          meta={p.activeLoansMeta}
           accent="blue"
         />
         <StatCard
-          title="High risk"
+          title={p.highRisk}
           value={highRiskCount.toLocaleString()}
-          meta="In consented portfolio"
+          meta={p.highRiskMeta}
           accent={highRiskCount > 0 ? 'amber' : 'slate'}
         />
       </div>
@@ -295,22 +293,19 @@ function BankDashboardPage() {
       <div className="dash-section">
         <div className="dash-section__head bank-dash-queue-head">
           <div>
-            <h2>Today’s queue</h2>
-            <p>Pending applications and high-risk farmers that need attention</p>
+            <h2>{p.todaysQueue}</h2>
+            <p>{p.queueSubtitle}</p>
           </div>
           <Link to="/loans" className="btn-view">
-            All loans
+            {p.allLoans}
           </Link>
         </div>
 
         {workQueue.length === 0 ? (
           <article className="card bank-dash-queue-empty">
-            <p className="muted">
-              Nothing urgent right now. When farmers apply or scores move to high risk, they
-              will show up here.
-            </p>
+            <p className="muted">{p.queueEmpty}</p>
             <Link to="/farmer" className="btn-secondary">
-              Browse farmers
+              {p.browseFarmers}
             </Link>
           </article>
         ) : (
@@ -338,7 +333,7 @@ function BankDashboardPage() {
                       <small className="bank-dash-queue-meta">{row.meta}</small>
                     </div>
                     <span className="bank-dash-queue-item__go">
-                      Open
+                      {p.open}
                       <ChevronRight size={16} aria-hidden />
                     </span>
                   </Link>
@@ -353,13 +348,11 @@ function BankDashboardPage() {
         <article className="card dash-farmers-card">
           <div className="section-head">
             <div>
-              <h2>Portfolio farmers</h2>
-              <p className="card-subtitle">
-                {farmers.length} consented · highest risk first
-              </p>
+              <h2>{p.portfolioFarmers}</h2>
+              <p className="card-subtitle">{p.portfolioSubtitle(farmers.length)}</p>
             </div>
             <Link to="/farmer" className="btn-view">
-              View all
+              {p.viewAll}
             </Link>
           </div>
 
@@ -368,10 +361,10 @@ function BankDashboardPage() {
               <table className="desktop-table dashboard-table bank-dash-table">
                 <thead>
                   <tr>
-                    <th>Farmer</th>
-                    <th>Score</th>
-                    <th>Risk</th>
-                    <th>Loan</th>
+                    <th>{p.colFarmer}</th>
+                    <th>{p.colScore}</th>
+                    <th>{p.colRisk}</th>
+                    <th>{p.colLoan}</th>
                     <th />
                   </tr>
                 </thead>
@@ -379,18 +372,14 @@ function BankDashboardPage() {
                   {previewFarmers.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="empty-cell">
-                        No consented farmers yet. Farmers appear here after they grant bank
-                        consent in the mobile app or under More → Farmer consent.
+                        {p.portfolioEmpty}
                       </td>
                     </tr>
                   ) : (
                     previewFarmers.map((farmer) => {
                       const risk = normalizeRisk(farmer.riskLevel)
                       const score = farmer.latestCreditScore ?? farmer.creditScore
-                      const loanStatus = farmer.activeLoan
-                        ? String(farmer.activeLoan).charAt(0) +
-                          String(farmer.activeLoan).slice(1).toLowerCase()
-                        : 'None'
+                      const loanStatus = loanStatusLabel(portal, farmer.activeLoan)
                       return (
                         <tr key={farmer.farmerId}>
                           <td>
@@ -408,15 +397,15 @@ function BankDashboardPage() {
                             </span>
                           </td>
                           <td>
-                            <StatusBadge value={risk || formatRiskLabel(farmer.riskLevel)} />
+                            <StatusBadge value={risk || farmer.riskLevel || p.unknown} />
                           </td>
                           <td>{loanStatus}</td>
                           <td className="bank-dash-row-actions">
                             <Link to={`/payments?farmerId=${farmer.farmerId}`} className="btn-view">
-                              Payments
+                              {p.payments}
                             </Link>
                             <Link to={`/farmer/${farmer.farmerId}`} className="btn-view">
-                              Profile
+                              {p.profile}
                               <ChevronRight size={14} aria-hidden />
                             </Link>
                           </td>
@@ -431,10 +420,7 @@ function BankDashboardPage() {
 
           <div className="bank-dash-mobile">
             {previewFarmers.length === 0 ? (
-              <p className="muted">
-                No consented farmers yet. They appear after granting bank consent on mobile or
-                under More → Farmer consent.
-              </p>
+              <p className="muted">{p.portfolioEmpty}</p>
             ) : (
               previewFarmers.map((farmer) => {
                 const risk = normalizeRisk(farmer.riskLevel)
@@ -451,24 +437,26 @@ function BankDashboardPage() {
                           {farmer.phone ? ` · ${formatRwandaPhoneDisplay(farmer.phone)}` : ''}
                         </small>
                       </div>
-                      <StatusBadge value={risk || formatRiskLabel(farmer.riskLevel)} />
+                      <StatusBadge value={risk || farmer.riskLevel || p.unknown} />
                     </div>
                     <div className="bank-dash-mobile-card__meta">
                       <span>
-                        Score{' '}
+                        {p.colScore}{' '}
                         <strong className={`bank-dash-score bank-dash-score--${scoreTone(score)}`}>
                           {score ?? '—'}
                         </strong>
                       </span>
-                      <span>Loan {farmer.activeLoan || 'None'}</span>
+                      <span>
+                        {p.colLoan} {loanStatusLabel(portal, farmer.activeLoan)}
+                      </span>
                     </div>
                     <div className="bank-dash-mobile-card__actions">
                       <Link to={`/payments?farmerId=${farmer.farmerId}`} className="btn-secondary">
                         <CreditCard size={14} aria-hidden />
-                        Payments
+                        {p.payments}
                       </Link>
                       <Link to={`/farmer/${farmer.farmerId}`} className="btn-primary">
-                        Profile
+                        {p.profile}
                       </Link>
                     </div>
                   </article>
@@ -482,15 +470,15 @@ function BankDashboardPage() {
           <article className="card activity-card">
             <div className="section-head">
               <div>
-                <h2>Recent activity</h2>
-                <p className="card-subtitle">Latest system events</p>
+                <h2>{p.recentActivity}</h2>
+                <p className="card-subtitle">{p.recentActivityMeta}</p>
               </div>
               <Link to="/audit" className="btn-view">
-                Full log
+                {p.fullLog}
               </Link>
             </div>
             {activities.length === 0 ? (
-              <p className="muted dashboard-empty">No recent activity.</p>
+              <p className="muted dashboard-empty">{p.noActivity}</p>
             ) : (
               <ul className="activity-list">
                 {activities.map((item) => (
@@ -508,15 +496,15 @@ function BankDashboardPage() {
       <div className="dash-section bank-dash-overview">
         <div className="dash-section__head">
           <div>
-            <h2>Portfolio overview</h2>
-            <p>Loan pipeline and credit risk for consented farmers</p>
+            <h2>{p.portfolioOverview}</h2>
+            <p>{p.overviewSubtitle}</p>
           </div>
           <div className="bank-dash-overview__actions">
             <Link to="/loans" className="btn-view">
-              Loans
+              {p.loans}
             </Link>
             <Link to="/farmer" className="btn-view">
-              Farmers
+              {p.farmers}
             </Link>
           </div>
         </div>
@@ -524,21 +512,21 @@ function BankDashboardPage() {
           <article className="card">
             <div className="section-head">
               <div>
-                <h2>Loan pipeline</h2>
-                <p className="card-subtitle">Applications by status</p>
+                <h2>{p.loanPipeline}</h2>
+                <p className="card-subtitle">{p.pipelineMeta}</p>
               </div>
             </div>
-            <SimpleBarChart rows={loanStatusRows} emptyMessage="No loan applications yet." />
+            <SimpleBarChart rows={loanStatusRows} emptyMessage={p.noLoans} />
           </article>
 
           <article className="card">
             <div className="section-head">
               <div>
-                <h2>Credit risk</h2>
-                <p className="card-subtitle">Latest farmer risk tiers</p>
+                <h2>{p.creditRisk}</h2>
+                <p className="card-subtitle">{p.creditRiskMeta}</p>
               </div>
             </div>
-            <SimpleBarChart rows={riskRows} emptyMessage="No risk scores yet." />
+            <SimpleBarChart rows={riskRows} emptyMessage={p.noRisk} />
           </article>
         </div>
       </div>

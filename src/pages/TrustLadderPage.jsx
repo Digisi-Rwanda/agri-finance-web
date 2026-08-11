@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { fetchTrustLadder } from '../services/bankabilityService'
 
-/**
- * Trust Ladder (#8) for BANK / ADMIN — Bronze → Platinum with behavior metrics.
- */
 function TrustLadderPage() {
+  const { s, p } = usePageCopy('trustLadder')
   const [farmerId, setFarmerId] = useState('')
   const [ladder, setLadder] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -17,26 +16,27 @@ function TrustLadderPage() {
       const data = await fetchTrustLadder({ score: 0 })
       setLadder(data)
     } catch {
-      toast.error('Could not load trust levels')
+      toast.error(p.loadFailed)
     }
   }
 
   useEffect(() => {
     loadLevels()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const evaluateFarmer = async () => {
     if (!farmerId.trim()) {
-      toast.info('Enter a farmer ID')
+      toast.info(p.enterFarmerId)
       return
     }
     setLoading(true)
     try {
       const data = await fetchTrustLadder({ farmerId: Number(farmerId) })
       setLadder(data)
-      toast.success(`${data.tier} · score ${data.score}`)
+      toast.success(p.evaluateSuccess(data.tier, data.score))
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Evaluation failed')
+      toast.error(e?.response?.data?.error || p.evaluateFailed)
     } finally {
       setLoading(false)
     }
@@ -52,35 +52,29 @@ function TrustLadderPage() {
 
   return (
     <section className="dashboard-page dashboard-page--compact">
-      <PageHeader
-        title="Credit tiers"
-        subtitle="Tier farmers by repayment, savings, contract fulfillment, and mobile money behavior."
-      />
+      <PageHeader title={p.title} subtitle={p.subtitle} />
 
       <div className="widgets four">
-        <StatCard title="Current tier" value={ladder?.tier || '—'} />
-        <StatCard title="Composite score" value={ladder?.score != null ? String(ladder.score) : '—'} />
-        <StatCard title="Mode" value={ladder?.mode === 'farmer' ? 'Farmer metrics' : 'Levels'} />
-        <StatCard
-          title="Next"
-          value={ladder?.nextTier?.tier ? String(ladder.nextTier.tier) : '—'}
-        />
+        <StatCard title={p.currentTier} value={ladder?.tier || '—'} />
+        <StatCard title={p.compositeScore} value={ladder?.score != null ? String(ladder.score) : '—'} />
+        <StatCard title={p.mode} value={ladder?.mode === 'farmer' ? p.modeFarmer : p.modeLevels} />
+        <StatCard title={p.next} value={ladder?.nextTier?.tier ? String(ladder.nextTier.tier) : '—'} />
       </div>
 
       <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-        <h3 className="mb-3 font-semibold">Evaluate farmer</h3>
+        <h3 className="mb-3 font-semibold">{p.evaluateFarmer}</h3>
         <div className="flex flex-wrap gap-2">
           <input
             className="rounded-lg border border-[var(--border)] bg-transparent p-2"
-            placeholder="Farmer ID"
+            placeholder={p.farmerIdPlaceholder}
             value={farmerId}
             onChange={(e) => setFarmerId(e.target.value)}
           />
           <button type="button" className="btn-primary" onClick={evaluateFarmer} disabled={loading}>
-            {loading ? 'Evaluating…' : 'Evaluate'}
+            {loading ? p.evaluating : p.evaluate}
           </button>
           <button type="button" className="btn-secondary" onClick={loadLevels}>
-            Show all levels
+            {p.showAllLevels}
           </button>
         </div>
         {ladder?.unlock ? (
@@ -117,9 +111,9 @@ function TrustLadderPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Level</th>
-              <th>Min score</th>
-              <th>Benefits</th>
+              <th>{p.colLevel}</th>
+              <th>{p.colMinScore}</th>
+              <th>{p.colBenefits}</th>
             </tr>
           </thead>
           <tbody>
@@ -134,7 +128,7 @@ function TrustLadderPage() {
               >
                 <td>
                   <strong>{lvl.tier}</strong>
-                  {ladder?.tier === lvl.tier ? ' · current' : ''}
+                  {ladder?.tier === lvl.tier ? p.currentSuffix : ''}
                 </td>
                 <td>{lvl.minScore}</td>
                 <td>{(lvl.benefits || []).join(' · ')}</td>

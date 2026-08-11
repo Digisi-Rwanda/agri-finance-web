@@ -9,16 +9,10 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { getNotifications } from '../services/notificationService'
 
 const READ_KEY = 'agri_finance_notification_read'
-
-const FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'unread', label: 'Unread' },
-  { id: 'loan', label: 'Loans' },
-  { id: 'system', label: 'System' },
-]
 
 function loadReadIds() {
   try {
@@ -41,12 +35,23 @@ function typeIcon(type) {
 }
 
 function NotificationsPage() {
+  const { s, p, layout } = usePageCopy('notifications')
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [readIds, setReadIds] = useState(loadReadIds)
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+
+  const filters = useMemo(
+    () => [
+      { id: 'all', label: p.filterAll },
+      { id: 'unread', label: p.filterUnread },
+      { id: 'loan', label: p.filterLoans },
+      { id: 'system', label: p.filterSystem },
+    ],
+    [p.filterAll, p.filterLoans, p.filterSystem, p.filterUnread],
+  )
 
   useEffect(() => {
     const load = async () => {
@@ -56,14 +61,14 @@ function NotificationsPage() {
         const data = await getNotifications()
         setItems(Array.isArray(data) ? data : [])
       } catch {
-        setLoadError('Could not load notifications.')
+        setLoadError(p.loadFailed)
         setItems([])
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [p.loadFailed])
 
   const enriched = useMemo(
     () => items.map((item) => ({ ...item, read: readIds.has(item.id) })),
@@ -96,7 +101,7 @@ function NotificationsPage() {
       saveReadIds(next)
       return next
     })
-    toast.success('All notifications marked as read.')
+    toast.success(p.markedAllRead)
   }
 
   const openItem = (item) => {
@@ -109,45 +114,45 @@ function NotificationsPage() {
       <div className="account-toolbar">
         <div>
           <nav className="account-toolbar__crumb" aria-label="Breadcrumb">
-            <Link to="/">Home</Link>
+            <Link to="/">{layout.breadcrumbHome || s.home}</Link>
             <span aria-hidden>/</span>
-            <span>Notifications</span>
+            <span>{p.title}</span>
           </nav>
-          <h1>Notifications</h1>
+          <h1>{p.title}</h1>
         </div>
         <div className="account-toolbar__actions">
           {unreadCount > 0 ? (
             <button type="button" className="btn-secondary" onClick={markAllRead}>
               <CheckCheck size={16} />
-              Mark all read
+              {p.markAllRead}
             </button>
           ) : null}
           <Link to="/settings" className="btn-secondary">
             <Settings size={16} />
-            Preferences
+            {p.preferences}
           </Link>
         </div>
       </div>
 
       <div className="notifications-summary">
         <div className="notifications-summary__stat">
-          <small>Total</small>
+          <small>{p.total}</small>
           <strong>{loading ? '…' : enriched.length}</strong>
         </div>
         <div className="notifications-summary__stat">
-          <small>Unread</small>
+          <small>{p.unread}</small>
           <strong>{loading ? '…' : unreadCount}</strong>
         </div>
         <div className="notifications-summary__stat">
-          <small>Loans</small>
+          <small>{p.loans}</small>
           <strong>
             {loading ? '…' : enriched.filter((item) => item.type === 'loan').length}
           </strong>
         </div>
       </div>
 
-      <div className="notifications-filters" role="tablist" aria-label="Filter notifications">
-        {FILTERS.map((option) => (
+      <div className="notifications-filters" role="tablist" aria-label={p.filterLabel}>
+        {filters.map((option) => (
           <button
             key={option.id}
             type="button"
@@ -175,12 +180,8 @@ function NotificationsPage() {
       ) : filtered.length === 0 ? (
         <article className="card notifications-empty">
           <Bell size={32} strokeWidth={1.5} />
-          <h2>{enriched.length === 0 ? 'No notifications yet' : 'Nothing in this filter'}</h2>
-          <p>
-            {enriched.length === 0
-              ? 'Loan decisions and system alerts will appear here.'
-              : 'Try another filter to see more alerts.'}
-          </p>
+          <h2>{enriched.length === 0 ? p.emptyTitle : p.filterEmptyTitle}</h2>
+          <p>{enriched.length === 0 ? p.emptyBody : p.filterEmptyBody}</p>
         </article>
       ) : (
         <div className="notification-list">
@@ -207,7 +208,7 @@ function NotificationsPage() {
                     <div className="notification-item__top">
                       <h3 className="notification-item__title">{item.title}</h3>
                       {!item.read ? (
-                        <span className="notification-item__dot" aria-label="Unread" />
+                        <span className="notification-item__dot" aria-label={p.unreadLabel} />
                       ) : null}
                     </div>
                     <p className="notification-item__message">{item.message}</p>
@@ -224,10 +225,10 @@ function NotificationsPage() {
                     onClick={() => markAsRead(item.id)}
                   >
                     <CircleCheckBig size={14} />
-                    Read
+                    {p.read}
                   </button>
                 ) : (
-                  <span className="notification-item__read-label">Read</span>
+                  <span className="notification-item__read-label">{p.read}</span>
                 )}
               </article>
             )

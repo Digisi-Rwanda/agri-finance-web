@@ -13,11 +13,17 @@
   </head>
   <body>
     <main class="wrap">
+      <div class="lang-bar" role="group" aria-label="Language">
+        <button type="button" class="lang-bar__btn lang-bar__btn--active" data-lang="en">English</button>
+        <button type="button" class="lang-bar__btn" data-lang="fr">Français</button>
+      </div>
+
       <a class="brand" href="/">
         <span class="brand-mark" aria-hidden="true"></span>
         Agri Trust
       </a>
 
+      <div id="panel-en" lang="en">
       <h1>Privacy Policy</h1>
       <p class="meta">Last updated: July 2026 · Draft for legal counsel review</p>
 
@@ -101,6 +107,40 @@
         Questions about privacy?
         <a href="mailto:support@agritrust.rw">support@agritrust.rw</a>
       </div>
+      </div>
+
+      <div id="panel-fr" lang="fr" hidden>
+        <h1>Politique de confidentialité</h1>
+        <p class="meta">Dernière mise à jour : juillet 2026 · Projet à valider par un conseil juridique</p>
+        <aside class="banner" role="note">
+          <strong>Revue juridique requise avant mise en production</strong>
+          Cette page décrit le produit actuel. Un conseil qualifié au Rwanda doit l’approuver avant qu’elle
+          soit considérée comme contractuelle.
+        </aside>
+        <p class="intro">
+          Agri Trust accompagne votre ferme et vos finances : champs, ventes, profil de crédit, demandes de prêt
+          et d’assurance, remboursements MoMo. Cette politique explique ce que nous collectons et vos choix.
+        </p>
+        <p><strong>Nous ne vendons pas vos données personnelles à des annonceurs ou courtiers.</strong></p>
+        <h2>1. Informations que vous fournissez</h2>
+        <p>Nom, téléphone, e-mail ; détails de ferme ; transactions ; demandes de prêt/assurance ; consentements.</p>
+        <h2>2. Crédit et produits financiers</h2>
+        <p>Nous combinons ferme, rendements et transactions pour un profil de crédit. Les partenaires ne reçoivent que le nécessaire avec votre accord.</p>
+        <h2>3. Remboursements MoMo</h2>
+        <p>Paiements via Paypack (partenaire agréé). Nous recevons le statut—jamais votre PIN MoMo.</p>
+        <h2>4. Outils optionnels</h2>
+        <p>Pluie/stress cultures et assistant agricole (IA si activée). Utilisation facultative.</p>
+        <h2>5. Partage sous votre contrôle</h2>
+        <p>Dans l’app : Profil → Confidentialité pour transactions, localisation et partage avec banques.</p>
+        <h2>6. Sécurité et partenaires</h2>
+        <p>Mots de passe hachés, sessions sécurisées. Partenaires techniques uniquement pour faire fonctionner Agri Trust.</p>
+        <h2>7. Vos droits</h2>
+        <p>Modifiez le profil, révoquez le consentement, contactez-nous pour accès ou suppression.</p>
+        <div class="contact">
+          Questions confidentialité ?
+          <a href="mailto:support@agritrust.rw">support@agritrust.rw</a>
+        </div>
+      </div>
 
       <nav class="nav-legal" aria-label="Legal">
         <a href="/terms">Terms &amp; Conditions</a>
@@ -108,5 +148,28 @@
         <a href="/">Partner portal</a>
       </nav>
     </main>
+    <script>
+      (function () {
+        var buttons = document.querySelectorAll('.lang-bar__btn')
+        var panelEn = document.getElementById('panel-en')
+        var panelFr = document.getElementById('panel-fr')
+        function setLang(code) {
+          document.documentElement.lang = code
+          document.title = code === 'fr' ? 'Politique de confidentialité · Agri Trust' : 'Privacy Policy · Agri Trust'
+          panelEn.hidden = code !== 'en'
+          panelFr.hidden = code !== 'fr'
+          buttons.forEach(function (btn) {
+            btn.classList.toggle('lang-bar__btn--active', btn.getAttribute('data-lang') === code)
+          })
+          try { localStorage.setItem('agri.legal.locale', code) } catch (_) {}
+        }
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () { setLang(btn.getAttribute('data-lang')) })
+        })
+        var stored = null
+        try { stored = localStorage.getItem('agri.legal.locale') } catch (_) {}
+        if (stored === 'fr') setLang('fr')
+      })()
+    </script>
   </body>
 </html>

@@ -413,8 +413,58 @@
   color: #991b1b;
 }
 
-.portal-light .status-neutral {
-  background: #e2e8f0;
-  color: #334155;
+.portal-light .portal-lang,
+.neon-dashboard .portal-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid #c0c9bb;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.neon-dashboard .portal-lang {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.portal-lang__btn {
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.portal-lang__btn--active {
+  opacity: 1;
+  background: rgba(0, 69, 13, 0.12);
+  color: #00450d;
+}
+
+.neon-dashboard .portal-lang__btn--active {
+  background: rgba(0, 255, 170, 0.15);
+  color: #6ee7b7;
+}
+
+.admin-users-hint {
+  font-size: 13px;
+  color: #4a5c50;
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.admin-user-role-hint {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  max-width: 220px;
+  line-height: 1.35;
 }
 

@@ -26,127 +26,86 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { clearSession, getCurrentUser, hydrateSessionUser } from '../services/auth'
 import ThemeSwitch from '../components/layout/ThemeSwitch'
+import PortalLanguageSwitcher from '../components/layout/PortalLanguageSwitcher'
 import { PortalThemeContext } from '../context/PortalThemeContext'
+import { usePortalCopy } from '../context/AuthLocaleContext'
 import { getHomePathForRole } from '../utils/roles'
 
-const navItemsByRole = {
+const NAV_BY_ROLE = {
   BANK: [
-    { to: '/', label: 'Home', icon: Home, end: true },
-    { to: '/farmer', label: 'Farmers', icon: UserRound },
-    { to: '/loans', label: 'Loans', icon: Landmark },
-    { to: '/loan-packages', label: 'Loan products', icon: ClipboardCheck },
-    { to: '/payments', label: 'Payments', icon: CreditCard },
+    { to: '/', labelKey: 'home', icon: Home, end: true },
+    { to: '/farmer', labelKey: 'farmers', icon: UserRound },
+    { to: '/loans', labelKey: 'loans', icon: Landmark },
+    { to: '/loan-packages', labelKey: 'loanProducts', icon: ClipboardCheck },
+    { to: '/payments', labelKey: 'payments', icon: CreditCard },
   ],
   INSURER: [
-    { to: '/insurer', label: 'Home', icon: Home, end: true },
-    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-    { to: '/payments', label: 'Payments', icon: CreditCard },
+    { to: '/insurer', labelKey: 'home', icon: Home, end: true },
+    { to: '/insurance', labelKey: 'insurance', icon: ShieldCheck },
+    { to: '/payments', labelKey: 'payments', icon: CreditCard },
   ],
   ADMIN: [
-    { to: '/', label: 'Home', icon: Home, end: true },
-    { to: '/farmer', label: 'Farmers', icon: UserRound },
-    { to: '/loans', label: 'Loans', icon: Landmark },
-    { to: '/loan-packages', label: 'Packages', icon: ClipboardCheck },
-    { to: '/contracts', label: 'Receivables', icon: Briefcase },
-    { to: '/inspections', label: 'Inspections', icon: ClipboardCheck },
-    { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
-    { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/admin', label: 'Users', icon: Users },
-    { to: '/admin/reports', label: 'Reports', icon: ScrollText },
+    { to: '/', labelKey: 'home', icon: Home, end: true },
+    { to: '/farmer', labelKey: 'farmers', icon: UserRound },
+    { to: '/loans', labelKey: 'loans', icon: Landmark },
+    { to: '/loan-packages', labelKey: 'loanPackages', icon: ClipboardCheck },
+    { to: '/contracts', labelKey: 'receivables', icon: Briefcase },
+    { to: '/inspections', labelKey: 'inspections', icon: ClipboardCheck },
+    { to: '/payment-watch', labelKey: 'paymentWatch', icon: Eye },
+    { to: '/payments', labelKey: 'payments', icon: CreditCard },
+    { to: '/admin', labelKey: 'users', icon: Users },
+    { to: '/admin/reports', labelKey: 'reports', icon: ScrollText },
   ],
-  FARMER: [
-    { to: '/payments', label: 'Home', icon: Home, end: true },
-  ],
-  COOPERATIVE: [
-    { to: '/', label: 'Home', icon: Home, end: true },
-  ],
-  INSPECTOR: [
-    { to: '/', label: 'Home', icon: Home, end: true },
-  ],
+  FARMER: [{ to: '/payments', labelKey: 'home', icon: Home, end: true }],
+  COOPERATIVE: [{ to: '/', labelKey: 'home', icon: Home, end: true }],
+  INSPECTOR: [{ to: '/', labelKey: 'home', icon: Home, end: true }],
   GUARANTEE_OFFICER: [
-    { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck, end: true },
-    { to: '/bankability', label: 'Claims', icon: Warehouse },
-    { to: '/payment-watch', label: 'Payment Watch', icon: Eye },
-    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
-    { to: '/trust-ladder', label: 'Trust Ladder', icon: Layers },
-    { to: '/contracts', label: 'Receivables', icon: Briefcase },
+    { to: '/bankability/v2', labelKey: 'guarantees', icon: ShieldCheck, end: true },
+    { to: '/bankability', labelKey: 'warehouseClaims', icon: Warehouse },
+    { to: '/payment-watch', labelKey: 'paymentWatch', icon: Eye },
+    { to: '/consent-vault', labelKey: 'consentVault', icon: FileKey },
+    { to: '/trust-ladder', labelKey: 'trustLadder', icon: Layers },
+    { to: '/contracts', labelKey: 'receivables', icon: Briefcase },
   ],
   REGISTRATION_OFFICER: [
-    { to: '/admin/reports', label: 'Home', icon: Home, end: true },
-    { to: '/farmer', label: 'Farmers', icon: UserRound },
-    { to: '/loans', label: 'Loans', icon: Landmark },
-    { to: '/contracts', label: 'Receivables', icon: Briefcase },
-    { to: '/consent-vault', label: 'Consent Vault', icon: FileKey },
-    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-    { to: '/payments', label: 'Payments', icon: CreditCard },
+    { to: '/admin/reports', labelKey: 'home', icon: Home, end: true },
+    { to: '/farmer', labelKey: 'farmers', icon: UserRound },
+    { to: '/loans', labelKey: 'loans', icon: Landmark },
+    { to: '/contracts', labelKey: 'receivables', icon: Briefcase },
+    { to: '/consent-vault', labelKey: 'consentVault', icon: FileKey },
+    { to: '/insurance', labelKey: 'insurance', icon: ShieldCheck },
+    { to: '/payments', labelKey: 'payments', icon: CreditCard },
   ],
 }
 
-const moreItemsByRole = {
+const MORE_BY_ROLE = {
   BANK: [
-    { to: '/contracts', label: 'Receivables', icon: Briefcase },
-    { to: '/payment-watch', label: 'Remittances', icon: Eye },
-    { to: '/consent-vault', label: 'Farmer consent', icon: FileKey },
-    { to: '/trust-ladder', label: 'Credit tiers', icon: Layers },
+    { to: '/contracts', labelKey: 'receivables', icon: Briefcase },
+    { to: '/payment-watch', labelKey: 'remittances', icon: Eye },
+    { to: '/consent-vault', labelKey: 'farmerConsent', icon: FileKey },
+    { to: '/trust-ladder', labelKey: 'creditTiers', icon: Layers },
   ],
   ADMIN: [
-    { to: '/consent-vault', label: 'Farmer consent', icon: FileKey },
-    { to: '/trust-ladder', label: 'Credit tiers', icon: Layers },
-    { to: '/bankability', label: 'Warehouse claims', icon: Warehouse },
-    { to: '/bankability/v2', label: 'Guarantees', icon: ShieldCheck },
-    { to: '/cooperative', label: 'Cooperative', icon: Warehouse },
-    { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
-    { to: '/audit', label: 'Audit Logs', icon: FileKey },
+    { to: '/consent-vault', labelKey: 'farmerConsent', icon: FileKey },
+    { to: '/trust-ladder', labelKey: 'creditTiers', icon: Layers },
+    { to: '/bankability', labelKey: 'warehouseClaims', icon: Warehouse },
+    { to: '/bankability/v2', labelKey: 'guarantees', icon: ShieldCheck },
+    { to: '/cooperative', labelKey: 'cooperative', icon: Warehouse },
+    { to: '/insurance', labelKey: 'insurance', icon: ShieldCheck },
+    { to: '/audit', labelKey: 'auditLogs', icon: FileKey },
   ],
 }
 
-const PAGE_TITLES = {
-  '/': 'Dashboard',
-  '/loans': 'Loans',
-  '/loan-packages': 'Loan products',
-  '/payments': 'Payments',
-  '/farmer': 'Farmers',
-  '/insurer': 'Dashboard',
-  '/insurance': 'Insurance',
-  '/admin': 'Users',
-  '/admin/reports': 'Reports',
-  '/audit': 'Audit Logs',
-  '/consent': 'Settings',
-  '/profile': 'My profile',
-  '/settings': 'Settings',
-  '/notifications': 'Notifications',
-  '/contracts': 'Receivables',
-  '/inspections': 'Field inspections',
-  '/bankability': 'Warehouse claims',
-  '/payment-watch': 'Remittances',
-  '/consent-vault': 'Farmer consent',
-  '/trust-ladder': 'Credit tiers',
-  '/bankability/v2': 'Guarantee operations',
-  '/cooperative': 'Cooperative ops',
+function getPageTitle(pathname, role, portal) {
+  if (pathname.startsWith('/farmer/') && pathname !== '/farmer/profile') return portal.layout.farmerProfile
+  if (pathname === '/farmer/profile') return portal.layout.farmerProfile
+  if (role === 'BANK' && pathname === '/') return portal.layout.bankCreditDesk
+  return portal.layout.pageTitles[pathname] || portal.layout.portal
 }
 
-const BANK_PAGE_TITLES = {
-  '/': 'Credit desk',
-}
+function getBreadcrumbs(pathname, homePath, role, portal) {
+  const crumbs = [{ label: portal.layout.breadcrumbHome, to: homePath }]
 
-const SEARCH_CONFIG = {
-  '/farmer': { placeholder: 'Search farmers…', target: '/farmer', label: 'Search farmers' },
-  '/loans': { placeholder: 'Search loans…', target: '/loans', label: 'Search loans' },
-  '/payments': { placeholder: 'Search transactions…', target: '/payments', label: 'Search transactions' },
-  default: { placeholder: 'Search farmers…', target: '/farmer', label: 'Search farmers' },
-}
-
-function getPageTitle(pathname, role) {
-  if (pathname.startsWith('/farmer/') && pathname !== '/farmer/profile') return 'Farmer Profile'
-  if (pathname === '/farmer/profile') return 'Farmer Profile'
-  if (role === 'BANK' && BANK_PAGE_TITLES[pathname]) return BANK_PAGE_TITLES[pathname]
-  return PAGE_TITLES[pathname] || 'Portal'
-}
-
-function getBreadcrumbs(pathname, homePath, role) {
-  const crumbs = [{ label: 'Home', to: homePath }]
-
-  // Role home pages should not show Home › Dashboard.
   if (pathname === homePath) {
     return crumbs
   }
@@ -163,45 +122,68 @@ function getBreadcrumbs(pathname, homePath, role) {
     pathname === '/trust-ladder'
   ) {
     const label =
-      role === 'BANK' && BANK_PAGE_TITLES[pathname]
-        ? BANK_PAGE_TITLES[pathname]
-        : PAGE_TITLES[pathname] || 'Dashboard'
+      role === 'BANK' && pathname === '/'
+        ? portal.layout.bankCreditDesk
+        : portal.layout.pageTitles[pathname] || portal.layout.portal
     crumbs.push({ label })
     return crumbs
   }
 
   if (pathname.startsWith('/farmer/')) {
-    crumbs.push({ label: 'Farmers', to: '/farmer' })
-    crumbs.push({ label: 'Farmer Profile' })
+    crumbs.push({ label: portal.nav.farmers, to: '/farmer' })
+    crumbs.push({ label: portal.layout.farmerProfile })
     return crumbs
   }
 
   if (pathname === '/profile') {
-    crumbs.push({ label: 'My profile' })
+    crumbs.push({ label: portal.layout.myProfile })
     return crumbs
   }
 
   if (pathname === '/settings' || pathname === '/consent') {
-    crumbs.push({ label: 'Settings' })
+    crumbs.push({ label: portal.layout.settings })
     return crumbs
   }
 
-  const title = PAGE_TITLES[pathname]
+  const title = portal.layout.pageTitles[pathname]
   if (title) crumbs.push({ label: title })
   return crumbs
 }
 
-function getSearchConfig(pathname) {
-  if (pathname.startsWith('/farmer')) return SEARCH_CONFIG['/farmer']
-  if (pathname.startsWith('/loans')) return SEARCH_CONFIG['/loans']
-  if (pathname.startsWith('/payments')) return SEARCH_CONFIG['/payments']
-  return SEARCH_CONFIG.default
+function getSearchConfig(pathname, portal) {
+  if (pathname.startsWith('/farmer')) {
+    return {
+      placeholder: portal.layout.searchFarmers,
+      target: '/farmer',
+      label: portal.layout.searchFarmersLabel,
+    }
+  }
+  if (pathname.startsWith('/loans')) {
+    return {
+      placeholder: portal.layout.searchLoans,
+      target: '/loans',
+      label: portal.layout.searchLoansLabel,
+    }
+  }
+  if (pathname.startsWith('/payments')) {
+    return {
+      placeholder: portal.layout.searchTransactions,
+      target: '/payments',
+      label: portal.layout.searchTransactionsLabel,
+    }
+  }
+  return {
+    placeholder: portal.layout.searchFarmers,
+    target: '/farmer',
+    label: portal.layout.searchFarmersLabel,
+  }
 }
 
 function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const moreRef = useRef(null)
+  const portal = usePortalCopy()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const currentRole = getCurrentUser()?.role || 'BANK'
@@ -223,8 +205,14 @@ function MainLayout() {
     setMoreOpen(false)
   }
 
-  const navItems = navItemsByRole[currentRole] || navItemsByRole.BANK
-  const moreItems = moreItemsByRole[currentRole] || []
+  const navItems = (NAV_BY_ROLE[currentRole] || NAV_BY_ROLE.BANK).map((item) => ({
+    ...item,
+    label: portal.nav[item.labelKey] || item.labelKey,
+  }))
+  const moreItems = (MORE_BY_ROLE[currentRole] || []).map((item) => ({
+    ...item,
+    label: portal.nav[item.labelKey] || item.labelKey,
+  }))
   const moreActive = moreItems.some(
     (item) =>
       location.pathname === item.to || location.pathname.startsWith(`${item.to}/`),
@@ -232,14 +220,17 @@ function MainLayout() {
   const canSearch = currentRole === 'BANK' || currentRole === 'ADMIN'
   const homePath = getHomePathForRole(currentRole)
   const pageTitle = useMemo(
-    () => getPageTitle(location.pathname, currentRole),
-    [location.pathname, currentRole],
+    () => getPageTitle(location.pathname, currentRole, portal),
+    [location.pathname, currentRole, portal],
   )
   const breadcrumbs = useMemo(
-    () => getBreadcrumbs(location.pathname, homePath, currentRole),
-    [location.pathname, homePath, currentRole],
+    () => getBreadcrumbs(location.pathname, homePath, currentRole, portal),
+    [location.pathname, homePath, currentRole, portal],
   )
-  const searchConfig = useMemo(() => getSearchConfig(location.pathname), [location.pathname])
+  const searchConfig = useMemo(
+    () => getSearchConfig(location.pathname, portal),
+    [location.pathname, portal],
+  )
   const settingsPath = '/settings'
 
   const handleSearchSubmit = (event) => {
@@ -293,7 +284,7 @@ function MainLayout() {
       <div className={`app-shell ${shellThemeClass} ${roleShellClass}`.trim()}>
         <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
           <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
-            Agri Trust
+            {portal.layout.brand}
           </Link>
 
           <nav className="sidebar-nav" aria-label="Main">
@@ -323,14 +314,14 @@ function MainLayout() {
               aria-expanded={moreOpen}
             >
               <MoreHorizontal size={24} strokeWidth={1.75} />
-              <span className="nav-link__label">More</span>
+              <span className="nav-link__label">{portal.layout.more}</span>
             </button>
             {moreOpen ? (
               <div className="sidebar-more__menu" role="menu">
                 {moreItems.length > 0 ? (
                   <>
                     <span className="sidebar-more__heading">
-                      {currentRole === 'BANK' ? 'Risk & receivables' : 'More tools'}
+                      {currentRole === 'BANK' ? portal.layout.moreBank : portal.layout.moreTools}
                     </span>
                     {moreItems.map((item) => (
                       <button
@@ -367,7 +358,7 @@ function MainLayout() {
                   }}
                 >
                   <User size={16} />
-                  Account
+                  {portal.layout.account}
                 </button>
                 <button
                   type="button"
@@ -380,7 +371,7 @@ function MainLayout() {
                   }}
                 >
                   <Settings size={16} />
-                  Settings
+                  {portal.layout.settings}
                 </button>
                 <button
                   type="button"
@@ -389,7 +380,7 @@ function MainLayout() {
                   onClick={handleLogout}
                 >
                   <LogOut size={16} />
-                  Logout
+                  {portal.layout.logout}
                 </button>
               </div>
             ) : null}
@@ -453,13 +444,14 @@ function MainLayout() {
 
             <div className="topbar__end">
               <div className="topbar__tools">
+                <PortalLanguageSwitcher />
                 <ThemeSwitch isDark={darkMode} onChange={setDarkMode} />
                 <button
                   type="button"
                   className="topbar-icon"
                   onClick={() => navigate('/notifications')}
-                  aria-label="Notifications"
-                  title="Notifications"
+                  aria-label={portal.layout.notifications}
+                  title={portal.layout.notifications}
                 >
                   <Bell size={16} />
                 </button>
@@ -474,11 +466,11 @@ function MainLayout() {
                   <UserRound size={17} />
                 </span>
                 <div>
-                  <strong id="profile-nudge-title">Complete your profile</strong>
-                  <p>Add your full name and phone number to help your organization identify you.</p>
+                  <strong id="profile-nudge-title">{portal.layout.completeProfileTitle}</strong>
+                  <p>{portal.layout.completeProfileBody}</p>
                 </div>
                 <Link to="/profile" className="btn-primary">
-                  Complete profile
+                  {portal.layout.completeProfileBtn}
                 </Link>
               </aside>
             ) : null}

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePortalCopy } from '../context/AuthLocaleContext'
 import { getCurrentUser } from '../services/auth'
 import { formatRwf } from '../utils/currency'
 import {
@@ -16,82 +17,96 @@ import {
   getAdminReportSummary,
 } from '../services/adminReportsService'
 
-const TABS = [
+const TAB_SPECS = [
   {
     id: 'loans',
-    label: 'Loans issued',
+    labelKey: 'tabLoans',
     columns: [
-      { key: 'loanId', label: 'Loan' },
-      { key: 'farmerId', label: 'Farmer' },
-      { key: 'bankId', label: 'Bank' },
-      { key: 'amount', label: 'Amount', money: true },
-      { key: 'status', label: 'Status', badge: true },
-      { key: 'disbursementDate', label: 'Disbursed' },
+      { key: 'loanId', colKey: 'loanId' },
+      { key: 'farmerId', colKey: 'farmerId' },
+      { key: 'bankId', colKey: 'bankId' },
+      { key: 'amount', colKey: 'amount', money: true },
+      { key: 'status', colKey: 'status', badge: true },
+      { key: 'disbursementDate', colKey: 'disbursementDate' },
     ],
   },
   {
     id: 'repayments',
-    label: 'Repayments',
+    labelKey: 'tabRepayments',
     columns: [
-      { key: 'repaymentId', label: 'Repayment' },
-      { key: 'loanId', label: 'Loan' },
-      { key: 'amountPaid', label: 'Amount paid', money: true },
-      { key: 'paymentDate', label: 'Paid on' },
+      { key: 'repaymentId', colKey: 'repaymentId' },
+      { key: 'loanId', colKey: 'loanIdRep' },
+      { key: 'amountPaid', colKey: 'amountPaid', money: true },
+      { key: 'paymentDate', colKey: 'paymentDate' },
     ],
   },
   {
     id: 'harvest',
-    label: 'Harvest',
+    labelKey: 'tabHarvest',
     columns: [
-      { key: 'yieldId', label: 'Yield' },
-      { key: 'farmId', label: 'Farm' },
-      { key: 'season', label: 'Season' },
-      { key: 'year', label: 'Year' },
-      { key: 'quantity', label: 'Quantity' },
-      { key: 'verificationStatus', label: 'Verification', badge: true },
+      { key: 'yieldId', colKey: 'yieldId' },
+      { key: 'farmId', colKey: 'farmId' },
+      { key: 'season', colKey: 'season' },
+      { key: 'year', colKey: 'year' },
+      { key: 'quantity', colKey: 'quantity' },
+      { key: 'verificationStatus', colKey: 'verificationStatus', badge: true },
     ],
   },
   {
     id: 'receipts',
-    label: 'Warehouse receipts',
+    labelKey: 'tabReceipts',
     columns: [
-      { key: 'receiptId', label: 'Receipt' },
-      { key: 'farmerId', label: 'Farmer' },
-      { key: 'cooperativeName', label: 'Cooperative' },
-      { key: 'commodity', label: 'Commodity' },
-      { key: 'status', label: 'Status', badge: true },
-      { key: 'expiryDate', label: 'Expires' },
+      { key: 'receiptId', colKey: 'receiptId' },
+      { key: 'farmerId', colKey: 'farmerId' },
+      { key: 'cooperativeName', colKey: 'cooperativeName' },
+      { key: 'commodity', colKey: 'commodity' },
+      { key: 'status', colKey: 'status', badge: true },
+      { key: 'expiryDate', colKey: 'expiryDate' },
     ],
   },
   {
     id: 'insurance',
-    label: 'Insurance compliance',
+    labelKey: 'tabInsurance',
     columns: [
-      { key: 'policyId', label: 'Policy' },
-      { key: 'farmerId', label: 'Farmer' },
-      { key: 'policyType', label: 'Cover' },
-      { key: 'status', label: 'Status', badge: true },
-      { key: 'validTo', label: 'Valid to' },
-      { key: 'complianceStatus', label: 'Compliance', badge: true },
+      { key: 'policyId', colKey: 'policyId' },
+      { key: 'farmerId', colKey: 'farmerId' },
+      { key: 'policyType', colKey: 'policyType' },
+      { key: 'status', colKey: 'status', badge: true },
+      { key: 'validTo', colKey: 'validTo' },
+      { key: 'complianceStatus', colKey: 'complianceStatus', badge: true },
     ],
   },
 ]
 
 const ROW_KEYS = ['loanId', 'repaymentId', 'yieldId', 'receiptId', 'policyId']
 
-/* Reports load once on mount, then per tab — same pattern as other role homes. */
 /* eslint-disable react-hooks/set-state-in-effect -- initial report fetch on mount */
 function AdminReportsPage() {
+  const r = usePortalCopy().adminReports
+  const cols = r.columns
   const [summary, setSummary] = useState(null)
   const [tab, setTab] = useState('loans')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const tabs = useMemo(
+    () =>
+      TAB_SPECS.map((spec) => ({
+        ...spec,
+        label: r[spec.labelKey],
+        columns: spec.columns.map((c) => ({
+          ...c,
+          label: cols[c.colKey] || c.colKey,
+        })),
+      })),
+    [r, cols],
+  )
+
   const loadSummary = async () => {
     try {
       setSummary(await getAdminReportSummary())
     } catch {
-      toast.error('Failed to load report summary')
+      toast.error(r.loadSummaryFailed)
     }
   }
 
@@ -106,7 +121,7 @@ function AdminReportsPage() {
       else if (nextTab === 'insurance') data = await getAdminReportInsurance()
       setRows(Array.isArray(data) ? data : [])
     } catch {
-      toast.error('Failed to load report')
+      toast.error(r.loadTabFailed)
       setRows([])
     } finally {
       setLoading(false)
@@ -124,20 +139,20 @@ function AdminReportsPage() {
     void loadTab(id)
   }
 
-  const activeTab = TABS.find((t) => t.id === tab) || TABS[0]
+  const activeTab = tabs.find((t) => t.id === tab) || tabs[0]
   const columns = activeTab.columns
   const isAdmin = getCurrentUser()?.role === 'ADMIN'
 
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Reports"
-        subtitle="Loans issued, repayments, harvest verification, warehouse receipts, and insurance compliance."
+        title={r.title}
+        subtitle={r.subtitle}
         actions={
           <>
             {isAdmin ? (
               <Link to="/admin" className="btn-secondary">
-                Users
+                {r.users}
               </Link>
             ) : null}
             <button
@@ -149,7 +164,7 @@ function AdminReportsPage() {
               }}
               disabled={loading}
             >
-              {loading ? 'Refreshing…' : 'Refresh'}
+              {loading ? r.refreshing : r.refresh}
             </button>
           </>
         }
@@ -157,29 +172,29 @@ function AdminReportsPage() {
 
       <div className="widgets four">
         <StatCard
-          title="Loans issued"
+          title={r.loansIssued}
           value={String(summary?.loansIssued ?? 0)}
           meta={formatRwf(summary?.loanVolume ?? 0)}
         />
         <StatCard
-          title="Repayments"
+          title={r.repayments}
           value={String(summary?.repaymentCount ?? 0)}
           meta={formatRwf(summary?.repaymentVolume ?? 0)}
         />
         <StatCard
-          title="Harvest verified"
+          title={r.harvestVerified}
           value={String(summary?.harvestVerified ?? 0)}
-          meta={`of ${summary?.harvestRecords ?? 0} records`}
+          meta={r.harvestMeta(summary?.harvestVerified ?? 0, summary?.harvestRecords ?? 0)}
         />
         <StatCard
-          title="Insurance active"
+          title={r.insuranceActive}
           value={String(summary?.insuranceActive ?? 0)}
-          meta={`${summary?.insuranceExpired ?? 0} expired`}
+          meta={r.insuranceMeta(summary?.insuranceExpired ?? 0)}
         />
       </div>
 
-      <div className="report-tabs" role="tablist" aria-label="Report type">
-        {TABS.map((t) => (
+      <div className="report-tabs" role="tablist" aria-label={r.tabListLabel}>
+        {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -193,10 +208,7 @@ function AdminReportsPage() {
         ))}
       </div>
 
-      <DataTableShell
-        title={activeTab.label}
-        footer={<span>{rows.length} row(s)</span>}
-      >
+      <DataTableShell title={activeTab.label} footer={<span>{r.tableFooter(rows.length)}</span>}>
         <table className="data-table desktop-table dashboard-table">
           <thead>
             <tr>
@@ -208,12 +220,12 @@ function AdminReportsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length}>Loading…</td>
+                <td colSpan={columns.length}>{r.loading}</td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="empty-cell">
-                  No records.
+                  {r.empty}
                 </td>
               </tr>
             ) : (

@@ -4,17 +4,15 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   getConsentVaultDetail,
   listConsentVault,
   regenerateConsentCertificate,
 } from '../services/bankabilityService'
 
-/**
- * OTP Consent Vault for BANK / ADMIN.
- * Step flow: list certificates → open OTP history → download PDF → regenerate if needed.
- */
 function ConsentVaultPage() {
+  const { s, p } = usePageCopy('consentVault')
   const [entries, setEntries] = useState([])
   const [selected, setSelected] = useState(null)
   const [history, setHistory] = useState([])
@@ -32,7 +30,7 @@ function ConsentVaultPage() {
       const data = await listConsentVault(farmerId || undefined)
       setEntries(Array.isArray(data) ? data : [])
     } catch (err) {
-      toast.error(err?.response?.data?.error || 'Failed to load consent vault')
+      toast.error(err?.response?.data?.error || p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -50,7 +48,7 @@ function ConsentVaultPage() {
       setSelected(detail)
       setHistory(Array.isArray(detail?.otpHistory) ? detail.otpHistory : [])
     } catch {
-      toast.error('Could not load consent detail')
+      toast.error(p.detailLoadFailed)
     } finally {
       setDetailLoading(false)
     }
@@ -58,7 +56,7 @@ function ConsentVaultPage() {
 
   const openPdf = (url) => {
     if (!url) {
-      toast.info('No certificate file yet')
+      toast.info(p.noCertFile)
       return
     }
     window.open(url.startsWith('http') ? url : `${apiOrigin}${url}`, '_blank')
@@ -67,11 +65,11 @@ function ConsentVaultPage() {
   const onRegenerate = async (id) => {
     try {
       const updated = await regenerateConsentCertificate(id)
-      toast.success(`Certificate ${updated.certificateRef || id} regenerated`)
+      toast.success(p.certRegenerated(updated.certificateRef || id))
       await load()
       await openDetail(id)
     } catch (err) {
-      toast.error(err?.response?.data?.error || 'Regenerate failed')
+      toast.error(err?.response?.data?.error || p.regenerateFailed)
     }
   }
 
@@ -90,23 +88,29 @@ function ConsentVaultPage() {
     return String(value).replace('T', ' ').slice(0, 19)
   }
 
+  const filterTabs = [
+    { key: 'all', label: p.filterAll(entries.length) },
+    { key: 'verified', label: p.filterVerified(verifiedCount) },
+    { key: 'pending', label: p.filterPending(pendingCount) },
+  ]
+
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Farmer consent"
-        subtitle="OTP-verified farmer consents with audit history and PDF certificates for underwriting."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
+            {loading ? s.refreshing : s.refresh}
           </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Vault entries" value={String(entries.length)} />
-        <StatCard title="OTP verified" value={String(verifiedCount)} accent="green" />
-        <StatCard title="Pending OTP" value={String(pendingCount)} accent="amber" />
-        <StatCard title="PDF certificates" value={String(withCert)} />
+        <StatCard title={p.vaultEntries} value={String(entries.length)} />
+        <StatCard title={p.otpVerified} value={String(verifiedCount)} accent="green" />
+        <StatCard title={p.pendingOtp} value={String(pendingCount)} accent="amber" />
+        <StatCard title={p.pdfCertificates} value={String(withCert)} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-end gap-3">
@@ -118,26 +122,22 @@ function ConsentVaultPage() {
           className="flex flex-wrap items-end gap-2"
         >
           <label className="flex flex-col gap-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Farmer ID
+            {p.farmerId}
             <input
               className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
-              placeholder="Optional"
+              placeholder={p.optional}
               value={farmerFilter}
               onChange={(e) => setFarmerFilter(e.target.value)}
               inputMode="numeric"
             />
           </label>
           <button type="submit" className="btn-secondary">
-            Apply filter
+            {p.applyFilter}
           </button>
         </form>
 
         <div className="flex flex-wrap gap-2">
-          {[
-            { key: 'all', label: `All (${entries.length})` },
-            { key: 'verified', label: `Verified (${verifiedCount})` },
-            { key: 'pending', label: `Pending (${pendingCount})` },
-          ].map((tab) => (
+          {filterTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
@@ -151,16 +151,16 @@ function ConsentVaultPage() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,1fr)]">
-        <DataTableShell title={loading ? 'Loading certificates…' : 'Consent certificates'}>
+        <DataTableShell title={loading ? p.loadingCertificates : p.tableTitle}>
           <table className="data-table">
             <thead>
               <tr>
-                <th>Certificate</th>
-                <th>Contract</th>
-                <th>Farmer</th>
-                <th>Buyer</th>
-                <th>Status</th>
-                <th>Verified</th>
+                <th>{p.colCertificate}</th>
+                <th>{p.colContract}</th>
+                <th>{p.colFarmer}</th>
+                <th>{p.colBuyer}</th>
+                <th>{p.colStatus}</th>
+                <th>{p.colVerified}</th>
                 <th />
               </tr>
             </thead>
@@ -168,9 +168,7 @@ function ConsentVaultPage() {
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    {loading
-                      ? 'Loading…'
-                      : 'No consents in this view. They appear after buyer OTP verification.'}
+                    {loading ? s.loading : p.empty}
                   </td>
                 </tr>
               ) : (
@@ -214,7 +212,7 @@ function ConsentVaultPage() {
                             className="btn-secondary"
                             onClick={() => openDetail(e.legalConsentId)}
                           >
-                            Open
+                            {s.open}
                           </button>
                           <button
                             type="button"
@@ -237,26 +235,26 @@ function ConsentVaultPage() {
         <aside className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h3 className="m-0 text-base font-semibold">Certificate detail</h3>
+              <h3 className="m-0 text-base font-semibold">{p.detailTitle}</h3>
               <p className="m-0 mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-                OTP audit trail and underwriting evidence
+                {p.detailSubtitle}
               </p>
             </div>
             {selected ? (
               <button type="button" className="btn-secondary" onClick={() => { setSelected(null); setHistory([]) }}>
-                Close
+                {s.close}
               </button>
             ) : null}
           </div>
 
           {detailLoading ? (
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading detail…</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{p.detailLoading}</p>
           ) : !selected ? (
             <div
               className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
-              Select <strong>Open</strong> on a certificate to review OTP history, hash, and PDF actions.
+              {p.selectHint}
             </div>
           ) : (
             <div className="space-y-4">
@@ -274,27 +272,27 @@ function ConsentVaultPage() {
 
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt style={{ color: 'var(--text-muted)' }}>Buyer</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.colBuyer}</dt>
                   <dd className="m-0 mt-1 font-medium">{selected.partyName || '—'}</dd>
                 </div>
                 <div>
-                  <dt style={{ color: 'var(--text-muted)' }}>Farmer</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.colFarmer}</dt>
                   <dd className="m-0 mt-1 font-medium">#{selected.farmerId || '—'}</dd>
                 </div>
                 <div>
-                  <dt style={{ color: 'var(--text-muted)' }}>Verified at</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.verifiedAt}</dt>
                   <dd className="m-0 mt-1">{fmtWhen(selected.verifiedAt)}</dd>
                 </div>
                 <div>
-                  <dt style={{ color: 'var(--text-muted)' }}>OTP sent</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.otpSent}</dt>
                   <dd className="m-0 mt-1">{fmtWhen(selected.otpSentAt)}</dd>
                 </div>
                 <div className="sm:col-span-2">
-                  <dt style={{ color: 'var(--text-muted)' }}>Channels</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.channels}</dt>
                   <dd className="m-0 mt-1">{selected.deliveryChannels || '—'}</dd>
                 </div>
                 <div className="sm:col-span-2">
-                  <dt style={{ color: 'var(--text-muted)' }}>Certificate hash</dt>
+                  <dt style={{ color: 'var(--text-muted)' }}>{p.certHash}</dt>
                   <dd
                     className="m-0 mt-1 break-all font-mono text-xs"
                     style={{ color: 'var(--text-secondary, var(--text-muted))' }}
@@ -320,7 +318,7 @@ function ConsentVaultPage() {
                   onClick={() => openPdf(selected.consentDocumentUrl)}
                   disabled={!selected.consentDocumentUrl}
                 >
-                  Download PDF
+                  {p.downloadPdf}
                 </button>
                 {selected.otpVerified ? (
                   <button
@@ -328,16 +326,16 @@ function ConsentVaultPage() {
                     className="btn-primary"
                     onClick={() => onRegenerate(selected.legalConsentId)}
                   >
-                    Regenerate PDF
+                    {p.regeneratePdf}
                   </button>
                 ) : null}
               </div>
 
               <div>
-                <h4 className="mb-3 mt-2 text-sm font-semibold">OTP event history</h4>
+                <h4 className="mb-3 mt-2 text-sm font-semibold">{p.otpHistory}</h4>
                 {history.length === 0 ? (
                   <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    No OTP events recorded.
+                    {p.noOtpEvents}
                   </p>
                 ) : (
                   <ol className="m-0 space-y-3 p-0" style={{ listStyle: 'none' }}>

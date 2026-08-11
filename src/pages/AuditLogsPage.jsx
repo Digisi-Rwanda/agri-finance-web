@@ -3,6 +3,7 @@ import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePortalCopy } from '../context/AuthLocaleContext'
 import { getAdminStats, getAuditLogs } from '../services/auditService'
 
 function deriveModule(action = '') {
@@ -17,6 +18,7 @@ function deriveModule(action = '') {
 }
 
 function AuditLogsPage() {
+  const audit = usePortalCopy().audit
   const [auditLogs, setAuditLogs] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -64,11 +66,11 @@ function AuditLogsPage() {
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="System audit trail"
-        subtitle="Immutable record of sign-ins, approvals, and administrative actions."
+        title={audit.title}
+        subtitle={audit.subtitle}
         actions={
           <button type="button" className="btn-primary" onClick={loadLogs} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh logs'}
+            {loading ? audit.refreshing : audit.refresh}
           </button>
         }
       />

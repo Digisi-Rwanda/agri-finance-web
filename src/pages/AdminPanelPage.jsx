@@ -17,6 +17,8 @@ import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import { passwordPolicyCopy } from '../constants/authCopy'
+import { partnerRoleLabel, roleLabel } from '../constants/portalLocales'
+import { usePortalCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage } from '../services/auth'
 import { evaluatePassword } from '../utils/passwordPolicy'
 import {
@@ -44,19 +46,21 @@ const ROLES = [
   'GUARANTEE_OFFICER',
 ]
 
+const PARTNER_ROLE_VALUES = [
+  'BANK',
+  'INSURER',
+  'COOPERATIVE',
+  'INSPECTOR',
+  'GUARANTEE_OFFICER',
+  'REGISTRATION_OFFICER',
+]
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const EMPTY_INVITE = { fullName: '', email: '', phone: '', role: 'BANK', password: '' }
 
-const PARTNER_ROLES = [
-  { value: 'BANK', label: 'Bank partner' },
-  { value: 'INSURER', label: 'Insurance partner' },
-  { value: 'COOPERATIVE', label: 'Cooperative' },
-  { value: 'INSPECTOR', label: 'Field inspector' },
-  { value: 'GUARANTEE_OFFICER', label: 'Guarantee officer' },
-  { value: 'REGISTRATION_OFFICER', label: 'Registration officer' },
-]
-
 function AdminPanelPage() {
+  const p = usePortalCopy().adminUsers
+  const portal = usePortalCopy()
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(true)
@@ -74,9 +78,9 @@ function AdminPanelPage() {
     }
     load().catch(() => {
       setLoadingUsers(false)
-      toast.error('Failed to load admin panel data.')
+      toast.error(p.loadFailed)
     })
-  }, [])
+  }, [p.loadFailed])
 
   const updateInvite = (field) => (event) => {
     const { value } = event.target
@@ -84,18 +88,17 @@ function AdminPanelPage() {
     setInviteErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev))
   }
 
-  // Stops the admin from setting a password built out of the account's own details.
   const passwordBlocklist = [invite.email, invite.fullName]
 
   const validateInvite = () => {
     const errors = {}
-    if (!invite.fullName.trim()) errors.fullName = 'Enter the person’s full name.'
-    if (!EMAIL_PATTERN.test(invite.email.trim())) errors.email = 'Enter a valid email address.'
+    if (!invite.fullName.trim()) errors.fullName = p.validation.fullName
+    if (!EMAIL_PATTERN.test(invite.email.trim())) errors.email = p.validation.email
     if (invite.phone.trim() && !isValidRwandaMobile(invite.phone)) {
-      errors.phone = 'Enter a valid Rwanda mobile number, or leave it blank.'
+      errors.phone = p.validation.phone
     }
     if (!evaluatePassword(invite.password, { blocklist: passwordBlocklist }).valid) {
-      errors.password = passwordPolicyCopy.tooWeak
+      errors.password = p.validation.password
     }
     return errors
   }
@@ -122,9 +125,9 @@ function AdminPanelPage() {
       setUsers((prev) => [created, ...prev])
       setStats((prev) => (prev ? { ...prev, users: Number(prev.users || 0) + 1 } : prev))
       setInvite(EMPTY_INVITE)
-      toast.success(`Account created for ${created.fullName || created.email || created.username}.`)
+      toast.success(p.accountCreated(created.fullName || created.email || created.username))
     } catch (error) {
-      toast.error(getAuthErrorMessage(error, 'Could not create the partner account.'))
+      toast.error(getAuthErrorMessage(error, p.accountCreateFailed))
     } finally {
       setSendingInvite(false)
     }
@@ -137,17 +140,16 @@ function AdminPanelPage() {
       setUsers((prev) =>
         prev.map((u) => (u.userId === userId ? { ...u, role: updated.role } : u)),
       )
-      toast.success(`Role updated to ${nextRole}.`)
+      toast.success(p.roleUpdated(roleLabel(portal, nextRole)))
     } catch {
-      toast.error('Could not update role.')
+      toast.error(p.roleUpdateFailed)
     } finally {
       setBusyUserId(null)
     }
   }
 
   const handleDeleteUser = async (userId) => {
-    const confirmed = window.confirm('Delete this user account? This action cannot be undone.')
-    if (!confirmed) return
+    if (!window.confirm(p.deleteConfirm)) return
     setBusyUserId(userId)
     try {
       await deleteAdminUser(userId)
@@ -155,29 +157,37 @@ function AdminPanelPage() {
       setStats((prev) =>
         prev ? { ...prev, users: Math.max(0, Number(prev.users || 1) - 1) } : prev,
       )
-      toast.success('User deleted successfully.')
+      toast.success(p.deleted)
     } catch {
-      toast.error('Could not delete user.')
+      toast.error(p.deleteFailed)
     } finally {
       setBusyUserId(null)
     }
   }
 
+  const shortcuts = [
+    { to: '/admin/reports', title: p.shortcutReports, description: p.shortcutReportsDesc, icon: BarChart3 },
+    { to: '/audit', title: p.shortcutAudit, description: p.shortcutAuditDesc, icon: ScrollText },
+    { to: '/farmer', title: p.shortcutFarmers, description: p.shortcutFarmersDesc, icon: UserRound },
+    { to: '/loans', title: p.shortcutLoans, description: p.shortcutLoansDesc, icon: Landmark },
+    { to: '/insurance', title: p.shortcutInsurance, description: p.shortcutInsuranceDesc, icon: ShieldCheck },
+  ]
+
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Admin · Users"
-        subtitle="Manage portal accounts and assign roles."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <>
             <Link to="/admin/reports" className="btn-secondary">
-              Reports
+              {p.reports}
             </Link>
             <Link to="/audit" className="btn-secondary">
-              Audit logs
+              {p.auditLogs}
             </Link>
             <Link to="/farmer" className="btn-primary">
-              Farmers
+              {p.farmers}
               <ArrowRight size={16} />
             </Link>
           </>
@@ -185,13 +195,13 @@ function AdminPanelPage() {
       />
 
       <div className="widgets four">
-        <StatCard title="Total users" value={String(stats?.users ?? 0)} meta="All roles" />
-        <StatCard title="Farmers" value={String(stats?.farmers ?? 0)} meta="Linked profiles" />
-        <StatCard title="Loans" value={String(stats?.loans ?? 0)} meta="All statuses" accent="blue" />
+        <StatCard title={p.totalUsers} value={String(stats?.users ?? 0)} meta={p.totalUsersMeta} />
+        <StatCard title={p.farmersStat} value={String(stats?.farmers ?? 0)} meta={p.farmersStatMeta} />
+        <StatCard title={p.loansStat} value={String(stats?.loans ?? 0)} meta={p.loansStatMeta} accent="blue" />
         <StatCard
-          title="Policies"
+          title={p.policiesStat}
           value={String(stats?.insurancePolicies ?? 0)}
-          meta="Insurance book"
+          meta={p.policiesStatMeta}
           accent="slate"
         />
       </div>
@@ -202,20 +212,17 @@ function AdminPanelPage() {
             <MailPlus size={20} />
           </span>
           <div>
-            <h2 id="partner-invite-title">Create a partner or staff account</h2>
-            <p>
-              You set the starting password. Share it with the account holder privately and ask them
-              to change it after their first sign-in.
-            </p>
+            <h2 id="partner-invite-title">{p.inviteTitle}</h2>
+            <p>{p.inviteBody}</p>
           </div>
         </div>
         <form className="admin-invite-form" onSubmit={handleInvitePartner} noValidate>
           <label>
-            <span>Full name</span>
+            <span>{p.fullName}</span>
             <input
               type="text"
               autoComplete="off"
-              placeholder="e.g. Celine Umukamisha"
+              placeholder={p.fullNamePlaceholder}
               value={invite.fullName}
               onChange={updateInvite('fullName')}
               aria-invalid={inviteErrors.fullName ? true : undefined}
@@ -225,11 +232,11 @@ function AdminPanelPage() {
             ) : null}
           </label>
           <label>
-            <span>Organization email</span>
+            <span>{p.email}</span>
             <input
               type="email"
               autoComplete="off"
-              placeholder="name@organization.com"
+              placeholder={p.emailPlaceholder}
               value={invite.email}
               onChange={updateInvite('email')}
               aria-invalid={inviteErrors.email ? true : undefined}
@@ -239,7 +246,7 @@ function AdminPanelPage() {
             ) : null}
           </label>
           <label>
-            <span>Phone (optional)</span>
+            <span>{p.phone}</span>
             <input
               type="tel"
               inputMode="tel"
@@ -260,21 +267,21 @@ function AdminPanelPage() {
             ) : null}
           </label>
           <label>
-            <span>Access role</span>
+            <span>{p.accessRole}</span>
             <select value={invite.role} onChange={updateInvite('role')}>
-              {PARTNER_ROLES.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
+              {PARTNER_ROLE_VALUES.map((role) => (
+                <option key={role} value={role}>
+                  {partnerRoleLabel(portal, role)}
                 </option>
               ))}
             </select>
           </label>
           <label className="admin-invite-form__password">
-            <span>Starting password</span>
+            <span>{p.startingPassword}</span>
             <input
               type="text"
               autoComplete="off"
-              placeholder="Mix letters, numbers and a symbol"
+              placeholder={p.passwordPlaceholder}
               value={invite.password}
               onChange={updateInvite('password')}
               aria-invalid={inviteErrors.password ? true : undefined}
@@ -290,69 +297,41 @@ function AdminPanelPage() {
           </label>
           <button type="submit" className="btn-primary" disabled={sendingInvite}>
             <MailPlus size={16} />
-            {sendingInvite ? 'Creating account…' : 'Create account'}
+            {sendingInvite ? p.creating : p.createAccount}
           </button>
         </form>
-        <p className="admin-invite-card__note">
-          The name and phone number you enter here are what the account holder sees on their profile.
-        </p>
+        <p className="admin-invite-card__note">{p.inviteNote}</p>
       </section>
 
       <div className="dash-section">
         <div className="dash-section__head">
-          <h2>System shortcuts</h2>
-          <p>Admin operations across the portal</p>
+          <h2>{p.shortcutsTitle}</h2>
+          <p>{p.shortcutsSubtitle}</p>
         </div>
         <div className="dash-quick-grid">
-          <QuickActionCard
-            to="/admin"
-            title="Users"
-            description="Roles & account access"
-            icon={Users}
-          />
-          <QuickActionCard
-            to="/admin/reports"
-            title="Reports"
-            description="Loans, harvest, insurance"
-            icon={BarChart3}
-          />
-          <QuickActionCard
-            to="/audit"
-            title="Audit logs"
-            description="Security & change trail"
-            icon={ScrollText}
-          />
-          <QuickActionCard
-            to="/farmer"
-            title="Farmers"
-            description="Directory & credit views"
-            icon={UserRound}
-          />
-          <QuickActionCard
-            to="/loans"
-            title="Loans"
-            description="Bank loan pipeline"
-            icon={Landmark}
-          />
-          <QuickActionCard
-            to="/insurance"
-            title="Insurance"
-            description="Policies overview"
-            icon={ShieldCheck}
-          />
+          {shortcuts.map((item) => (
+            <QuickActionCard
+              key={item.to}
+              to={item.to}
+              title={item.title}
+              description={item.description}
+              icon={item.icon}
+            />
+          ))}
         </div>
       </div>
 
-      <DataTableShell title="User management" footer={<span>{users.length} account(s)</span>}>
+      <DataTableShell title={p.tableTitle} footer={<span>{p.tableFooter(users.length)}</span>}>
+        <p className="admin-users-hint">{p.partnerRoleHint}</p>
         <div className="table-scroll">
           <table className="desktop-table dashboard-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Account</th>
-                <th>Role</th>
-                <th>Farmer ID</th>
-                <th>Actions</th>
+                <th>{p.colId}</th>
+                <th>{p.colAccount}</th>
+                <th>{p.colRole}</th>
+                <th>{p.colFarmerId}</th>
+                <th>{p.colActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -367,47 +346,56 @@ function AdminPanelPage() {
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="empty-cell">
-                    No users found.
+                    {p.empty}
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
-                  <tr key={user.userId}>
-                    <td>{user.userId}</td>
-                    <td>
-                      <strong className="dash-name">{user.username}</strong>
-                      {user.email && user.email !== user.username ? (
-                        <span className="admin-user-email">{user.email}</span>
-                      ) : null}
-                    </td>
-                    <td>
-                      <select
-                        className="dash-role-select"
-                        value={user.role}
-                        onChange={(event) => handleRoleChange(user.userId, event.target.value)}
-                        disabled={busyUserId === user.userId}
-                        aria-label={`Role for ${user.username}`}
-                      >
-                        {(user.farmerId ? ['FARMER'] : ROLES.filter((role) => role !== 'FARMER')).map((role) => (
-                          <option key={role} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>{user.farmerId ?? '—'}</td>
-                    <td className="action-cell">
-                      <button
-                        type="button"
-                        className="btn-secondary danger"
-                        onClick={() => handleDeleteUser(user.userId)}
-                        disabled={busyUserId === user.userId}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                users.map((user) => {
+                  const roleOptions = user.farmerId
+                    ? ['FARMER']
+                    : ROLES.filter((role) => role !== 'FARMER')
+                  return (
+                    <tr key={user.userId}>
+                      <td>{user.userId}</td>
+                      <td>
+                        <strong className="dash-name">{user.username}</strong>
+                        {user.email && user.email !== user.username ? (
+                          <span className="admin-user-email">{user.email}</span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <select
+                          className="dash-role-select"
+                          value={user.role}
+                          onChange={(event) => handleRoleChange(user.userId, event.target.value)}
+                          disabled={busyUserId === user.userId}
+                          aria-label={p.roleFor(user.username)}
+                          title={user.farmerId ? p.farmerRoleHint : undefined}
+                        >
+                          {roleOptions.map((role) => (
+                            <option key={role} value={role}>
+                              {roleLabel(portal, role)}
+                            </option>
+                          ))}
+                        </select>
+                        {user.farmerId ? (
+                          <span className="admin-user-role-hint">{p.farmerRoleHint}</span>
+                        ) : null}
+                      </td>
+                      <td>{user.farmerId ?? '—'}</td>
+                      <td className="action-cell">
+                        <button
+                          type="button"
+                          className="btn-secondary danger"
+                          onClick={() => handleDeleteUser(user.userId)}
+                          disabled={busyUserId === user.userId}
+                        >
+                          {p.delete}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

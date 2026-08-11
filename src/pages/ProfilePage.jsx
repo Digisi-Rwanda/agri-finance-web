@@ -14,8 +14,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import StatusBadge from '../components/ui/StatusBadge'
+import { roleLabel } from '../constants/portalLocales'
+import { usePageCopy, usePortalCopy } from '../context/AuthLocaleContext'
 import { getAuthErrorMessage, getProfile, updateProfile } from '../services/auth'
-import { getUserInitials, ROLE_LABELS } from '../utils/roles'
+import { getUserInitials } from '../utils/roles'
 import {
   formatRwandaPhoneDisplay,
   isValidRwandaMobile,
@@ -26,6 +28,8 @@ import {
 const EMPTY_FORM = { fullName: '', phone: '' }
 
 function ProfilePage() {
+  const { s, p, layout } = usePageCopy('profile')
+  const portal = usePortalCopy()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -41,13 +45,13 @@ function ProfilePage() {
       try {
         setProfile(await getProfile())
       } catch {
-        setError('Could not load your profile. Please sign in again.')
+        setError(p.loadFailed)
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [p.loadFailed])
 
   const beginEdit = () => {
     setForm({
@@ -75,11 +79,11 @@ function ProfilePage() {
 
     const nextErrors = {}
     const fullName = form.fullName.trim().replace(/\s+/g, ' ')
-    if (fullName.length < 2) nextErrors.fullName = 'Enter your full name.'
-    else if (fullName.length > 100) nextErrors.fullName = 'Use 100 characters or fewer.'
-    if (!form.phone.trim()) nextErrors.phone = 'Enter your Rwanda mobile number.'
+    if (fullName.length < 2) nextErrors.fullName = p.validation.fullName
+    else if (fullName.length > 100) nextErrors.fullName = p.validation.fullNameMax
+    if (!form.phone.trim()) nextErrors.phone = p.validation.phone
     else if (!isValidRwandaMobile(form.phone)) {
-      nextErrors.phone = 'Enter a valid Rwanda mobile number (+250 7XX XXX XXX).'
+      nextErrors.phone = p.validation.phoneInvalid
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -95,9 +99,9 @@ function ProfilePage() {
       })
       setProfile(updated)
       setEditing(false)
-      toast.success('Your profile has been updated.')
+      toast.success(p.updated)
     } catch (requestError) {
-      toast.error(getAuthErrorMessage(requestError, 'Could not update your profile.'))
+      toast.error(getAuthErrorMessage(requestError, p.updateFailed))
     } finally {
       setSaving(false)
     }
@@ -107,7 +111,7 @@ function ProfilePage() {
     return (
       <section className="dashboard-page account-page">
         <div className="account-toolbar">
-          <h1>Account</h1>
+          <h1>{p.title}</h1>
         </div>
         <div className="account-skeleton card" />
       </section>
@@ -118,31 +122,31 @@ function ProfilePage() {
     return (
       <section className="dashboard-page account-page">
         <div className="account-toolbar">
-          <h1>Account</h1>
+          <h1>{p.title}</h1>
         </div>
-        <article className="card account-alert">{error || 'Profile unavailable.'}</article>
+        <article className="card account-alert">{error || p.unavailable}</article>
       </section>
     )
   }
 
-  const displayName = profile.fullName?.trim() || 'Complete your profile'
+  const displayName = profile.fullName?.trim() || p.completeName
   const initials = getUserInitials(profile)
-  const roleLabel = ROLE_LABELS[profile.role] || profile.role
+  const userRoleLabel = roleLabel(portal, profile.role)
   const profileComplete = Boolean(profile.fullName?.trim() && profile.phone)
 
   const details = [
-    { label: 'Full name', value: profile.fullName || '—' },
-    { label: 'Username', value: profile.username || '—' },
-    { label: 'Email', value: profile.email || '—' },
+    { label: p.fullName, value: profile.fullName || '—' },
+    { label: p.username, value: profile.username || '—' },
+    { label: p.email, value: profile.email || '—' },
     {
-      label: 'Phone',
+      label: p.phone,
       value: profile.phone ? formatRwandaPhoneDisplay(profile.phone) : '—',
     },
-    { label: 'Role', value: roleLabel },
-    profile.institution ? { label: 'Institution', value: profile.institution } : null,
-    profile.location ? { label: 'Location', value: profile.location } : null,
+    { label: p.role, value: userRoleLabel },
+    profile.institution ? { label: p.institution, value: profile.institution } : null,
+    profile.location ? { label: p.location, value: profile.location } : null,
     profile.registrationDate
-      ? { label: 'Member since', value: String(profile.registrationDate).slice(0, 10) }
+      ? { label: p.memberSince, value: String(profile.registrationDate).slice(0, 10) }
       : null,
   ].filter(Boolean)
 
@@ -151,15 +155,15 @@ function ProfilePage() {
       <div className="account-toolbar">
         <div>
           <nav className="account-toolbar__crumb" aria-label="Breadcrumb">
-            <Link to="/">Home</Link>
+            <Link to="/">{layout.breadcrumbHome || s.home}</Link>
             <span aria-hidden>/</span>
-            <span>Account</span>
+            <span>{p.title}</span>
           </nav>
-          <h1>Account</h1>
+          <h1>{p.title}</h1>
         </div>
         <Link to="/settings" className="btn-primary">
           <Settings size={16} />
-          Settings
+          {p.settings}
         </Link>
       </div>
 
@@ -181,7 +185,7 @@ function ProfilePage() {
               <h2 className="account-id-card__name">{displayName}</h2>
               <p className="account-id-card__meta">@{profile.username}</p>
             </div>
-            <StatusBadge value={roleLabel} />
+            <StatusBadge value={userRoleLabel} />
           </div>
 
           <div className="account-id-card__chips">
@@ -206,7 +210,7 @@ function ProfilePage() {
           </div>
 
           <div className="account-id-card__verify">
-            <span>Email</span>
+            <span>{p.email}</span>
             <StatusBadge value={profile.emailVerified ? 'Verified' : 'Pending'} />
           </div>
         </div>
@@ -218,12 +222,12 @@ function ProfilePage() {
             <UserRound size={18} />
           </span>
           <div>
-            <strong id="profile-completion-title">Complete your profile</strong>
-            <p>Add your full name and phone number so colleagues can identify and contact you.</p>
+            <strong id="profile-completion-title">{p.completeName}</strong>
+            <p>{p.completeBanner}</p>
           </div>
           {!editing ? (
             <button type="button" className="btn-primary" onClick={beginEdit}>
-              Complete now
+              {p.completeNow}
             </button>
           ) : null}
         </aside>
@@ -233,26 +237,26 @@ function ProfilePage() {
         <div className="account-panel__head">
           <UserRound size={18} />
           <div>
-            <h3>Personal details</h3>
-            <p>Your name and phone are visible only to authorized portal users.</p>
+            <h3>{p.personalDetails}</h3>
+            <p>{p.personalDetailsDesc}</p>
           </div>
           {!editing ? (
             <button type="button" className="btn-secondary account-panel__edit" onClick={beginEdit}>
               <Pencil size={14} />
-              Edit
+              {p.edit}
             </button>
           ) : null}
         </div>
         {editing ? (
           <form className="account-edit-form" onSubmit={saveProfile} noValidate>
             <label className="account-edit-field">
-              <span>Full name</span>
+              <span>{p.fullName}</span>
               <input
                 type="text"
                 autoComplete="name"
                 autoFocus
                 maxLength={100}
-                placeholder="e.g. Celine Umukamisha"
+                placeholder={p.fullNamePlaceholder}
                 value={form.fullName}
                 onChange={updateField('fullName')}
                 aria-invalid={formErrors.fullName ? true : undefined}
@@ -264,7 +268,7 @@ function ProfilePage() {
             </label>
 
             <label className="account-edit-field">
-              <span>Phone number</span>
+              <span>{p.phone}</span>
               <input
                 type="tel"
                 inputMode="tel"
@@ -289,7 +293,7 @@ function ProfilePage() {
             <div className="account-edit-readonly">
               <Mail size={15} aria-hidden />
               <span>
-                Email and role are managed by your organization administrator.
+                {p.emailManaged}
                 <strong>{profile.email}</strong>
               </span>
             </div>
@@ -297,11 +301,11 @@ function ProfilePage() {
             <div className="account-edit-actions">
               <button type="submit" className="btn-primary" disabled={saving}>
                 <Save size={15} />
-                {saving ? 'Saving…' : 'Save changes'}
+                {saving ? s.saving : p.saveChanges}
               </button>
               <button type="button" className="btn-secondary" onClick={cancelEdit} disabled={saving}>
                 <X size={15} />
-                Cancel
+                {s.cancel}
               </button>
             </div>
           </form>
@@ -310,7 +314,7 @@ function ProfilePage() {
             {profileComplete ? (
               <p className="account-profile-status">
                 <CheckCircle2 size={15} aria-hidden />
-                Profile complete
+                {p.profileComplete}
               </p>
             ) : null}
             <dl className="account-details account-details--rows">
@@ -328,12 +332,12 @@ function ProfilePage() {
       <article className="card account-panel">
         <div className="account-panel__head">
           <LockKeyhole size={18} />
-          <h3>Password</h3>
+          <h3>{p.password}</h3>
         </div>
         <div className="account-password-row">
-          <p>Reset your sign-in password by email.</p>
+          <p>{p.passwordDesc}</p>
           <Link to="/forgot-password" className="btn-secondary">
-            Reset password
+            {p.resetPassword}
           </Link>
         </div>
       </article>

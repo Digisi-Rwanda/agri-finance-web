@@ -15,6 +15,7 @@ import {
   uploadInspectionEvidence,
 } from '../services/bankabilityService'
 import { getCurrentUser } from '../services/auth'
+import { usePageCopy } from '../context/AuthLocaleContext'
 
 function formatValue(value) {
   if (value == null || value === '') return '—'
@@ -39,6 +40,7 @@ const defaultSchedule = () => new Date(Date.now() + 3 * 86400000).toISOString().
  */
 /* eslint-disable react-hooks/set-state-in-effect -- initial queue fetch on mount, same as other role homes */
 function InspectionQueuePage() {
+  const { s, p } = usePageCopy('inspections')
   const [queue, setQueue] = useState([])
   const [contracts, setContracts] = useState([])
   const [inspectors, setInspectors] = useState([])
@@ -87,9 +89,7 @@ function InspectionQueuePage() {
       setContracts(Array.isArray(allContracts) ? allContracts : [])
       setInspectors(Array.isArray(staff) ? staff : [])
     } catch (e) {
-      toast.error(
-        e?.response?.data?.message || e?.response?.data?.error || 'Failed to load inspection queue',
-      )
+      toast.error(e?.response?.data?.message || e?.response?.data?.error || p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -175,7 +175,7 @@ function InspectionQueuePage() {
     : null
 
   const inspectorName = (id) => {
-    if (!id) return 'Unassigned'
+    if (!id) return p.unassignedLabel
     const u = inspectors.find((i) => Number(i.userId) === Number(id))
     return u ? u.username : `#${id}`
   }
@@ -211,11 +211,11 @@ function InspectionQueuePage() {
         assignedInspectorId: inspectorId ? Number(inspectorId) : null,
         outcome: 'pending',
       })
-      toast.success(`Case #${created?.inspectionId || ''} ready`)
+      toast.success(p.caseReady(created?.inspectionId || ''))
       await load()
       if (created?.inspectionId) openWorkPanel(created)
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.response?.data?.message || 'Could not open case')
+      toast.error(e?.response?.data?.error || e?.response?.data?.message || p.openCaseFailed)
     } finally {
       setBusyId(null)
     }
@@ -225,14 +225,14 @@ function InspectionQueuePage() {
     setBusyId(`cancel-${id}`)
     try {
       await cancelInspection(id)
-      toast.success(`Removed case #${id}`)
+      toast.success(p.caseRemoved(id))
       if (selectedId === id) closeWorkPanel()
       rememberDismissed(id)
       await load()
     } catch {
       rememberDismissed(id)
       if (selectedId === id) closeWorkPanel()
-      toast.info(`Case #${id} hidden here`)
+      toast.info(p.caseHidden(id))
     } finally {
       setBusyId(null)
     }
@@ -243,10 +243,10 @@ function InspectionQueuePage() {
     try {
       const dedupe = await dedupeInspections()
       const removed = dedupe?.cancelled || dedupe?.removed || 0
-      toast.success(removed > 0 ? `Removed ${removed} duplicate(s)` : 'No duplicates')
+      toast.success(removed > 0 ? p.duplicatesRemoved(removed) : p.noDuplicates)
       await load()
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.response?.data?.error || 'Cleanup failed')
+      toast.error(e?.response?.data?.message || e?.response?.data?.error || p.cleanupFailed)
     } finally {
       setBusyId(null)
     }
@@ -265,27 +265,27 @@ function InspectionQueuePage() {
         await uploadInspectionEvidence(selectedId, evidenceFile)
         setEvidenceFile(null)
       }
-      toast.success('Visit saved')
+      toast.success(p.visitSaved)
       await load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Could not save visit')
+      toast.error(e?.response?.data?.error || p.saveVisitFailed)
     } finally {
       setBusyId(null)
     }
   }
 
   const decide = async (id, outcome) => {
-    const label = outcome === 'approved' ? 'approve & verify' : 'reject & dispute'
-    if (!window.confirm(`Are you sure you want to ${label} this contract?`)) return
+    const confirmMsg = outcome === 'approved' ? p.confirmApprove : p.confirmReject
+    if (!window.confirm(confirmMsg)) return
     setBusyId(`decide-${id}`)
     try {
       const user = getCurrentUser()
       await decideInspection(id, outcome, user?.userId || user?.id || null)
-      toast.success(outcome === 'approved' ? 'Contract verified' : 'Contract disputed')
+      toast.success(outcome === 'approved' ? p.contractVerified : p.contractDisputed)
       if (selectedId === id) closeWorkPanel()
       await load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Decision failed')
+      toast.error(e?.response?.data?.error || p.decisionFailed)
     } finally {
       setBusyId(null)
     }
@@ -294,55 +294,55 @@ function InspectionQueuePage() {
   return (
     <section className="dashboard-page dashboard-page--compact inspection-page">
       <PageHeader
-        title="Field inspections"
-        subtitle="Work the visit, save notes and evidence, then approve or reject."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <button type="button" className="btn-secondary" onClick={load} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
-            </button>
+            {loading ? s.refreshing : s.refresh}
+          </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Active visits" value={String(primaryQueue.length)} meta="Open cases" />
-        <StatCard title="Unassigned" value={String(unassignedCount)} meta="Need an inspector" />
-        <StatCard title="Awaiting case" value={String(missingCases.length)} meta="Buyer OTP done" />
-        <StatCard title="Verified" value={String(verifiedCount)} meta="Contracts cleared" />
+        <StatCard title={p.activeVisits} value={String(primaryQueue.length)} meta={p.activeVisitsMeta} />
+        <StatCard title={p.unassigned} value={String(unassignedCount)} meta={p.unassignedMeta} />
+        <StatCard title={p.awaitingCase} value={String(missingCases.length)} meta={p.awaitingCaseMeta} />
+        <StatCard title={p.verified} value={String(verifiedCount)} meta={p.verifiedMeta} />
       </div>
 
       {selectedCase ? (
         <div className="inspection-work" ref={workPanelRef}>
           <div className="inspection-work__head">
             <div>
-              <p className="inspection-work__eyebrow">Visit</p>
+              <p className="inspection-work__eyebrow">{p.visitEyebrow}</p>
               <h2>
                 Contract #{selectedCase.contractId}
                 <span className="inspection-card__sub"> · Case #{selectedCase.inspectionId}</span>
               </h2>
               {selectedContract ? (
                 <p className="inspection-work__meta">
-                  {selectedContract.buyerName || 'Buyer'} · {formatValue(selectedContract.contractValue)}
+                  {selectedContract.buyerName || p.buyerLabel} · {formatValue(selectedContract.contractValue)}
                 </p>
               ) : null}
             </div>
             <button type="button" className="btn-secondary" onClick={closeWorkPanel}>
-              Close
+              {s.close}
             </button>
           </div>
 
           <div className="inspection-work__grid">
             <label>
-              Visit notes
+              {p.visitNotes}
               <textarea
                 rows={4}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Crop condition, quantity match, any issues…"
+                placeholder={p.notesPlaceholder}
               />
             </label>
             <div className="inspection-work__side">
               <label>
-                Visit date
+                {p.visitDate}
                 <input
                   type="date"
                   value={scheduleDate}
@@ -350,9 +350,9 @@ function InspectionQueuePage() {
                 />
               </label>
               <label>
-                Inspector
+                {p.inspector}
                 <select value={inspectorId} onChange={(e) => setInspectorId(e.target.value)}>
-                  <option value="">Unassigned</option>
+                  <option value="">{p.unassignedLabel}</option>
                   {inspectors.map((i) => (
                     <option key={i.userId} value={i.userId}>
                       {i.username}
@@ -361,7 +361,7 @@ function InspectionQueuePage() {
                 </select>
               </label>
               <label>
-                Evidence
+                {p.evidence}
                 <input
                   type="file"
                   accept="image/*,.pdf"
@@ -370,7 +370,7 @@ function InspectionQueuePage() {
                 {evidenceFile ? (
                   <span className="inspection-file-name">{evidenceFile.name}</span>
                 ) : selectedCase.evidenceUrls ? (
-                  <span className="inspection-file-name">Saved</span>
+                  <span className="inspection-file-name">{p.saved}</span>
                 ) : null}
               </label>
             </div>
@@ -383,7 +383,7 @@ function InspectionQueuePage() {
               disabled={busyId === `save-${selectedId}`}
               onClick={saveVisit}
             >
-              {busyId === `save-${selectedId}` ? 'Saving…' : 'Save'}
+              {busyId === `save-${selectedId}` ? s.saving : s.save}
             </button>
             <button
               type="button"
@@ -391,7 +391,7 @@ function InspectionQueuePage() {
               disabled={Boolean(busyId)}
               onClick={() => decide(selectedId, 'approved')}
             >
-              Approve &amp; verify
+              {p.approveVerify}
             </button>
             <button
               type="button"
@@ -399,7 +399,7 @@ function InspectionQueuePage() {
               disabled={Boolean(busyId)}
               onClick={() => decide(selectedId, 'rejected')}
             >
-              Reject
+              {s.reject}
             </button>
           </div>
         </div>
@@ -408,8 +408,8 @@ function InspectionQueuePage() {
       {missingCases.length > 0 ? (
         <section className="inspection-section">
           <div className="inspection-section__head">
-            <h2>Awaiting a case</h2>
-            <p>Buyer OTP is done but no visit case exists yet — open one to start work.</p>
+            <h2>{p.awaitingTitle}</h2>
+            <p>{p.awaitingBody}</p>
           </div>
           <div className="inspection-card-list">
             {missingCases.map((c) => (
@@ -430,7 +430,7 @@ function InspectionQueuePage() {
                     disabled={busyId === `open-${c.contractId}`}
                     onClick={() => openCase(c.contractId)}
                   >
-                    {busyId === `open-${c.contractId}` ? 'Opening…' : 'Open case'}
+                    {busyId === `open-${c.contractId}` ? p.opening : p.openCase}
                   </button>
                 </div>
               </article>
@@ -441,13 +441,13 @@ function InspectionQueuePage() {
 
       <section className="inspection-section">
         <div className="inspection-section__head">
-          <h2>Active visits</h2>
-          <p>One case per contract. Open a visit to save notes, then approve or reject.</p>
+          <h2>{p.activeTitle}</h2>
+          <p>{p.activeBody}</p>
         </div>
 
         {primaryQueue.length === 0 ? (
           <div className="inspection-empty">
-            {loading ? 'Loading…' : 'No active visits. Cases appear here after buyer OTP.'}
+            {loading ? s.loading : p.activeEmpty}
           </div>
         ) : (
           <div className="inspection-card-list">
@@ -469,20 +469,20 @@ function InspectionQueuePage() {
                     </div>
                     <dl className="inspection-card__facts">
                       <div>
-                        <dt>Buyer</dt>
+                        <dt>{p.colBuyer}</dt>
                         <dd>{contract?.buyerName || '—'}</dd>
                       </div>
                       <div>
-                        <dt>Value</dt>
+                        <dt>{p.colValue}</dt>
                         <dd>{formatValue(contract?.contractValue)}</dd>
                       </div>
                       <div>
-                        <dt>Inspector</dt>
+                        <dt>{p.colInspector}</dt>
                         <dd>{inspectorName(row.assignedInspectorId)}</dd>
                       </div>
                       <div>
-                        <dt>Date</dt>
-                        <dd>{row.scheduledDate || 'Not set'}</dd>
+                        <dt>{p.colDate}</dt>
+                        <dd>{row.scheduledDate || p.notSet}</dd>
                       </div>
                     </dl>
                   </div>
@@ -492,7 +492,7 @@ function InspectionQueuePage() {
                       className="btn-primary"
                       onClick={() => openWorkPanel(row)}
                     >
-                      {isActive ? 'Editing ↑' : 'Open visit'}
+                      {isActive ? p.editing : p.openVisit}
                     </button>
                   </div>
                 </article>
@@ -506,8 +506,8 @@ function InspectionQueuePage() {
         <section className="inspection-section">
           <div className="inspection-section__head inspection-section__head--row">
             <div>
-              <h2>Duplicate cases</h2>
-              <p>Extra cases opened for a contract that already has an active visit.</p>
+              <h2>{p.duplicates}</h2>
+              <p>{p.duplicatesDesc}</p>
             </div>
             <button
               type="button"
@@ -515,7 +515,7 @@ function InspectionQueuePage() {
               onClick={runDedupe}
               disabled={busyId === 'dedupe' || loading}
             >
-              {busyId === 'dedupe' ? 'Cleaning…' : `Remove all ${duplicateQueue.length}`}
+              {busyId === 'dedupe' ? p.cleaning : p.removeAll(duplicateQueue.length)}
             </button>
           </div>
           <div className="inspection-card-list">
@@ -534,7 +534,7 @@ function InspectionQueuePage() {
                     disabled={busyId === `cancel-${row.inspectionId}`}
                     onClick={() => removeDuplicate(row.inspectionId)}
                   >
-                    {busyId === `cancel-${row.inspectionId}` ? 'Removing…' : 'Remove'}
+                    {busyId === `cancel-${row.inspectionId}` ? p.removing : p.remove}
                   </button>
                 </div>
               </article>

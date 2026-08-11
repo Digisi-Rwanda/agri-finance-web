@@ -15,37 +15,13 @@ import DataTableShell from '../components/ui/DataTableShell'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { getLoans, updateLoanStatus } from '../services/bankService'
 import { isInsuranceRequiredError } from '../services/insuranceService'
 import { formatRwf, formatRwfCompact } from '../utils/currency'
 import { exportTableReport, slugifyFilename } from '../utils/exportPdf'
 
 const PAGE_SIZE = 10
-
-const STATUS_OPTIONS = [
-  { value: 'All', label: 'All status' },
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Approved', label: 'Approved' },
-  { value: 'Disbursed', label: 'Disbursed' },
-  { value: 'Rejected', label: 'Rejected' },
-  { value: 'Repaid', label: 'Repaid' },
-]
-
-const RISK_OPTIONS = [
-  { value: 'All', label: 'All risk' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'LOW', label: 'Low' },
-]
-
-const SORT_OPTIONS = [
-  { value: 'pending-first', label: 'Pending first' },
-  { value: 'amount-desc', label: 'Amount · high to low' },
-  { value: 'amount-asc', label: 'Amount · low to high' },
-  { value: 'score-desc', label: 'Score · high to low' },
-  { value: 'score-asc', label: 'Score · low to high' },
-  { value: 'name', label: 'Farmer A–Z' },
-]
 
 function normalizeRisk(loan) {
   const fromApi = String(loan.riskLevel || '').trim().toUpperCase()
@@ -83,14 +59,8 @@ function scoreTone(score) {
   return 'low'
 }
 
-function riskLabel(risk) {
-  if (risk === 'HIGH') return 'High'
-  if (risk === 'MEDIUM') return 'Medium'
-  if (risk === 'LOW') return 'Low'
-  return 'Unknown'
-}
-
 function LoanManagementPage() {
+  const { s, p } = usePageCopy('loans')
   const location = useLocation()
   const [loans, setLoans] = useState([])
   const [loading, setLoading] = useState(true)
@@ -101,6 +71,47 @@ function LoanManagementPage() {
   const [searchQuery, setSearchQuery] = useState(location.state?.search || '')
   const [sortBy, setSortBy] = useState('pending-first')
   const [page, setPage] = useState(1)
+
+  const statusOptions = useMemo(
+    () => [
+      { value: 'All', label: p.allStatus },
+      { value: 'Pending', label: s.statuses.PENDING },
+      { value: 'Approved', label: s.statuses.APPROVED },
+      { value: 'Disbursed', label: s.statuses.DISBURSED },
+      { value: 'Rejected', label: s.statuses.REJECTED },
+      { value: 'Repaid', label: 'Repaid' },
+    ],
+    [p.allStatus, s.statuses],
+  )
+
+  const riskOptions = useMemo(
+    () => [
+      { value: 'All', label: p.allRisk },
+      { value: 'HIGH', label: s.risk.high },
+      { value: 'MEDIUM', label: s.risk.medium },
+      { value: 'LOW', label: s.risk.low },
+    ],
+    [p.allRisk, s.risk],
+  )
+
+  const sortOptions = useMemo(
+    () => [
+      { value: 'pending-first', label: p.sortPendingFirst },
+      { value: 'amount-desc', label: p.sortAmountDesc },
+      { value: 'amount-asc', label: p.sortAmountAsc },
+      { value: 'score-desc', label: p.sortScoreDesc },
+      { value: 'score-asc', label: p.sortScoreAsc },
+      { value: 'name', label: p.sortName },
+    ],
+    [p],
+  )
+
+  const riskLabel = (risk) => {
+    if (risk === 'HIGH') return s.risk.high
+    if (risk === 'MEDIUM') return s.risk.medium
+    if (risk === 'LOW') return s.risk.low
+    return 'Unknown'
+  }
 
   useEffect(() => {
     if (location.state?.search) {
@@ -117,21 +128,20 @@ function LoanManagementPage() {
         const data = await getLoans()
         setLoans(Array.isArray(data) ? data : [])
       } catch {
-        setLoadError('Could not load loan applications. Check your connection and try again.')
+        setLoadError(p.loadFailed)
         setLoans([])
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [p.loadFailed])
 
   const refreshLoans = async (loanId, status, updated) => {
     try {
       const next = await getLoans()
       setLoans(next)
     } catch {
-      // Status change already succeeded — keep local row updated if refresh fails.
       setLoans((prev) =>
         prev.map((loan) => (loan.id === loanId ? { ...loan, ...updated, status } : loan)),
       )
@@ -148,17 +158,14 @@ function LoanManagementPage() {
     try {
       const updated = await updateLoanStatus(loanId, status)
       await refreshLoans(loanId, status, updated)
-      toast.success(`${updated?.farmer || loan?.farmer || 'Loan'} ${status.toLowerCase()}.`)
+      toast.success(p.statusUpdated(updated?.farmer || loan?.farmer || 'Loan', status.toLowerCase()))
     } catch (e) {
       if (status === 'Approved' && isInsuranceRequiredError(e)) {
-        toast.error(
-          e?.response?.data?.error ||
-            'Active insurance is required. An insurer must issue a policy before the bank can approve.',
-        )
+        toast.error(e?.response?.data?.error || p.insuranceRequired)
         return
       }
       const apiError = e?.response?.data?.error || e?.response?.data?.message || e?.message
-      toast.error(apiError || `Failed to ${status.toLowerCase()} loan. Please retry.`)
+      toast.error(apiError || p.statusFailed(status.toLowerCase()))
     } finally {
       setBusyId(null)
     }
@@ -229,19 +236,19 @@ function LoanManagementPage() {
   }
 
   const canDecide = (status) => {
-    const s = String(status || '').toLowerCase()
-    return s === 'pending' || s === 'approved'
+    const normalized = String(status || '').toLowerCase()
+    return normalized === 'pending' || normalized === 'approved'
   }
 
   const renderLoanActions = (loan) => {
     if (!canDecide(loan.status)) {
       return loan.farmerId ? (
         <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
-          View farmer
+          {p.viewFarmer}
           <ChevronRight size={14} aria-hidden />
         </Link>
       ) : (
-        <span className="muted">No action</span>
+        <span className="muted">{s.noAction}</span>
       )
     }
 
@@ -255,11 +262,11 @@ function LoanManagementPage() {
             disabled={busy}
             onClick={() => handleStatus(loan.id, 'Disbursed')}
           >
-            {busy ? 'Saving…' : 'Disburse'}
+            {busy ? s.saving : s.disburse}
           </button>
           {loan.farmerId ? (
             <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
-              Profile
+              {s.profile}
             </Link>
           ) : null}
         </>
@@ -273,7 +280,7 @@ function LoanManagementPage() {
           disabled={busy}
           onClick={() => handleStatus(loan.id, 'Approved')}
         >
-          {busy ? 'Saving…' : 'Approve'}
+          {busy ? s.saving : s.approve}
         </button>
         <button
           type="button"
@@ -281,11 +288,11 @@ function LoanManagementPage() {
           disabled={busy}
           onClick={() => handleStatus(loan.id, 'Rejected')}
         >
-          Reject
+          {s.reject}
         </button>
         {loan.farmerId ? (
           <Link to={`/farmer/${loan.farmerId}`} className="btn-view">
-            Profile
+            {s.profile}
           </Link>
         ) : null}
       </>
@@ -295,12 +302,12 @@ function LoanManagementPage() {
   const handleExportReport = () => {
     const headers = [
       { key: 'id', label: 'Loan ID' },
-      { key: 'farmer', label: 'Farmer' },
-      { key: 'score', label: 'Credit score' },
-      { key: 'amount', label: 'Amount (Rwf)' },
-      { key: 'risk', label: 'Risk' },
-      { key: 'purpose', label: 'Purpose' },
-      { key: 'status', label: 'Status' },
+      { key: 'farmer', label: p.colFarmer },
+      { key: 'score', label: p.colScore },
+      { key: 'amount', label: p.colAmount },
+      { key: 'risk', label: p.colRisk },
+      { key: 'purpose', label: p.colPurpose },
+      { key: 'status', label: p.colStatus },
     ]
     const rows = filteredLoans.map((loan) => ({
       id: loan.id,
@@ -312,32 +319,35 @@ function LoanManagementPage() {
       status: loan.status,
     }))
     exportTableReport({
-      title: 'Loan Applications Report',
+      title: p.tableTitle,
       subtitle: `${rows.length} application(s)`,
       filename: `${slugifyFilename('loan-applications')}-report`,
       headers,
       rows,
     })
-    toast.success(`Downloaded PDF with ${rows.length} loan record(s).`)
+    toast.success(p.pdfDownloaded)
   }
+
+  const footerFrom = filteredLoans.length === 0 ? 0 : start + 1
+  const footerTo = Math.min(start + PAGE_SIZE, filteredLoans.length)
 
   return (
     <section className="dashboard-page dashboard-page--compact loan-directory-page">
       <PageHeader
-        title="Loans"
-        subtitle="Review applications, approve or reject, and track disbursed amounts. Approve needs ACTIVE insurance for the same farmer."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <>
             <Link to="/farmer" className="btn-secondary">
               <Users size={16} />
-              Farmers
+              {p.farmers}
             </Link>
             <button type="button" className="btn-secondary" onClick={handleExportReport}>
               <Download size={16} aria-hidden />
-              Export PDF
+              {p.exportPdf}
             </button>
             <Link to="/" className="btn-primary">
-              Dashboard
+              {p.dashboard}
               <ArrowRight size={16} />
             </Link>
           </>
@@ -348,11 +358,7 @@ function LoanManagementPage() {
         <div className="dash-alerts">
           <div className="dash-alert dash-alert--warn">
             <AlertCircle size={18} />
-            <span>
-              <strong>Insurance gate:</strong> Approve only works when the farmer has an ACTIVE
-              policy covering today (same Farmer ID). If approve fails, the toast explains why —
-              ask the insurer to issue/activate cover, then retry.
-            </span>
+            <span>{p.insuranceGate}</span>
           </div>
         </div>
       ) : null}
@@ -370,12 +376,9 @@ function LoanManagementPage() {
             >
               <HandCoins size={18} />
               <span>
-                <strong>
-                  {pendingCount} pending application{pendingCount === 1 ? '' : 's'}
-                </strong>{' '}
-                awaiting a decision · {formatRwfCompact(pendingAmount)}
+                {p.pendingAlert(pendingCount)} · {formatRwfCompact(pendingAmount)}
               </span>
-              <span className="dash-alert__action">Filter pending</span>
+              <span className="dash-alert__action">{p.filterPending}</span>
             </button>
           ) : null}
           {highRiskPending > 0 ? (
@@ -389,34 +392,33 @@ function LoanManagementPage() {
               }}
             >
               <AlertCircle size={18} />
-              <span>
-                <strong>
-                  {highRiskPending} high-risk pending
-                </strong>{' '}
-                application{highRiskPending === 1 ? '' : 's'} need closer review
-              </span>
-              <span className="dash-alert__action">Review now</span>
+              <span>{p.highRiskPending(highRiskPending)}</span>
+              <span className="dash-alert__action">{p.reviewNow}</span>
             </button>
           ) : null}
         </div>
       ) : null}
 
       <div className="widgets four">
-        <StatCard title="Applications" value={loading ? '…' : String(loans.length)} meta="All statuses" />
         <StatCard
-          title="Pending"
+          title={p.applications}
+          value={loading ? '…' : String(loans.length)}
+          meta="All statuses"
+        />
+        <StatCard
+          title={p.pending}
           value={loading ? '…' : String(pendingCount)}
           meta={formatRwfCompact(pendingAmount)}
           accent="amber"
         />
         <StatCard
-          title="Approved"
+          title={p.approved}
           value={loading ? '…' : String(approvedCount + disbursedCount)}
-          meta={`${disbursedCount} disbursed`}
+          meta={`${disbursedCount} ${String(s.statuses.DISBURSED).toLowerCase()}`}
           accent="blue"
         />
         <StatCard
-          title="Booked amount"
+          title={p.bookedAmount}
           value={loading ? '…' : formatRwfCompact(approvedAmount)}
           meta="Approved + disbursed"
           accent="slate"
@@ -430,16 +432,16 @@ function LoanManagementPage() {
       ) : null}
 
       <DataTableShell
-        title="Loan applications"
+        title={p.tableTitle}
         filters={
           <div className="loan-filters">
             <label className="filter-search loan-filters__search">
-              <span>Search</span>
+              <span>{s.search}</span>
               <div className="filter-search__field">
                 <Search size={14} aria-hidden />
                 <input
                   type="search"
-                  placeholder="Farmer, loan ID, or purpose"
+                  placeholder={p.searchPlaceholder}
                   value={searchQuery}
                   onChange={(event) => {
                     setSearchQuery(event.target.value)
@@ -450,7 +452,7 @@ function LoanManagementPage() {
             </label>
 
             <div className="loan-filters__chips" role="group" aria-label="Status filter">
-              {STATUS_OPTIONS.map((option) => (
+              {statusOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -467,7 +469,7 @@ function LoanManagementPage() {
 
             <div className="loan-filters__row">
               <label>
-                Risk
+                {p.colRisk}
                 <select
                   value={riskFilter}
                   onChange={(event) => {
@@ -475,7 +477,7 @@ function LoanManagementPage() {
                     setPage(1)
                   }}
                 >
-                  {RISK_OPTIONS.map((option) => (
+                  {riskOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -491,7 +493,7 @@ function LoanManagementPage() {
                     setPage(1)
                   }}
                 >
-                  {SORT_OPTIONS.map((option) => (
+                  {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -501,7 +503,7 @@ function LoanManagementPage() {
               {hasActiveFilters ? (
                 <button type="button" className="btn-secondary loan-filters__clear" onClick={clearFilters}>
                   <X size={14} />
-                  Clear filters
+                  {s.clearFilters}
                 </button>
               ) : null}
             </div>
@@ -510,8 +512,7 @@ function LoanManagementPage() {
         footer={
           <>
             <span>
-              Showing {filteredLoans.length === 0 ? 0 : start + 1}–
-              {Math.min(start + PAGE_SIZE, filteredLoans.length)} of {filteredLoans.length}
+              {s.showing(footerFrom, footerTo, filteredLoans.length)}
               {filteredLoans.length !== loans.length ? ` (filtered from ${loans.length})` : ''}
             </span>
             <div className="page-actions">
@@ -519,20 +520,18 @@ function LoanManagementPage() {
                 type="button"
                 className="btn-secondary"
                 disabled={safePage === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               >
-                Previous
+                {s.previous}
               </button>
-              <span className="page-indicator">
-                Page {safePage} of {totalPages}
-              </span>
+              <span className="page-indicator">{s.pageOf(safePage, totalPages)}</span>
               <button
                 type="button"
                 className="btn-secondary"
                 disabled={safePage === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
               >
-                Next
+                {s.next}
               </button>
             </div>
           </>
@@ -541,13 +540,13 @@ function LoanManagementPage() {
         <table className="desktop-table dashboard-table loan-directory-table">
           <thead>
             <tr>
-              <th>Farmer</th>
-              <th>Amount</th>
-              <th>Score</th>
-              <th>Risk</th>
-              <th>Purpose</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{p.colFarmer}</th>
+              <th>{p.colAmount}</th>
+              <th>{p.colScore}</th>
+              <th>{p.colRisk}</th>
+              <th>{p.colPurpose}</th>
+              <th>{p.colStatus}</th>
+              <th>{p.colActions}</th>
             </tr>
           </thead>
           <tbody>
@@ -562,9 +561,7 @@ function LoanManagementPage() {
             ) : pagedLoans.length === 0 ? (
               <tr>
                 <td colSpan={7} className="empty-cell">
-                  {loans.length === 0
-                    ? 'No loan applications yet.'
-                    : 'No loans match your search or filters.'}
+                  {loans.length === 0 ? p.empty : p.emptyFilter}
                 </td>
               </tr>
             ) : (
@@ -589,7 +586,7 @@ function LoanManagementPage() {
                     <td>
                       <StatusBadge value={risk === 'UNKNOWN' ? 'Unknown' : risk} />
                     </td>
-                    <td className="loan-purpose-cell">{loan.purpose || 'General'}</td>
+                    <td className="loan-purpose-cell">{loan.purpose || p.generalPurpose}</td>
                     <td>
                       <StatusBadge value={loan.status} />
                     </td>
@@ -601,15 +598,11 @@ function LoanManagementPage() {
           </tbody>
         </table>
 
-        <div className="mobile-loan-list" aria-label="Loan applications">
+        <div className="mobile-loan-list" aria-label={p.tableTitle}>
           {loading ? (
             <div className="skeleton-row" />
           ) : pagedLoans.length === 0 ? (
-            <p className="empty-cell">
-              {loans.length === 0
-                ? 'No loan applications yet.'
-                : 'No loans match your search or filters.'}
-            </p>
+            <p className="empty-cell">{loans.length === 0 ? p.empty : p.emptyFilter}</p>
           ) : (
             pagedLoans.map((loan) => {
               const risk = normalizeRisk(loan)
@@ -626,20 +619,20 @@ function LoanManagementPage() {
                   </div>
                   <div className="loan-mobile-card__meta">
                     <div>
-                      <span>Amount</span>
+                      <span>{p.colAmount}</span>
                       {formatRwf(loan.amount)}
                     </div>
                     <div>
-                      <span>Score</span>
+                      <span>{p.colScore}</span>
                       {loan.score || '—'}
                     </div>
                     <div>
-                      <span>Risk</span>
+                      <span>{p.colRisk}</span>
                       {riskLabel(risk)}
                     </div>
                     <div>
-                      <span>Purpose</span>
-                      {loan.purpose || 'General'}
+                      <span>{p.colPurpose}</span>
+                      {loan.purpose || p.generalPurpose}
                     </div>
                   </div>
                   <div className="loan-mobile-card__actions">{renderLoanActions(loan)}</div>

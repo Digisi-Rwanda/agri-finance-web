@@ -5,13 +5,13 @@ import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTableShell from '../components/ui/DataTableShell'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import {
   listContracts,
   listContractConsents,
   startBuyerConsent,
 } from '../services/bankabilityService'
 
-/** Stages where buyer OTP is still the next staff action. */
 function needsBuyerOtp(status) {
   const s = String(status || '').toLowerCase()
   return (
@@ -23,15 +23,6 @@ function needsBuyerOtp(status) {
   )
 }
 
-function stageHint(status) {
-  const s = String(status || '').toLowerCase()
-  if (s.includes('disput')) return 'Disputed — create a new contract if needed'
-  if (s.includes('buyer') || s === 'draft' || s === 'submitted') return 'Send buyer OTP link'
-  if (s.includes('field_inspection')) return 'Inspector field visit'
-  if (s === 'verified') return 'Ready as loan collateral'
-  return 'In progress'
-}
-
 function formatValue(value) {
   if (value == null || value === '') return '—'
   const n = Number(value)
@@ -39,14 +30,20 @@ function formatValue(value) {
   return String(value)
 }
 
-/**
- * Receivables = purchase contracts used as collateral.
- * Focus: status + one clear next action (OTP → inspections → verified).
- */
 function ContractsPage() {
+  const { s, p } = usePageCopy('contracts')
   const [contracts, setContracts] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+
+  const stageHint = (status) => {
+    const st = String(status || '').toLowerCase()
+    if (st.includes('disput')) return p.stageDisputed
+    if (st.includes('buyer') || st === 'draft' || st === 'submitted') return p.stageOtp
+    if (st.includes('field_inspection')) return p.stageInspection
+    if (st === 'verified') return p.stageVerified
+    return p.stageProgress
+  }
 
   const load = async () => {
     setLoading(true)
@@ -54,7 +51,7 @@ function ContractsPage() {
       const data = await listContracts()
       setContracts(Array.isArray(data) ? data : [])
     } catch {
-      toast.error('Failed to load contracts')
+      toast.error(p.loadFailed)
     } finally {
       setLoading(false)
     }
@@ -62,6 +59,7 @@ function ContractsPage() {
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const counts = useMemo(() => {
@@ -104,14 +102,12 @@ function ContractsPage() {
         /* clipboard optional */
       }
       toast.success(
-        res.otpCode
-          ? `Buyer link copied. OTP ${res.otpCode} (use if email/SMS not sent).`
-          : 'Buyer verification link copied — send it to the buyer.',
+        res.otpCode ? p.otpCopiedWithCode(res.otpCode) : p.otpCopied,
       )
       toast.info(absolute, { autoClose: 12000 })
       load()
     } catch (e) {
-      toast.error(e?.response?.data?.error || e?.response?.data?.message || 'OTP failed')
+      toast.error(e?.response?.data?.error || e?.response?.data?.message || p.otpFailed)
     }
   }
 
@@ -120,7 +116,7 @@ function ContractsPage() {
       const list = await listContractConsents(id)
       const consent = Array.isArray(list) ? list[0] : null
       if (!consent) {
-        toast.info('No consent PDF yet — buyer must complete OTP first')
+        toast.info(p.noConsentPdf)
         return
       }
       const doc = consent.consentDocumentUrl
@@ -128,42 +124,44 @@ function ContractsPage() {
       if (doc) {
         window.open(doc.startsWith('http') ? doc : `${base}${doc}`, '_blank')
       } else if (consent.otpVerified) {
-        toast.info('OTP verified — open Consent Vault if PDF is still generating')
+        toast.info(p.consentVerified)
       } else {
-        toast.info('Consent pending — buyer has not completed OTP yet')
+        toast.info(p.consentPending)
       }
     } catch {
-      toast.error('Could not load consent')
+      toast.error(p.consentLoadFailed)
     }
   }
+
+  const filterTabs = [
+    { key: 'all', label: p.filterAll(counts.all) },
+    { key: 'buyer', label: p.filterNeedOtp(counts.pendingBuyer) },
+    { key: 'inspection', label: p.filterInspection(counts.inspection) },
+    { key: 'verified', label: p.filterVerified(counts.verified) },
+    { key: 'disputed', label: p.filterDisputed(counts.disputed) },
+  ]
 
   return (
     <section className="dashboard-page dashboard-page--compact">
       <PageHeader
-        title="Receivables"
-        subtitle="Purchase contracts used as loan collateral. Send buyer OTP, then field inspection, then verified."
+        title={p.title}
+        subtitle={p.subtitle}
         actions={
           <button type="button" className="btn-primary" onClick={load} disabled={loading}>
-            {loading ? 'Refreshing…' : 'Refresh'}
+            {loading ? s.refreshing : s.refresh}
           </button>
         }
       />
 
       <div className="widgets four">
-        <StatCard title="Pending buyer" value={String(counts.pendingBuyer)} meta="Need OTP link" />
-        <StatCard title="Field inspection" value={String(counts.inspection)} meta="Go to Inspections" />
-        <StatCard title="Verified" value={String(counts.verified)} meta="Loan-ready" />
-        <StatCard title="Disputed" value={String(counts.disputed)} />
+        <StatCard title={p.pendingBuyer} value={String(counts.pendingBuyer)} meta={p.pendingBuyerMeta} />
+        <StatCard title={p.fieldInspection} value={String(counts.inspection)} meta={p.fieldInspectionMeta} />
+        <StatCard title={p.verified} value={String(counts.verified)} meta={p.verifiedMeta} />
+        <StatCard title={p.disputed} value={String(counts.disputed)} />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          { key: 'all', label: `All (${counts.all})` },
-          { key: 'buyer', label: `Need OTP (${counts.pendingBuyer})` },
-          { key: 'inspection', label: `Inspection (${counts.inspection})` },
-          { key: 'verified', label: `Verified (${counts.verified})` },
-          { key: 'disputed', label: `Disputed (${counts.disputed})` },
-        ].map((tab) => (
+        {filterTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -176,27 +174,27 @@ function ContractsPage() {
       </div>
 
       <div className="mt-6">
-        <DataTableShell title="Contracts">
+        <DataTableShell title={p.tableTitle}>
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Buyer</th>
-                <th>Value</th>
-                <th>Status</th>
-                <th>Next step</th>
-                <th>Action</th>
+                <th>{p.colId}</th>
+                <th>{p.colBuyer}</th>
+                <th>{p.colValue}</th>
+                <th>{p.colStatus}</th>
+                <th>{p.colNext}</th>
+                <th>{p.colAction}</th>
               </tr>
             </thead>
             <tbody>
               {loading && visible.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>Loading…</td>
+                  <td colSpan={6}>{s.loading}</td>
                 </tr>
               ) : null}
               {!loading && visible.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>No contracts in this filter.</td>
+                  <td colSpan={6}>{p.empty}</td>
                 </tr>
               ) : null}
               {visible.map((c) => {
@@ -226,12 +224,12 @@ function ContractsPage() {
                             className="btn-primary"
                             onClick={() => onStartOtp(c.contractId)}
                           >
-                            Send buyer OTP link
+                            {p.sendOtp}
                           </button>
                         ) : null}
                         {inspection ? (
                           <Link to="/inspections" className="btn-primary">
-                            Go to inspections
+                            {p.goInspections}
                           </Link>
                         ) : null}
                         {verified ? (
@@ -240,12 +238,12 @@ function ContractsPage() {
                             className="btn-secondary"
                             onClick={() => onViewConsent(c.contractId)}
                           >
-                            Consent PDF
+                            {p.consentPdf}
                           </button>
                         ) : null}
                         {disputed ? (
                           <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                            Closed
+                            {p.closed}
                           </span>
                         ) : null}
                       </div>

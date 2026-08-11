@@ -2,6 +2,7 @@ import { Bell, LockKeyhole, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { usePageCopy } from '../context/AuthLocaleContext'
 import { usePortalTheme } from '../context/PortalThemeContext'
 import { getCurrentUser, getProfile } from '../services/auth'
 import { getConsent, updateConsent } from '../services/consentService'
@@ -40,6 +41,7 @@ function SettingToggle({ label, description, checked, onChange, disabled }) {
 }
 
 function SettingsPage() {
+  const { s, p, layout } = usePageCopy('settings')
   const currentRole = getCurrentUser()?.role || 'BANK'
   const isFarmer = currentRole === 'FARMER'
   const { isDark, setIsDark } = usePortalTheme()
@@ -61,19 +63,19 @@ function SettingsPage() {
           setConsent(await getConsent())
         }
       } catch {
-        toast.error('Unable to load settings.')
+        toast.error(p.loadFailed)
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [isFarmer])
+  }, [isFarmer, p.loadFailed])
 
   const saveNotificationPref = (key, value) => {
     const next = { ...notifications, [key]: value }
     setNotifications(next)
     localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(next))
-    toast.success('Preference saved.')
+    toast.success(p.prefSaved)
   }
 
   const handleConsentToggle = async (key) => {
@@ -82,14 +84,18 @@ function SettingsPage() {
     setConsentBusy(true)
     try {
       await updateConsent({ [key]: nextValue })
-      toast.success(
-        `${key === 'shareTransactions' ? 'Transactions' : 'Satellite data'} sharing ${
-          nextValue ? 'enabled' : 'disabled'
-        }.`,
-      )
+      const msg =
+        key === 'shareTransactions'
+          ? nextValue
+            ? p.transactionsEnabled
+            : p.transactionsDisabled
+          : nextValue
+            ? p.satelliteEnabled
+            : p.satelliteDisabled
+      toast.success(msg)
     } catch {
       setConsent((prev) => ({ ...prev, [key]: !nextValue }))
-      toast.error('Failed to update consent.')
+      toast.error(p.consentFailed)
     } finally {
       setConsentBusy(false)
     }
@@ -105,7 +111,7 @@ function SettingsPage() {
     return (
       <section className="dashboard-page account-page">
         <div className="account-toolbar">
-          <h1>Settings</h1>
+          <h1>{p.title}</h1>
         </div>
         <div className="account-skeleton card" />
       </section>
@@ -117,14 +123,14 @@ function SettingsPage() {
       <div className="account-toolbar">
         <div>
           <nav className="account-toolbar__crumb" aria-label="Breadcrumb">
-            <Link to="/">Home</Link>
+            <Link to="/">{layout.breadcrumbHome || s.home}</Link>
             <span aria-hidden>/</span>
-            <span>Settings</span>
+            <span>{p.title}</span>
           </nav>
-          <h1>Settings</h1>
+          <h1>{p.title}</h1>
         </div>
         <Link to="/profile" className="btn-secondary">
-          Account
+          {p.account}
         </Link>
       </div>
 
@@ -132,16 +138,16 @@ function SettingsPage() {
         <article className="card settings-panel">
           <div className="settings-panel__head">
             {isDark ? <Moon size={18} /> : <Sun size={18} />}
-            <h3>Appearance</h3>
+            <h3>{p.appearance}</h3>
           </div>
-          <div className="settings-theme" role="group" aria-label="Theme">
+          <div className="settings-theme" role="group" aria-label={p.themeGroup}>
             <button
               type="button"
               className={`settings-theme__btn${!isDark ? ' settings-theme__btn--active' : ''}`}
               onClick={() => setTheme(false)}
             >
               <Sun size={16} />
-              Light
+              {p.light}
             </button>
             <button
               type="button"
@@ -149,7 +155,7 @@ function SettingsPage() {
               onClick={() => setTheme(true)}
             >
               <Moon size={16} />
-              Dark
+              {p.dark}
             </button>
           </div>
         </article>
@@ -157,30 +163,30 @@ function SettingsPage() {
         <article className="card settings-panel">
           <div className="settings-panel__head">
             <Bell size={18} />
-            <h3>Notifications</h3>
+            <h3>{p.notifications}</h3>
           </div>
           <div className="settings-toggle-list">
             <SettingToggle
-              label="Loan updates"
-              description="Applications, approvals, and status changes."
+              label={p.loanUpdates}
+              description={p.loanUpdatesDesc}
               checked={notifications.loanUpdates}
               onChange={(value) => saveNotificationPref('loanUpdates', value)}
             />
             <SettingToggle
-              label="Payment alerts"
-              description="MoMo confirmations and repayment reminders."
+              label={p.paymentAlerts}
+              description={p.paymentAlertsDesc}
               checked={notifications.paymentAlerts}
               onChange={(value) => saveNotificationPref('paymentAlerts', value)}
             />
             <SettingToggle
-              label="System announcements"
-              description="Maintenance and product updates."
+              label={p.systemNews}
+              description={p.systemNewsDesc}
               checked={notifications.systemNews}
               onChange={(value) => saveNotificationPref('systemNews', value)}
             />
           </div>
           <Link to="/notifications" className="btn-view settings-panel__link">
-            Open inbox
+            {p.openInbox}
           </Link>
         </article>
 
@@ -188,19 +194,19 @@ function SettingsPage() {
           <article className="card settings-panel">
             <div className="settings-panel__head">
               <LockKeyhole size={18} />
-              <h3>Data sharing</h3>
+              <h3>{p.dataSharing}</h3>
             </div>
             <div className="settings-toggle-list">
               <SettingToggle
-                label="Share transactions"
-                description="Allow banks to view transaction history for credit scoring."
+                label={p.shareTransactions}
+                description={p.shareTransactionsDesc}
                 checked={consent.shareTransactions}
                 disabled={consentBusy}
                 onChange={() => handleConsentToggle('shareTransactions')}
               />
               <SettingToggle
-                label="Share satellite data"
-                description="Allow insurers and lenders to use farm imagery."
+                label={p.shareSatellite}
+                description={p.shareSatelliteDesc}
                 checked={consent.shareSatelliteData}
                 disabled={consentBusy}
                 onChange={() => handleConsentToggle('shareSatelliteData')}
@@ -212,12 +218,12 @@ function SettingsPage() {
         <article className="card settings-panel">
           <div className="settings-panel__head">
             <LockKeyhole size={18} />
-            <h3>Password</h3>
+            <h3>{p.password}</h3>
           </div>
           <div className="account-password-row">
-            <p>Change your sign-in password by email.</p>
+            <p>{p.passwordDesc}</p>
             <Link to="/forgot-password" className="btn-secondary">
-              Reset password
+              {p.resetPassword}
             </Link>
           </div>
         </article>

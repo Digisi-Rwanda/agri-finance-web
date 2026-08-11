@@ -1,5 +1,5 @@
+import { Navigate } from 'react-router-dom'
 import { getCurrentUser } from '../services/auth'
-import AdminReportsPage from '../pages/AdminReportsPage'
 import BankDashboardPage from '../pages/BankDashboardPage'
 import CooperativeDashboardPage from '../pages/CooperativeDashboardPage'
 import InsurerDashboardPage from '../pages/InsurerDashboardPage'
@@ -22,7 +22,7 @@ function RoleHome() {
     case 'GUARANTEE_OFFICER':
       return <SpecV2OpsPage />
     case 'REGISTRATION_OFFICER':
-      return <AdminReportsPage />
+      return <Navigate to="/admin/reports" replace />
     case 'ADMIN':
     case 'BANK':
     default:
