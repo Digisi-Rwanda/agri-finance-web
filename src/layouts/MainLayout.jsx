@@ -293,7 +293,10 @@ function MainLayout() {
       <div className={`app-shell ${shellThemeClass} ${roleShellClass}`.trim()}>
         <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
           <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
-            Agri Trust
+            <span className="brand-stack">
+              <span>Agri Trust</span>
+              <span className="brand-sub">Partner portal</span>
+            </span>
           </Link>
 
           <nav className="sidebar-nav" aria-label="Main">

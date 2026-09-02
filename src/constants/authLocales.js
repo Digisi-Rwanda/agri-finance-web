@@ -13,7 +13,7 @@ export const SUPPORTED_AUTH_LOCALES = ['en', 'rw', 'fr']
 
 const rw = {
   brand: {
-    tagline: "Urubuga rw'imari y'ubuhinzi",
+    tagline: "Urubuga rw'abafatanyabikorwa · urubuga rwa Hinga",
   },
   illustration: {
     eyebrow: "U Rwanda · Imari y'ubuhinzi",
@@ -76,7 +76,7 @@ const rw = {
     submitting: 'Kwinjira…',
     partnerAccessHelp: "Kwinjira ni ku batumiwe gusa. Vugana n'umuyobozi w'ikigo cyawe.",
     partnerEmailRequired: "Andika aderesi ya imeyili y'ikigo cyawe.",
-    partnerOnly: "Konti z'abahinzi zikoresha porogaramu ya Agri Trust kuri telefoni.",
+    partnerOnly: "Konti z'abahinzi ziyandikishwa muri porogaramu ya Hinga, si kuri uru rubuga.",
     toastSuccess: 'Murakaza neza. Winjiye neza.',
     toastError: 'Imeyili cyangwa ijambobanga sibyo. Ongera ugerageze.',
     emailRequired: 'Andika aderesi ya imeyili yawe.',
@@ -86,7 +86,7 @@ const rw = {
     repeatedFailures:
       "Ntibikunda? Nyuma y'igerageza rike, konti yawe izafungwa iminota 15 — ahubwo hindura ijambobanga.",
     farmerPrompt: 'Uri umuhinzi?',
-    farmerAction: 'Koresha porogaramu ya Agri Trust',
+    farmerAction: 'Fata porogaramu ya Hinga',
   },
   forgotPassword: {
     title: 'Hindura ijambobanga',
@@ -195,7 +195,7 @@ const fr = {
     partnerAccessHelp:
       'L’accès est sur invitation uniquement. Contactez l’administrateur de votre organisation.',
     partnerEmailRequired: 'Saisissez l’adresse e-mail de votre organisation.',
-    partnerOnly: 'Les comptes agriculteurs utilisent l’application mobile Agri Trust.',
+    partnerOnly: 'Les comptes agriculteurs s’inscrivent dans l’application mobile Hinga, pas sur ce portail.',
     toastSuccess: 'Bon retour. Vous êtes connecté.',
     toastError: 'E-mail ou mot de passe incorrect. Veuillez réessayer.',
     emailRequired: 'Saisissez votre adresse e-mail.',
@@ -205,7 +205,7 @@ const fr = {
     repeatedFailures:
       'Toujours bloqué ? Après quelques tentatives supplémentaires, votre compte sera verrouillé pendant 15 minutes — réinitialisez plutôt votre mot de passe.',
     farmerPrompt: 'Vous êtes agriculteur ?',
-    farmerAction: 'Utilisez l’application mobile Agri Trust',
+    farmerAction: 'Télécharger Hinga',
   },
   forgotPassword: {
     title: 'Réinitialiser le mot de passe',

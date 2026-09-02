@@ -1,6 +1,7 @@
 export const authBrand = {
   name: 'Agri Trust',
-  tagline: 'Agricultural finance portal',
+  tagline: 'Partner portal · Hinga platform',
+  farmerProduct: 'Hinga',
 }
 
 export const authIllustration = {
@@ -48,7 +49,7 @@ export const loginCopy = {
   submitting: 'Signing in…',
   partnerAccessHelp: 'Access is invitation-only. Contact your organization administrator.',
   partnerEmailRequired: 'Enter your organization email address.',
-  partnerOnly: 'Farmer accounts use the Agri Trust mobile app.',
+  partnerOnly: 'Farmer accounts are created in the Hinga mobile app, not on this portal.',
   toastSuccess: 'Welcome back. You are now signed in.',
   toastError: 'Incorrect email or password. Please try again.',
   emailRequired: 'Enter your email address.',
@@ -58,7 +59,7 @@ export const loginCopy = {
   repeatedFailures:
     'Still not working? After a few more attempts your account is locked for 15 minutes — reset your password instead.',
   farmerPrompt: 'Are you a farmer?',
-  farmerAction: 'Use the Agri Trust mobile app',
+  farmerAction: 'Get the Hinga app',
   reset: {
     title: 'Reset your password',
     description: 'Enter your email and we will send you a link to choose a new password.',

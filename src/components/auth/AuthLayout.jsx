@@ -6,6 +6,7 @@ import AuthIllustration from './AuthIllustration'
 import LanguageSwitcher from './LanguageSwitcher'
 
 const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@agritrust.rw'
+const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Agri Trust Partner Portal Support')}`
 const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL || '/support'
 const TERMS_URL = import.meta.env.VITE_TERMS_URL || '/terms'
 const PRIVACY_URL = import.meta.env.VITE_PRIVACY_URL || '/privacy'
@@ -69,7 +70,7 @@ export default function AuthLayout({ title, subtitle, eyebrow, footer, children,
               {SUPPORT_EMAIL ? (
                 <span className="auth-meta__support">
                   {security.supportPrompt}{' '}
-                  <a className="auth-link" href={`mailto:${SUPPORT_EMAIL}`}>
+                  <a className="auth-link" href={SUPPORT_MAILTO}>
                     {security.supportAction}
                   </a>
                 </span>
