@@ -17,6 +17,10 @@
       "destination": "/support.html"
     },
     {
+      "source": "/delete-data",
+      "destination": "/delete-data.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
