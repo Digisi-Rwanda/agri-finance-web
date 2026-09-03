@@ -4,7 +4,7 @@ import { useAuthCopy } from '../../context/AuthLocaleContext'
 import AuthIllustration from './AuthIllustration'
 import LanguageSwitcher from './LanguageSwitcher'
 
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@agritrust.rw'
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@hinga.rw'
 const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Agri Trust Partner Portal Support')}`
 const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL || '/support'
 const TERMS_URL = import.meta.env.VITE_TERMS_URL || '/terms'

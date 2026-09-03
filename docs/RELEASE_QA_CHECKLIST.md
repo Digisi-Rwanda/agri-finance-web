@@ -72,7 +72,7 @@ Complete these passes on **production** (or a production-like staging env with l
 
 - [ ] `GET /privacy` returns Privacy Policy HTML (not SPA shell)
 - [ ] `GET /terms` returns Terms HTML
-- [ ] `GET /support` returns Support HTML with `support@agritrust.rw` and Play Store link
+- [ ] `GET /support` returns Support HTML with `support@hinga.rw` and Play Store link
 - [ ] Mobile “view full policy” / register Terms links open the same URLs
 - [ ] Login footer shows Terms, Privacy, Support; farmer CTA opens Play Store
 
