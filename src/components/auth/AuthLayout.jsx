@@ -1,7 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import authFieldBg from '../../assets/auth-field-bg.webp'
 import { useAuthCopy } from '../../context/AuthLocaleContext'
-import AgriTrustMark from '../ui/AgriTrustMark'
 import AuthIllustration from './AuthIllustration'
 import LanguageSwitcher from './LanguageSwitcher'
 
@@ -29,22 +28,21 @@ export default function AuthLayout({ title, subtitle, eyebrow, footer, children,
         <div className="auth-mobile-banner">
           <img src={authFieldBg} alt="" className="auth-mobile-banner__bg" decoding="async" />
           <div className="auth-mobile-banner__content">
-            <AgriTrustMark size={18} />
-            <span>{brand.name}</span>
+            <img src="/hinga-logo.png" alt="Hinga" className="auth-hinga-logo auth-hinga-logo--banner" />
+            <span className="auth-mobile-banner__tag">{brand.tagline}</span>
           </div>
         </div>
 
         <div className="auth-form-panel">
           <div className={`auth-form-center${compact ? ' auth-form-center--compact' : ''}`}>
             <div className="auth-topbar">
-              <div className="auth-brand-inline">
-                <div className="auth-avatar">
-                  <AgriTrustMark size={19} />
-                </div>
-                <div className="auth-brand-text">
-                  <span className="auth-brand-name">{brand.name}</span>
-                  <span className="auth-brand-tag">{brand.tagline}</span>
-                </div>
+              <div className="auth-brand-inline auth-brand-inline--hinga">
+                <img
+                  src="/hinga-logo.png"
+                  alt="Hinga — your harvest has a score"
+                  className="auth-hinga-logo"
+                />
+                <span className="auth-brand-tag">{brand.tagline}</span>
               </div>
               <LanguageSwitcher />
             </div>

@@ -57,12 +57,39 @@ a {
   letter-spacing: -0.02em;
 }
 
+.brand--hinga {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  margin-bottom: 0.35rem;
+}
+
+.brand-icon {
+  display: block;
+  border-radius: 0.45rem;
+  flex-shrink: 0;
+}
+
+.brand-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  line-height: 1.15;
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
 .brand-sub {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #b8e6c8;
-  margin-top: -0.7rem;
+  margin-top: 0;
 }
 
 .sidebar-nav {
