@@ -283,8 +283,12 @@ function MainLayout() {
     <PortalThemeContext.Provider value={{ isDark: darkMode, setIsDark: setDarkMode }}>
       <div className={`app-shell ${shellThemeClass} ${roleShellClass}`.trim()}>
         <aside className={`sidebar sidebar--flat ${menuOpen ? 'open' : ''}`}>
-          <Link to={homePath} className="brand" onClick={() => setMenuOpen(false)}>
-            {portal.layout.brand}
+          <Link to={homePath} className="brand brand--hinga" onClick={() => setMenuOpen(false)}>
+            <img src="/hinga-icon.png" alt="" className="brand-icon" width="36" height="36" />
+            <span className="brand-stack">
+              <span className="brand-name">Hinga</span>
+              <span className="brand-sub">{portal.layout.portal}</span>
+            </span>
           </Link>
 
           <nav className="sidebar-nav" aria-label="Main">

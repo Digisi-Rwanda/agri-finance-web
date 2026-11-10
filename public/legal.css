@@ -38,14 +38,18 @@ body {
 
 .brand {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
   margin-bottom: 1.75rem;
   text-decoration: none;
   color: var(--brand-deep);
-  font-family: "Segoe UI", system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+}
+
+.brand-logo {
+  display: block;
+  width: min(220px, 72vw);
+  height: auto;
 }
 
 .brand-mark {
@@ -54,6 +58,59 @@ body {
   border-radius: 0.45rem;
   background: linear-gradient(145deg, var(--brand), var(--brand-deep));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+}
+
+.brand-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.2;
+}
+
+.brand-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.role-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .role-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.role-card {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  padding: 1rem 1.05rem;
+}
+
+.role-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  color: var(--brand-deep);
+}
+
+.role-card p:last-child {
+  margin-bottom: 0;
+}
+
+.role-card--hinga {
+  border-top: 3px solid var(--brand);
+}
+
+.role-card--partner {
+  border-top: 3px solid var(--brand-deep);
 }
 
 h1 {

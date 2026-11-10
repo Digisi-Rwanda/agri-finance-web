@@ -50,7 +50,7 @@ src/
 | Variable | Default / production | Purpose |
 |----------|----------------------|---------|
 | `VITE_API_BASE_URL` | Local: `http://localhost:8080/api` · Prod: `https://agri-finance-backendd.onrender.com/api` | Backend API base URL |
-| `VITE_SUPPORT_EMAIL` | `support@agritrust.rw` | Auth footer support mailto |
+| `VITE_SUPPORT_EMAIL` | `support@hinga.rw` | Auth footer support mailto |
 | `VITE_SUPPORT_URL` | `/support` | Public support page |
 | `VITE_TERMS_URL` | `/terms` | Terms & Conditions |
 | `VITE_PRIVACY_URL` | `/privacy` | Privacy Policy |
